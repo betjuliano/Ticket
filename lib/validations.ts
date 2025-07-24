@@ -34,26 +34,45 @@ export const ticketFiltersSchema = z.object({
 // Schema para usuário
 export const userSchema = z.object({
   id: z.string(),
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
-  email: z.string().email('Email inválido'),
-  role: z.enum(['user', 'coordinator', 'admin']).default('user'),
+  name: z.string(),
+  email: z.string().email(),
+  role: z.enum(['user', 'coordinator', 'admin']),
   department: z.string().optional(),
-  active: z.boolean().default(true),
+  active: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 // Schema para criação de usuário
-export const createUserSchema = userSchema.omit({ id: true })
+export const userCreateSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  role: z.enum(['user', 'coordinator', 'admin']),
+  department: z.string().optional(),
+  active: z.boolean().default(true),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+})
 
 // Schema para atualização de usuário
-export const updateUserSchema = userSchema.partial().omit({ id: true })
+export const userUpdateSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).optional(),
+  role: z.enum(['user', 'coordinator', 'admin']).optional(),
+  department: z.string().optional(),
+  active: z.boolean().optional(),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+})
 
 // Schema para autenticação
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(1, 'Senha é obrigatória'),
 })
 
-// Schema para registro
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
   email: z.string().email('Email inválido'),
@@ -128,7 +147,16 @@ export const userFiltersSchema = z.object({
   limit: z.coerce.number().min(1).max(50).default(10)
 })
 
-// Tipos TypeScript adicionais
+// Tipos TypeScript derivados dos schemas
+export type CreateTicketInput = z.infer<typeof createTicketSchema>
+export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
+export type TicketFilters = z.infer<typeof ticketFiltersSchema>
+export type User = z.infer<typeof userSchema>
+export type CreateUserInput = z.infer<typeof userCreateSchema>
+export type UpdateUserInput = z.infer<typeof userUpdateSchema>
+export type LoginInput = z.infer<typeof loginSchema>
+export type RegisterInput = z.infer<typeof registerSchema>
+export type DashboardStatsInput = z.infer<typeof dashboardStatsSchema>
 export type CreateCommentInput = z.infer<typeof createCommentSchema>
 export type UpdateCommentInput = z.infer<typeof updateCommentSchema>
 export type CreateKnowledgeInput = z.infer<typeof createKnowledgeSchema>
@@ -136,15 +164,4 @@ export type UpdateKnowledgeInput = z.infer<typeof updateKnowledgeSchema>
 export type KnowledgeFilters = z.infer<typeof knowledgeFiltersSchema>
 export type AttachmentInput = z.infer<typeof attachmentSchema>
 export type UserFilters = z.infer<typeof userFiltersSchema>
-
-// Tipos TypeScript derivados dos schemas
-export type CreateTicketInput = z.infer<typeof createTicketSchema>
-export type UpdateTicketInput = z.infer<typeof updateTicketSchema>
-export type TicketFilters = z.infer<typeof ticketFiltersSchema>
-export type User = z.infer<typeof userSchema>
-export type CreateUserInput = z.infer<typeof createUserSchema>
-export type UpdateUserInput = z.infer<typeof updateUserSchema>
-export type LoginInput = z.infer<typeof loginSchema>
-export type RegisterInput = z.infer<typeof registerSchema>
-export type DashboardStatsInput = z.infer<typeof dashboardStatsSchema>
 

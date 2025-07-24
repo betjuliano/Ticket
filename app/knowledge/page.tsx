@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { KnowledgeDocument, AIMessage } from "@/types/global"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,11 +15,12 @@ interface KnowledgePageProps {
 
 export default function KnowledgePage({ userRole }: KnowledgePageProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDocument, setSelectedDocument] = useState(null)
-  const [showUploadForm, setShowUploadForm] = useState(false)
-  const [showAiChat, setShowAiChat] = useState(false)
-  const [aiMessages, setAiMessages] = useState([])
+  const [selectedDocument, setSelectedDocument] = useState<KnowledgeDocument | null>(null)
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>([])
   const [aiInput, setAiInput] = useState("")
+  const [showAiChat, setShowAiChat] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  // Remover a linha duplicada: const [userRole] = useState("coordinator")
 
   const documents = [
     {
@@ -70,7 +72,7 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
   const handleAiQuery = async () => {
     if (!aiInput.trim()) return
 
-    const newMessage = {
+    const newMessage: AIMessage = {
       type: "user",
       content: aiInput,
       timestamp: new Date().toLocaleTimeString(),
@@ -81,7 +83,7 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
 
     // Simular resposta da IA
     setTimeout(() => {
-      const aiResponse = {
+      const aiResponse: AIMessage = {
         type: "ai",
         content: `Com base na knowledge base, encontrei informações relevantes sobre "${aiInput}". Segundo o Manual de Procedimentos TI, recomendo verificar primeiro as configurações de rede e depois os logs do sistema. Posso elaborar uma resposta mais detalhada se necessário.`,
         timestamp: new Date().toLocaleTimeString(),

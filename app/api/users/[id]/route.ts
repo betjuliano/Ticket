@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { updateUserSchema } from '@/lib/validations'
+import { userUpdateSchema } from '@/lib/validations'
 import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils'
 import { getServerSession } from 'next-auth'
 import { authOptions, hashPassword } from '@/lib/auth'
@@ -52,7 +52,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const validatedData = updateUserSchema.parse(body)
+    const validatedData = userUpdateSchema.parse(body)
 
     // Se está alterando senha, fazer hash
     if (validatedData.password) {

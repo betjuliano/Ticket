@@ -311,7 +311,7 @@ export default function UsersPage({ userRole }: UsersPageProps) {
                     }`}
                   >
                     <td className="py-3 px-4 text-sm text-white">{item.name}</td>
-                    {activeTab === "users" && (
+                    {activeTab === "users" && 'matricula' in item && (
                       <td className="py-3 px-4 text-sm text-white font-mono">{item.matricula}</td>
                     )}
                     <td className="py-3 px-4 text-sm text-white">{item.sector}</td>
@@ -336,20 +336,20 @@ export default function UsersPage({ userRole }: UsersPageProps) {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      {activeTab === "users" ? (
+                      {activeTab === "users" && 'ticketsCount' in item ? (
                         <div className="text-sm">
                           <div className="text-white font-mono">{item.ticketsCount}</div>
                           <div className="text-xs text-neutral-400">Último: {item.lastTicket}</div>
                         </div>
-                      ) : (
+                      ) : 'specialties' in item ? (
                         <div className="flex flex-wrap gap-1">
-                          {item.specialties.map((spec) => (
+                          {item.specialties.map((spec: string) => (
                             <Badge key={spec} className="bg-orange-500/20 text-orange-500 text-xs">
                               {spec}
                             </Badge>
                           ))}
                         </div>
-                      )}
+                      ) : null}
                     </td>
                     <td className="py-3 px-4">
                       <Badge

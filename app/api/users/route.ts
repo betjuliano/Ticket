@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createUserSchema, updateUserSchema } from '@/lib/validations'
+import { userCreateSchema, userUpdateSchema } from '@/lib/validations'
 import { createSuccessResponse, createErrorResponse, handleApiError, logRequest } from '@/lib/api-utils'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, hashPassword } from '@/lib/auth'
 
 // GET - Listar usuários
 export async function GET(request: NextRequest) {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedData = createUserSchema.parse(body)
+    const validatedData = userCreateSchema.parse(body)
 
     // Verificar se usuário já existe
     const existingUser = await prisma.user.findFirst({

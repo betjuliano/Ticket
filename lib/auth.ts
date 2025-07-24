@@ -137,4 +137,22 @@ export const requireRole = (roles: string[]) => {
       }
     }
   }
-} 
+}
+
+// Adicione esta declaração de módulo para estender os tipos do NextAuth
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+    }
+  }
+  
+  interface User {
+    id: string;
+    role?: string;
+  }
+}

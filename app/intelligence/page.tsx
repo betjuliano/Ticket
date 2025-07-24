@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { IntelligenceReport } from "@/types/global"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +10,7 @@ import { Search, FileText, Eye, Download, Filter, Globe, Shield, AlertTriangle }
 
 export default function IntelligencePage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedReport, setSelectedReport] = useState(null)
+  const [selectedReport, setSelectedReport] = useState<IntelligenceReport | null>(null)
 
   const reports = [
     {
@@ -74,7 +75,7 @@ export default function IntelligencePage() {
     },
   ]
 
-  const getClassificationColor = (classification) => {
+  const getClassificationColor = (classification: string) => {
     switch (classification) {
       case "TOP SECRET":
         return "bg-red-500/20 text-red-500"
@@ -87,7 +88,7 @@ export default function IntelligencePage() {
     }
   }
 
-  const getThreatColor = (threat) => {
+  const getThreatColor = (threat: string) => {
     switch (threat) {
       case "critical":
         return "bg-red-500/20 text-red-500"
@@ -102,7 +103,7 @@ export default function IntelligencePage() {
     }
   }
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "verified":
         return "bg-white/20 text-white"

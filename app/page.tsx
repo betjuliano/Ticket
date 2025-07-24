@@ -1,24 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signOut, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { ChevronRight, Monitor, Settings, Shield, Target, Users, Bell, RefreshCw, User, UserCog, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import DashboardPage from "./dashboard/page"
-import TicketsPage from "./tickets/page"
-import KnowledgePage from "./knowledge/page"
-import UsersPage from "./users/page"
-import SystemsPage from "./systems/page"
 
-export default function TicketingDashboard() {
+export default function HomePage() {
   const { data: session, status } = useSession()
-  const [activeSection, setActiveSection] = useState("dashboard")
+  const router = useRouter()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [userRole, setUserRole] = useState("coordinator")
+  const [userRole, setUserRole] = useState<"user" | "coordinator">("coordinator")
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/auth/signin' })
+  }
+
+  const handleNavigation = (section: string) => {
+    router.push(`/${section}`)
+  }
+
+  // Redirect to dashboard by default
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push('/dashboard')
+    }
+  }, [status, router])
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center h-screen bg-neutral-900">
+        <div className="text-orange-500">Carregando...</div>
+      </div>
+    )
+  }
+
+  if (status === "unauthenticated") {
+    router.push('/auth/signin')
+    return null
   }
 
   return (
@@ -100,12 +120,8 @@ export default function TicketingDashboard() {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded transition-colors ${
-                  activeSection === item.id
-                    ? "bg-orange-500 text-white"
-                    : "text-neutral-400 hover:text-white hover:bg-neutral-800"
-                }`}
+                onClick={() => handleNavigation(item.id)}
+                className="w-full flex items-center gap-3 p-3 rounded transition-colors text-neutral-400 hover:text-white hover:bg-neutral-800"
               >
                 <item.icon className="w-5 h-5 md:w-5 md:h-5 sm:w-6 sm:h-6" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
@@ -140,7 +156,7 @@ export default function TicketingDashboard() {
         <div className="h-16 bg-neutral-800 border-b border-neutral-700 flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
             <div className="text-sm text-neutral-400">
-              TICKET SYSTEM / <span className="text-orange-500">{activeSection.toUpperCase()}</span>
+              TICKET SYSTEM / <span className="text-orange-500">HOME</span>
             </div>
             <Badge
               className={`${userRole === "coordinator" ? "bg-orange-500/20 text-orange-500" : "bg-white/20 text-white"}`}
@@ -159,13 +175,18 @@ export default function TicketingDashboard() {
           </div>
         </div>
 
-        {/* Dashboard Content */}
-        <div className="flex-1 overflow-auto">
-          {activeSection === "dashboard" && <DashboardPage userRole={userRole} />}
-          {activeSection === "tickets" && <TicketsPage userRole={userRole} />}
-          {activeSection === "knowledge" && <KnowledgePage userRole={userRole} />}
-          {activeSection === "users" && <UsersPage userRole={userRole} />}
-          {activeSection === "systems" && <SystemsPage userRole={userRole} />}
+        {/* Welcome Content */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Bem-vindo ao Sistema de Tickets</h2>
+            <p className="text-neutral-400 mb-6">Selecione uma seção no menu lateral para começar</p>
+            <Button 
+              onClick={() => handleNavigation('dashboard')}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Ir para Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     </div>
