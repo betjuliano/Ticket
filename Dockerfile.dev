@@ -1,0 +1,33 @@
+# ========================================
+# DOCKERFILE PARA DESENVOLVIMENTO
+# ========================================
+
+FROM node:18-alpine
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    curl \
+    git \
+    openssh-client \
+    && rm -rf /var/cache/apk/*
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package.json package-lock.json* pnpm-lock.yaml* ./
+
+# Instalar dependências
+RUN npm ci
+
+# Copiar código fonte
+COPY . .
+
+# Gerar cliente Prisma
+RUN npx prisma generate
+
+# Expor porta
+EXPOSE 3000
+
+# Comando de inicialização para desenvolvimento
+CMD ["npm", "run", "dev"] 

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, Monitor, Settings, Shield, Target, Users, Bell, RefreshCw, User, UserCog } from "lucide-react"
+import { signOut, useSession } from "next-auth/react"
+import { ChevronRight, Monitor, Settings, Shield, Target, Users, Bell, RefreshCw, User, UserCog, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import DashboardPage from "./dashboard/page"
@@ -11,16 +12,19 @@ import UsersPage from "./users/page"
 import SystemsPage from "./systems/page"
 
 export default function TicketingDashboard() {
+  const { data: session, status } = useSession()
   const [activeSection, setActiveSection] = useState("dashboard")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [userRole, setUserRole] = useState("coordinator") // "user" or "coordinator"
+  const [userRole, setUserRole] = useState("coordinator")
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/auth/signin' })
+  }
 
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div
-        className={`${sidebarCollapsed ? "w-16" : "w-70"} bg-neutral-900 border-r border-neutral-700 transition-all duration-300 fixed md:relative z-50 md:z-auto h-full md:h-auto ${!sidebarCollapsed ? "md:block" : ""}`}
-      >
+      <div className={`${sidebarCollapsed ? "w-16" : "w-70"} bg-neutral-900 border-r border-neutral-700 transition-all duration-300 fixed md:relative z-50 md:z-auto h-full md:h-auto ${!sidebarCollapsed ? "md:block" : ""}`}>
         <div className="p-4">
           <div className="flex items-center justify-between mb-8">
             <div className={`${sidebarCollapsed ? "hidden" : "block"}`}>
@@ -60,6 +64,27 @@ export default function TicketingDashboard() {
                 >
                   <UserCog className="w-3 h-3 mr-1" />
                   COORDENADOR
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* User Info & Logout */}
+          {!sidebarCollapsed && session && (
+            <div className="mb-6 p-3 bg-neutral-800 border border-neutral-700 rounded">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs text-white">
+                  <div className="font-medium">{session.user?.name}</div>
+                  <div className="text-neutral-400">{session.user?.email}</div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  className="text-neutral-400 hover:text-red-500"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             </div>

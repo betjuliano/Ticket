@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  # Traefik - Reverse Proxy e Load Balancer
+  traefik:
+    image: traefik:v3.0
+    container_name: ticket-traefik
+    restart: unless-stopped
+    command:
+      # Configurações globais
+      - --global.checkNewVersion=false
+      - --global.sendAnonymousUsage=false
+      
+      # Configurações da API
+      - --api.dashboard=true
+      - --api.debug=true
+      
+      # Configurações dos entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      
+      # Redirecionamento HTTP para HTTPS
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      
+      # Configurações do Docker provider
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=ticket-network
+      
+      # Configurações do Let's Encrypt
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@seudominio.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      
+      # Configurações de logs
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard do Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    networks:
+      - ticket-network
+    labels:
+      # Dashboard do Traefik
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      
+      # Middleware de autenticação básica para o dashboard
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH:-admin:$$2y$$10$$K8V2VKDKHsOKOcUuLcGOOOqNdKXqk8rKEWOjFuQOQOQOQOQOQOQOQO}"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+
+  # PostgreSQL - Banco de dados
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticket-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ticket_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ticket_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticket_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - ticket-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ticket_user} -d ${POSTGRES_DB:-ticket_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis - Cache e sessões
+  redis:
+    image: redis:7-alpine
+    container_name: ticket-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis-data:/data
+    networks:
+      - ticket-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Aplicação Ticket System
+  ticket-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket-app
+    restart: unless-stopped
+    environment:
+      # Configurações da aplicação
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_NAME: "Ticket System"
+      NEXT_PUBLIC_APP_VERSION: "2.1.7"
+      NEXT_PUBLIC_APP_ENV: "production"
+      NEXT_PUBLIC_APP_URL: "https://${DOMAIN:-localhost}"
+      
+      # Configurações de banco de dados
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-ticket_user}:${POSTGRES_PASSWORD:-ticket_password}@postgres:5432/${POSTGRES_DB:-ticket_db}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:-redis_password}@redis:6379"
+      
+      # Configurações de autenticação
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-super-secret-key-here}
+      NEXTAUTH_URL: "https://${DOMAIN:-localhost}"
+      
+      # Configurações de email
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      
+      # Configurações de upload
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
+      UPLOAD_ALLOWED_TYPES: ${UPLOAD_ALLOWED_TYPES:-image/jpeg,image/png,image/gif,application/pdf}
+      
+      # Configurações de logs
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FILE: "/app/logs/app.log"
+      
+      # Configurações de cache
+      CACHE_TTL: ${CACHE_TTL:-3600}
+      
+      # Configurações de rate limiting
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-900}
+    volumes:
+      - app-logs:/app/logs
+      - app-uploads:/app/uploads
+    networks:
+      - ticket-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      # Configurações do Traefik
+      - "traefik.enable=true"
+      
+      # Roteamento principal
+      - "traefik.http.routers.ticket-app.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.ticket-app.entrypoints=websecure"
+      - "traefik.http.routers.ticket-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ticket-app.service=ticket-app"
+      - "traefik.http.services.ticket-app.loadbalancer.server.port=3000"
+      
+      # Middlewares de segurança
+      - "traefik.http.middlewares.ticket-security.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
+      - "traefik.http.middlewares.ticket-security.headers.accesscontrolalloworiginlist=https://${DOMAIN:-localhost}"
+      - "traefik.http.middlewares.ticket-security.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.ticket-security.headers.addvaryheader=true"
+      - "traefik.http.middlewares.ticket-security.headers.referrerpolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.ticket-security.headers.framedeny=true"
+      - "traefik.http.middlewares.ticket-security.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.ticket-security.headers.browserxssfilter=true"
+      - "traefik.http.middlewares.ticket-security.headers.stsincludesubdomains=true"
+      - "traefik.http.middlewares.ticket-security.headers.stspreload=true"
+      - "traefik.http.middlewares.ticket-security.headers.stsseconds=31536000"
+      
+      # Rate limiting
+      - "traefik.http.middlewares.ticket-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.ticket-ratelimit.ratelimit.burst=200"
+      
+      # Aplicar middlewares
+      - "traefik.http.routers.ticket-app.middlewares=ticket-security,ticket-ratelimit"
+
+# Volumes persistentes
+volumes:
+  traefik-letsencrypt:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  app-logs:
+    driver: local
+  app-uploads:
+    driver: local
+
+# Rede personalizada
+networks:
+  ticket-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// MODELOS DE USUÁRIOS E AUTENTICAÇÃO
+// ========================================
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  password         String
+  role             UserRole  @default(USER)
+  avatar           String?
+  isActive         Boolean   @default(true)
+  matricula        String?   @unique
+  telefone         String?   @unique
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relacionamentos
+  createdTickets    Ticket[] @relation("CreatedBy")
+  assignedTickets   Ticket[] @relation("AssignedTo")
+  ticketComments    Comment[]
+  ticketAttachments Attachment[]
+  userSessions      Session[]
+  userLogs          UserLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ========================================
+// MODELOS DE TICKETS
+// ========================================
+
+model Ticket {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  status      TicketStatus @default(OPEN)
+  priority    Priority     @default(MEDIUM)
+  category    String
+  tags        String
+  
+  // Relacionamentos
+  createdById String
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?       @relation("AssignedTo", fields: [assignedToId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  closedAt    DateTime?
+  
+  // Relacionamentos
+  comments    Comment[]
+  attachments Attachment[]
+  ticketLogs  TicketLog[]
+
+  @@map("tickets")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  filename  String
+  filepath  String
+  filesize  Int
+  mimetype  String
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("attachments")
+}
+
+// ========================================
+// MODELOS DE CONHECIMENTO
+// ========================================
+
+model KnowledgeArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  category    String
+  tags        String
+  isPublished Boolean  @default(false)
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("knowledge_articles")
+}
+
+// ========================================
+// MODELOS DE LOGS E AUDITORIA
+// ========================================
+
+model UserLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_logs")
+}
+
+model TicketLog {
+  id        String   @id @default(cuid())
+  ticketId  String
+  action    String
+  details   String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_logs")
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum UserRole {
+  ADMIN
+  COORDINATOR
+  USER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_USER
+  WAITING_FOR_THIRD_PARTY
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}

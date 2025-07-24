@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
+import { Providers } from '@/components/providers'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Tactical Operations Dashboard',
   description: 'Tactical command and control system',
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -14,8 +15,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="bg-black text-white font-mono antialiased">
-        {children}
+      <body 
+        className="bg-black text-white font-mono antialiased"
+        suppressHydrationWarning={true}
+      >
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

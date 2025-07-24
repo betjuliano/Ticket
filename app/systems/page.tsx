@@ -434,4 +434,37 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
                   <div>
-                    <h\
+                    <h4 className="text-sm font-medium text-white">Novos Tickets</h4>
+                    <p className="text-xs text-neutral-400">Notificar quando um novo ticket for criado</p>
+                  </div>
+                  <Switch id="notify-new-tickets" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                  <div>
+                    <h4 className="text-sm font-medium text-white">Respostas de Usuários</h4>
+                    <p className="text-xs text-neutral-400">Notificar quando um usuário responder</p>
+                  </div>
+                  <Switch id="notify-user-responses" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                  <div>
+                    <h4 className="text-sm font-medium text-white">Tickets Urgentes</h4>
+                    <p className="text-xs text-neutral-400">Notificar imediatamente para tickets urgentes</p>
+                  </div>
+                  <Switch id="notify-urgent" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                  <div>
+                    <h4 className="text-sm font-medium text-white">Relatórios Diários</h4>
+                    <p className="text-xs text-neutral-400">Enviar resumo diário por e-mail</p>
+                  </div>
+                  <Switch id="daily-reports" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
