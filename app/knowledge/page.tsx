@@ -101,21 +101,21 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
   )
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wider">KNOWLEDGE BASE</h1>
-          <p className="text-sm text-neutral-400">Base de conhecimento para suporte à IA e consultas</p>
+          <p className="text-sm text-blue-200">Base de conhecimento para suporte à IA e consultas</p>
         </div>
         <div className="flex gap-2">
           {userRole === "coordinator" && (
-            <Button onClick={() => setShowUploadForm(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+            <Button onClick={() => setShowUploadForm(true)} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
               <Upload className="w-4 h-4 mr-2" />
               Upload Documento
             </Button>
           )}
-          <Button onClick={() => setShowAiChat(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+          <Button onClick={() => setShowAiChat(true)} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
             <Bot className="w-4 h-4 mr-2" />
             Consultar IA
           </Button>
@@ -124,65 +124,65 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">DOCUMENTOS</p>
+                <p className="text-xs text-blue-200 tracking-wider">DOCUMENTOS</p>
                 <p className="text-2xl font-bold text-white font-mono">{documents.length}</p>
               </div>
-              <FileText className="w-8 h-8 text-white" />
+              <FileText className="w-8 h-8 text-blue-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">CATEGORIAS</p>
+                <p className="text-xs text-blue-200 tracking-wider">CATEGORIAS</p>
                 <p className="text-2xl font-bold text-white font-mono">4</p>
               </div>
-              <Database className="w-8 h-8 text-white" />
+              <Database className="w-8 h-8 text-blue-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">CONSULTAS IA</p>
-                <p className="text-2xl font-bold text-orange-500 font-mono">156</p>
+                <p className="text-xs text-blue-200 tracking-wider">CONSULTAS IA</p>
+                <p className="text-2xl font-bold text-blue-300 font-mono">156</p>
               </div>
-              <Brain className="w-8 h-8 text-orange-500" />
+              <Brain className="w-8 h-8 text-blue-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">PRECISÃO IA</p>
+                <p className="text-xs text-blue-200 tracking-wider">PRECISÃO IA</p>
                 <p className="text-2xl font-bold text-white font-mono">94%</p>
               </div>
-              <Zap className="w-8 h-8 text-white" />
+              <Zap className="w-8 h-8 text-blue-300" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Search */}
-      <Card className="bg-neutral-900 border-neutral-700">
+      <Card className="bg-white/10 backdrop-blur-lg border-white/20">
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-300" />
             <Input
               placeholder="Buscar documentos na knowledge base..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-neutral-800 border-neutral-600 text-white"
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
             />
           </div>
         </CardContent>
@@ -193,7 +193,7 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
         {filteredDocuments.map((doc) => (
           <Card
             key={doc.id}
-            className="bg-neutral-900 border-neutral-700 hover:border-orange-500/50 transition-colors cursor-pointer"
+            className="bg-white/10 backdrop-blur-lg border-white/20 hover:border-blue-400/50 transition-colors cursor-pointer"
             onClick={() => setSelectedDocument(doc)}
           >
             <CardHeader className="pb-3">

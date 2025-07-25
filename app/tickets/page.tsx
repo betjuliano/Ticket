@@ -128,15 +128,15 @@ function CoordinatorTicketsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wider">CENTRAL DE TICKETS</h1>
-          <p className="text-sm text-neutral-400">Gerencie todos os chamados do sistema</p>
+          <p className="text-sm text-blue-200">Gerencie todos os chamados do sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+          <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
             <Filter className="w-4 h-4 mr-2" />
             Filtros
           </Button>
@@ -144,27 +144,27 @@ function CoordinatorTicketsPage() {
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-neutral-900 border-neutral-700">
+      <Card className="bg-white/10 backdrop-blur-lg border-white/20">
         <CardContent className="p-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-300" />
               <Input
                 placeholder="Buscar por título, usuário, matrícula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-neutral-800 border-neutral-600 text-white"
+                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
               />
             </div>
             <Select>
-              <SelectTrigger className="w-40 bg-neutral-800 border-neutral-600 text-white">
+              <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white focus:border-blue-400 focus:ring-blue-400">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="open">Abertos</SelectItem>
-                <SelectItem value="in_progress">Em Andamento</SelectItem>
-                <SelectItem value="resolved">Resolvidos</SelectItem>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="all" className="text-white hover:bg-slate-700">Todos</SelectItem>
+                <SelectItem value="open" className="text-white hover:bg-slate-700">Abertos</SelectItem>
+                <SelectItem value="in_progress" className="text-white hover:bg-slate-700">Em Andamento</SelectItem>
+                <SelectItem value="resolved" className="text-white hover:bg-slate-700">Resolvidos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -176,7 +176,7 @@ function CoordinatorTicketsPage() {
         {tickets.map((ticket) => (
           <Card
             key={ticket.id}
-            className="bg-neutral-900 border-neutral-700 hover:border-orange-500/50 transition-colors cursor-pointer"
+            className="bg-white/10 backdrop-blur-lg border-white/20 hover:border-blue-400/50 transition-colors cursor-pointer"
             onClick={() => setSelectedTicket(ticket)}
           >
             <CardContent className="p-4">
@@ -184,14 +184,14 @@ function CoordinatorTicketsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-sm font-bold text-white">{ticket.title}</h3>
-                    <Badge className="bg-neutral-800 text-neutral-300 text-xs font-mono">{ticket.id}</Badge>
+                    <Badge className="bg-white/20 text-blue-200 text-xs font-mono">{ticket.id}</Badge>
                   </div>
-                  <p className="text-sm text-neutral-300 mb-2">{ticket.description}</p>
+                  <p className="text-sm text-blue-200 mb-2">{ticket.description}</p>
                   <div className="flex flex-wrap gap-2 mb-2">
                     <Badge
                       className={`${
                         ticket.status === "open"
-                          ? "bg-orange-500/20 text-orange-500"
+                          ? "bg-blue-600/20 text-blue-300"
                           : ticket.status === "in_progress"
                             ? "bg-white/20 text-white"
                             : "bg-white/20 text-white"

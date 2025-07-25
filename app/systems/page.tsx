@@ -28,14 +28,14 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wider">CONFIGURAÇÕES DO SISTEMA</h1>
-          <p className="text-sm text-neutral-400">Configure integrações e parâmetros do sistema</p>
+          <p className="text-sm text-blue-200">Configure integrações e parâmetros do sistema</p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+        <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
           <Save className="w-4 h-4 mr-2" />
           Salvar Configurações
         </Button>
@@ -56,8 +56,8 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`${
               activeTab === tab.id 
-                ? "bg-orange-500 hover:bg-orange-600" 
-                : "text-neutral-400 hover:text-white"
+                ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800" 
+                : "text-blue-300 hover:text-white"
             }`}
           >
             <tab.icon className="w-4 h-4 mr-2" />
@@ -69,9 +69,9 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
       {/* Email Configuration */}
       {activeTab === "email" && (
         <div className="space-y-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-white/10 backdrop-blur-lg border-white/20">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-blue-200 tracking-wider flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 CONFIGURAÇÃO SMTP
               </CardTitle>
@@ -79,44 +79,44 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-neutral-300 mb-2 block">SERVIDOR SMTP</label>
+                  <label className="text-sm font-medium text-blue-200 mb-2 block">SERVIDOR SMTP</label>
                   <Input 
                     placeholder="smtp.gmail.com"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
                     defaultValue="smtp.empresa.com"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-neutral-300 mb-2 block">PORTA</label>
+                  <label className="text-sm font-medium text-blue-200 mb-2 block">PORTA</label>
                   <Input 
                     placeholder="587"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
                     defaultValue="587"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-neutral-300 mb-2 block">USUÁRIO</label>
+                  <label className="text-sm font-medium text-blue-200 mb-2 block">USUÁRIO</label>
                   <Input 
                     placeholder="sistema@empresa.com"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
                     defaultValue="tickets@empresa.com"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-neutral-300 mb-2 block">SENHA</label>
+                  <label className="text-sm font-medium text-blue-200 mb-2 block">SENHA</label>
                   <Input 
                     type="password"
                     placeholder="••••••••"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center space-x-2">
                   <Switch id="ssl" defaultChecked />
-                  <label htmlFor="ssl" className="text-sm text-neutral-300">Usar SSL/TLS</label>
+                  <label htmlFor="ssl" className="text-sm text-blue-200">Usar SSL/TLS</label>
                 </div>
-                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent">
+                <Button variant="outline" className="border-white/20 text-blue-300 hover:bg-white/10 hover:text-white bg-transparent">
                   <TestTube className="w-4 h-4 mr-2" />
                   Testar Conexão
                 </Button>
@@ -274,7 +274,7 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">API KEY</label>
                   <Input 
                     type="password"
-                    placeholder="sk-••••••••••••••••••••••••••••••••"
+                    placeholder="sk-••••••••••••••••••••••••••••••••••"
                     className="bg-neutral-800 border-neutral-600 text-white"
                   />
                 </div>

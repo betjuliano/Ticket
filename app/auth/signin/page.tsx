@@ -617,7 +617,9 @@ export default function AuthPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-blue-300 text-sm">
-            © 2024 Universidade Federal de Santa Maria
+            Desenvolvido por Ia projetos - Prof. Juliano
+            2025 Universidade Federal de Santa Maria
+            
           </p>
         </div>
       </div>
