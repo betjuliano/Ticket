@@ -24,7 +24,15 @@ export default function HomePage() {
   // Redirect to dashboard by default
   useEffect(() => {
     if (status === "authenticated") {
-      router.push('/dashboard')
+      // Use setTimeout to avoid setState during render
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 0)
+    } else if (status === "unauthenticated") {
+      // Use setTimeout to avoid setState during render
+      setTimeout(() => {
+        router.push('/auth/signin')
+      }, 0)
     }
   }, [status, router])
 
@@ -36,9 +44,13 @@ export default function HomePage() {
     )
   }
 
+  // Remove the direct router.push call from render
   if (status === "unauthenticated") {
-    router.push('/auth/signin')
-    return null
+    return (
+      <div className="flex items-center justify-center h-screen bg-neutral-900">
+        <div className="text-orange-500">Redirecionando...</div>
+      </div>
+    )
   }
 
   return (

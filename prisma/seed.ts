@@ -30,7 +30,19 @@ async function main() {
       email: 'admjulianoo@gmail.com',
       name: 'Juliano Admin',
       password: await bcrypt.hash('123456', 10),
-      role: 'USER' as const // ou 'COORDINATOR' se preferir
+      role: 'ADMIN' as const
+    },
+    {
+      email: 'coordadm@ufsm.br',
+      name: 'Coordenação UFSM',
+      password: await bcrypt.hash('Adm4125', 10),
+      role: 'COORDINATOR' as const
+    },
+    {
+      email: 'alunoadm@ufsm.br',
+      name: 'Aluno Admin UFSM',
+      password: await bcrypt.hash('teste123', 10),
+      role: 'USER' as const
     }
   ]
 

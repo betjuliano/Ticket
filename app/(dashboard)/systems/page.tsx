@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,12 +9,39 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Settings, Mail, MessageSquare, Database, Shield, Bell, Server, Zap, Save, TestTube } from "lucide-react"
 
-interface SystemsPageProps {
-  userRole: "user" | "coordinator"
-}
+export default function SystemsPage() {
+  const { data: session } = useSession()
+  const userRole = session?.user?.role === 'COORDINATOR' ? 'coordinator' : 'user'
+  const [activeTab, setActiveTab] = useState("email")
 
-export default function SystemsPage({ userRole }: SystemsPageProps) {
-  const [activeTab, setActiveTab] = useState("email") // "email", "whatsapp", "ai", "security", "notifications"
+  // Função para salvar configurações
+  const handleSaveConfigurations = async () => {
+    try {
+      const response = await fetch('/api/systems/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailConfig: {
+            // smtp: smtpConfig,
+            // templates: emailTemplates
+          },
+          // whatsappConfig,
+          // aiConfig,
+          // securityConfig,
+          // notificationConfig
+        })
+      })
+      
+      if (response.ok) {
+        alert('Configurações salvas com sucesso!')
+      } else {
+        alert('Erro ao salvar configurações')
+      }
+    } catch (error) {
+      console.error('Erro:', error)
+      alert('Erro ao salvar configurações')
+    }
+  }
 
   if (userRole === "user") {
     return (
@@ -35,7 +63,10 @@ export default function SystemsPage({ userRole }: SystemsPageProps) {
           <h1 className="text-2xl font-bold text-white tracking-wider">CONFIGURAÇÕES DO SISTEMA</h1>
           <p className="text-sm text-blue-200">Configure integrações e parâmetros do sistema</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+        <Button 
+          onClick={handleSaveConfigurations}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+        >
           <Save className="w-4 h-4 mr-2" />
           Salvar Configurações
         </Button>

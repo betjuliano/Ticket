@@ -1,11 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import {
   Search,
   Plus,
@@ -19,15 +23,31 @@ import {
   Edit,
   Trash2,
   UserPlus,
+  ArrowLeft,
+  Home
 } from "lucide-react"
 
-interface UsersPageProps {
-  userRole: "user" | "coordinator"
-}
+// Remove this interface as it's not needed
+// interface UsersPageProps {
+//   userRole: "user" | "coordinator"
+// }
 
-export default function UsersPage({ userRole }: UsersPageProps) {
+export default function UsersPage() {
+  const { data: session } = useSession()
+  const userRole = session?.user?.role === 'COORDINATOR' ? 'coordinator' : 'user'
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedRole, setSelectedRole] = useState("all")
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "USER",
+    matricula: "",
+    telefone: ""
+  })
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeTab, setActiveTab] = useState("users") // "users" or "support"
 
@@ -138,17 +158,41 @@ export default function UsersPage({ userRole }: UsersPageProps) {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
+      {/* Header com Navegação */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">USUÁRIOS & APOIO</h1>
-          <p className="text-sm text-neutral-400">Gerencie usuários do sistema e contatos de apoio</p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard')}
+            className="text-blue-300 hover:text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-wider">GERENCIAMENTO DE USUÁRIOS</h1>
+            <p className="text-sm text-blue-200">Gerencie usuários e contatos de apoio</p>
+          </div>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          {activeTab === "users" ? "Novo Usuário" : "Novo Contato"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Usuário
+          </Button>
+        </div>
+      </div>
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-blue-200">
+        <Home className="w-4 h-4" />
+        <span>/</span>
+        <span>Dashboard</span>
+        <span>/</span>
+        <span className="text-white">Usuários</span>
       </div>
 
       {/* Tabs */}
@@ -484,6 +528,58 @@ export default function UsersPage({ userRole }: UsersPageProps) {
           </Card>
         </div>
       )}
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
+      {/* Header com Navegação */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard')}
+            className="text-blue-300 hover:text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-wider">GERENCIAMENTO DE USUÁRIOS</h1>
+            <p className="text-sm text-blue-200">Gerencie usuários e contatos de apoio</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Usuário
+          </Button>
+        </div>
+      </div>
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-blue-200">
+        <Home className="w-4 h-4" />
+        <span>/</span>
+        <span>Dashboard</span>
+        <span>/</span>
+        <span className="text-white">Usuários</span>
+      </div>
+
+      {/* ... resto do código existente com cores azuis ... */}
+      
+      {/* Dialog para Criar/Editar Usuário */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="bg-slate-900 border-blue-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Criar Novo Usuário</DialogTitle>
+          </DialogHeader>
+          {/* Formulário de criação */}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

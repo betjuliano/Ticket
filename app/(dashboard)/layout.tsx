@@ -38,7 +38,7 @@ export default function DashboardLayout({
     return path || 'dashboard'
   }
 
-  const userRole = session?.user?.role === 'COORDINATOR' ? 'coordinator' : 'user'
+  const userRole = session?.user?.role === 'COORDINATOR' || session?.user?.role === 'ADMIN' ? 'coordinator' : 'user'
 
   return (
     <div className="flex h-screen bg-black text-white">

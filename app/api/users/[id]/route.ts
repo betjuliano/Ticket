@@ -8,16 +8,17 @@ import { authOptions, hashPassword } from '@/lib/auth'
 // GET - Buscar usuário por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return createErrorResponse('Não autenticado', 401)
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -43,11 +44,12 @@ export async function GET(
 // PUT - Atualizar usuário
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== 'COORDINATOR' && session.user.id !== params.id)) {
+    if (!session || (session.user.role !== 'COORDINATOR' && session.user.id !== id)) {
       return createErrorResponse('Acesso negado', 403)
     }
 
@@ -60,7 +62,7 @@ export async function PUT(
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       select: {
         id: true,
@@ -83,16 +85,17 @@ export async function PUT(
 // DELETE - Desativar usuário (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'COORDINATOR') {
       return createErrorResponse('Acesso negado', 403)
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: false },
       select: {
         id: true,

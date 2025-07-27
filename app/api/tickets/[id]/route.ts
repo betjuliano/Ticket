@@ -44,10 +44,11 @@ let mockTickets: Ticket[] = [
 // GET - Buscar ticket por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const ticket = mockTickets.find(t => t.id === params.id)
+    const { id } = await params
+    const ticket = mockTickets.find(t => t.id === id)
     
     if (!ticket) {
       return NextResponse.json(
@@ -72,11 +73,12 @@ export async function GET(
 // PUT - Atualizar ticket
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
-    const ticketIndex = mockTickets.findIndex(t => t.id === params.id)
+    const ticketIndex = mockTickets.findIndex(t => t.id === id)
     
     if (ticketIndex === -1) {
       return NextResponse.json(
@@ -89,7 +91,7 @@ export async function PUT(
     const updatedTicket = {
       ...mockTickets[ticketIndex],
       ...body,
-      id: params.id, // Garantir que o ID não seja alterado
+      id: id, // Garantir que o ID não seja alterado
       updatedAt: new Date().toISOString()
     }
 
@@ -111,10 +113,11 @@ export async function PUT(
 // DELETE - Excluir ticket
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const ticketIndex = mockTickets.findIndex(t => t.id === params.id)
+    const { id } = await params
+    const ticketIndex = mockTickets.findIndex(t => t.id === id)
     
     if (ticketIndex === -1) {
       return NextResponse.json(

@@ -1,26 +1,42 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from 'next-auth/react'
 import { KnowledgeDocument, AIMessage } from "@/types/global"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Search, Upload, FileText, Bot, Brain, Database, Download, Eye, Trash2, MessageSquare, Zap } from "lucide-react"
+import { 
+  Search, 
+  Upload, 
+  FileText, 
+  Bot, 
+  Brain, 
+  Database, 
+  Download, 
+  Eye, 
+  Trash2, 
+  MessageSquare, 
+  Zap,
+  ArrowLeft,
+  Plus,
+  Send
+} from "lucide-react"
 
-interface KnowledgePageProps {
-  userRole: "user" | "coordinator"
-}
-
-export default function KnowledgePage({ userRole }: KnowledgePageProps) {
+export default function KnowledgePage() {
+  const { data: session } = useSession()
+  const userRole = session?.user?.role === 'COORDINATOR' ? 'coordinator' : 'user'
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDocument, setSelectedDocument] = useState<KnowledgeDocument | null>(null)
   const [aiMessages, setAiMessages] = useState<AIMessage[]>([])
   const [aiInput, setAiInput] = useState("")
   const [showAiChat, setShowAiChat] = useState(false)
   const [showUploadForm, setShowUploadForm] = useState(false)
-  // Remover a linha duplicada: const [userRole] = useState("coordinator")
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 
   const documents = [
     {
@@ -102,25 +118,57 @@ export default function KnowledgePage({ userRole }: KnowledgePageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
-      {/* Header */}
+      {/* Header com Navegação */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">KNOWLEDGE BASE</h1>
-          <p className="text-sm text-blue-200">Base de conhecimento para suporte à IA e consultas</p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard')}
+            className="text-blue-300 hover:text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-wider">BASE DE CONHECIMENTO</h1>
+            <p className="text-sm text-blue-200">Documentos e chat de consulta IA</p>
+          </div>
         </div>
         <div className="flex gap-2">
-          {userRole === "coordinator" && (
-            <Button onClick={() => setShowUploadForm(true)} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Documento
-            </Button>
-          )}
-          <Button onClick={() => setShowAiChat(true)} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
-            <Bot className="w-4 h-4 mr-2" />
-            Consultar IA
+          <Button
+            onClick={() => setIsUploadDialogOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Documento
           </Button>
         </div>
       </div>
+
+      {/* Chat IA com cores azuis */}
+      <Card className="bg-white/10 backdrop-blur-lg border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium text-blue-200 tracking-wider flex items-center gap-2">
+            <Bot className="w-4 h-4" />
+            CONSULTA IA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Chat interface com cores azuis */}
+          <div className="bg-blue-900/30 border border-blue-400/30 rounded p-4">
+            {/* Mensagens do chat */}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Digite sua pergunta..."
+              className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
+            />
+            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
