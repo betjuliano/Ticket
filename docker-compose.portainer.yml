@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Sistema de Tickets - Aplicação Principal (usando Traefik global existente)
+  ticket-system-multidominio:
+    image: ticket-system:latest
+    networks:
+      - iaprojetos
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_URL=https://iadm.iaprojetos.com.br
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - UPLOAD_MAX_SIZE=${UPLOAD_MAX_SIZE}
+      - LOG_LEVEL=${LOG_LEVEL}
+    labels:
+      - "traefik.enable=true"
+      
+      # Configuração para múltiplos domínios
+      - "traefik.http.routers.ticket-multi.rule=Host(`iadm.iaprojetos.com.br`) || Host(`tickets.iaprojetos.com.br`)"
+      - "traefik.http.routers.ticket-multi.entrypoints=websecure"
+      - "traefik.http.routers.ticket-multi.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.ticket-multi.middlewares=security-headers"
+      - "traefik.http.services.ticket-multi.loadbalancer.server.port=3000"
+      
+      # Certificados SSL para ambos os domínios
+      - "traefik.http.routers.ticket-multi.tls.domains[0].main=iadm.iaprojetos.com.br"
+      - "traefik.http.routers.ticket-multi.tls.domains[1].main=tickets.iaprojetos.com.br"
+      
+      # Headers de segurança
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.security-headers.headers.contentSecurityPolicy=default-src 'self' http: https: data: blob: 'unsafe-inline'; font-src 'self' data: https: moz-extension: chrome-extension:"
+      
+      # Redirecionamento HTTP para HTTPS
+      - "traefik.http.routers.ticket-multi-http.rule=Host(`iadm.iaprojetos.com.br`) || Host(`tickets.iaprojetos.com.br`)"
+      - "traefik.http.routers.ticket-multi-http.entrypoints=web"
+      - "traefik.http.routers.ticket-multi-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+    volumes:
+      - ticket-logs:/app/logs
+      - ticket-uploads:/app/uploads
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    networks:
+      - iaprojetos
+    environment:
+      - POSTGRES_DB=tickets_db
+      - POSTGRES_USER=tickets_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    networks:
+      - iaprojetos
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+networks:
+  iaprojetos:
+    external: true
+
+volumes:
+  ticket-logs:
+  ticket-uploads:
+  postgres-data:
+  redis-data:
