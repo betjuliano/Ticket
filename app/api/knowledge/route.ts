@@ -5,12 +5,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { z } from 'zod'
 
+// Schema para criação de artigos de conhecimento. Observe que a propriedade
+// `isPublished` é usada para controlar a visibilidade do artigo. Utilizar
+// `tags` como array de strings no esquema, mas convertê-lo para string
+// antes de persistir no banco, pois o modelo Prisma define `tags` como
+// campo `String`.
 const createKnowledgeSchema = z.object({
   title: z.string().min(5).max(200),
   content: z.string().min(10),
   category: z.string().min(1).max(50),
   tags: z.array(z.string()).optional(),
-  isPublic: z.boolean().default(true)
+  isPublished: z.boolean().default(false)
 })
 
 // GET - Listar artigos
@@ -24,7 +29,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const category = searchParams.get('category')
 
-    const where: any = { isPublic: true }
+    // Filtrar apenas artigos publicados. O campo na base de dados é `isPublished`.
+    const where: any = { isPublished: true }
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -71,9 +77,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createKnowledgeSchema.parse(body)
 
+    // Converta tags (array) em string, se fornecido. O modelo do Prisma usa
+    // `tags` como campo de texto, então armazenamos como lista separada por vírgula.
+    const tagsString = validatedData.tags ? validatedData.tags.join(',') : ''
+
     const newArticle = await prisma.knowledgeArticle.create({
       data: {
-        ...validatedData,
+        title: validatedData.title,
+        content: validatedData.content,
+        category: validatedData.category,
+        tags: tagsString,
+        isPublished: validatedData.isPublished,
         authorId: session.user.id
       },
       include: {

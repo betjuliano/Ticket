@@ -123,7 +123,7 @@ export default function KnowledgePage() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/')}
             className="text-blue-300 hover:text-white hover:bg-white/10"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -303,7 +303,7 @@ export default function KnowledgePage() {
 
       {/* Upload Document Modal */}
       {showUploadForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <Card className="bg-neutral-900 border-neutral-700 w-full max-w-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg font-bold text-white tracking-wider">UPLOAD DOCUMENTO</CardTitle>
@@ -369,7 +369,7 @@ export default function KnowledgePage() {
 
       {/* AI Chat Modal */}
       {showAiChat && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <Card className="bg-neutral-900 border-neutral-700 w-full max-w-4xl h-[80vh] flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between border-b border-neutral-700">
               <CardTitle className="text-lg font-bold text-white tracking-wider flex items-center gap-2">
@@ -434,7 +434,7 @@ export default function KnowledgePage() {
 
       {/* Document Detail Modal */}
       {selectedDocument && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <Card className="bg-neutral-900 border-neutral-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>

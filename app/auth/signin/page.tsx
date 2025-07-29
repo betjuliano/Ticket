@@ -68,7 +68,7 @@ export default function AuthPage() {
       if (result?.error) {
         setError('Email ou senha inválidos')
       } else {
-        router.push('/dashboard')
+        router.push('/')
       }
     } catch (error) {
       setError('Erro interno do servidor')

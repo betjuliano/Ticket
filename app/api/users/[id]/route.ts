@@ -49,7 +49,7 @@ export async function PUT(
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== 'COORDINATOR' && session.user.id !== id)) {
+    if (!session || (!['COORDINATOR', 'ADMIN'].includes(session.user.role) && session.user.id !== id)) {
       return createErrorResponse('Acesso negado', 403)
     }
 
@@ -90,7 +90,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'COORDINATOR') {
+    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
       return createErrorResponse('Acesso negado', 403)
     }
 

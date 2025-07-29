@@ -44,10 +44,11 @@ let mockTickets: Ticket[] = [
 // GET - Buscar ticket por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  // params is provided directly by Next.js; it is not a promise.
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params
+    const { id } = params
     const ticket = mockTickets.find(t => t.id === id)
     
     if (!ticket) {
@@ -73,10 +74,11 @@ export async function GET(
 // PUT - Atualizar ticket
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  // params is provided directly by Next.js; it is not a promise.
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params
+    const { id } = params
     const body = await request.json()
     const ticketIndex = mockTickets.findIndex(t => t.id === id)
     
@@ -110,13 +112,56 @@ export async function PUT(
   }
 }
 
+// PATCH - Atualizar ticket parcialmente (para botões de ação)
+export async function PATCH(
+  request: NextRequest,
+  // params is provided directly by Next.js; it is not a promise.
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+    const body = await request.json()
+    const ticketIndex = mockTickets.findIndex(t => t.id === id)
+    
+    if (ticketIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Ticket não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Atualizar ticket parcialmente
+    const updatedTicket = {
+      ...mockTickets[ticketIndex],
+      ...body,
+      id: id, // Garantir que o ID não seja alterado
+      updatedAt: new Date().toISOString()
+    }
+
+    mockTickets[ticketIndex] = updatedTicket
+
+    return NextResponse.json({
+      success: true,
+      data: updatedTicket,
+      message: 'Ticket atualizado com sucesso'
+    })
+  } catch (error) {
+    console.error('Erro ao atualizar ticket:', error)
+    return NextResponse.json(
+      { success: false, error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
+
 // DELETE - Excluir ticket
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  // params is provided directly by Next.js; it is not a promise.
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params
+    const { id } = params
     const ticketIndex = mockTickets.findIndex(t => t.id === id)
     
     if (ticketIndex === -1) {

@@ -24,7 +24,7 @@ export default function AuthErrorPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-800">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4">

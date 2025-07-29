@@ -1,106 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { analyticsService } from '@/lib/analytics'
+import { createSuccessResponse, createErrorResponse, handleApiError, logRequest } from '@/lib/api-utils'
 
+// GET - Obter dados de analytics
 export async function GET(request: NextRequest) {
   try {
+    logRequest('GET', '/api/analytics')
+    
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role === 'USER') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
+      return createErrorResponse('Acesso negado', 403)
     }
 
     const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') || '30' // dias
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - parseInt(period))
+    const period = searchParams.get('period') || '30d'
+    const type = searchParams.get('type') || 'overview'
 
-    // Métricas principais
-    const [totalTickets, openTickets, resolvedTickets] = await Promise.all([
-      prisma.ticket.count({
-        where: { createdAt: { gte: startDate } }
-      }),
-      prisma.ticket.count({
-        where: { 
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-          createdAt: { gte: startDate }
-        }
-      }),
-      prisma.ticket.count({
-        where: { 
-          status: 'RESOLVED',
-          createdAt: { gte: startDate }
-        }
-      })
-    ])
-    
-    // Calcular tempo médio de resolução separadamente (se necessário)
-    const avgResolutionTime = await prisma.ticket.aggregate({
-      where: {
-        status: 'RESOLVED',
-        closedAt: { not: null },
-        createdAt: { gte: startDate }
-      },
-      _count: { id: true }
-      // TODO: Implementar cálculo de tempo médio quando o schema incluir closedAt
-    })
+    let data
 
-    // Tickets por categoria
-    const ticketsByCategory = await prisma.ticket.groupBy({
-      by: ['category'],
-      where: { createdAt: { gte: startDate } },
-      _count: { id: true }
-    })
+    switch (type) {
+      case 'overview':
+        const [ticketStats, userStats, performanceMetrics] = await Promise.all([
+          analyticsService.getTicketStats(period),
+          analyticsService.getUserStats(period),
+          analyticsService.getPerformanceMetrics(period)
+        ])
+        data = { ticketStats, userStats, performanceMetrics }
+        break
 
-    // Tickets por prioridade
-    const ticketsByPriority = await prisma.ticket.groupBy({
-      by: ['priority'],
-      where: { createdAt: { gte: startDate } },
-      _count: { id: true }
-    })
+      case 'tickets':
+        data = await analyticsService.getTicketStats(period)
+        break
 
-    // Tickets por dia (últimos 30 dias)
-    const ticketsPerDay = await prisma.$queryRaw`
-      SELECT 
-        DATE("createdAt") as date,
-        COUNT(*) as count
-      FROM "tickets"
-      WHERE "createdAt" >= ${startDate}
-      GROUP BY DATE("createdAt")
-      ORDER BY date
-    `
+      case 'users':
+        data = await analyticsService.getUserStats(period)
+        break
 
-    // Performance por usuário (coordenadores/admins)
-    const userPerformance = await prisma.ticket.groupBy({
-      by: ['assignedToId'],
-      where: {
-        assignedToId: { not: null },
-        createdAt: { gte: startDate }
-      },
-      _count: { id: true }
-      // TODO: Implementar cálculo de tempo médio quando necessário
-    })
+      case 'performance':
+        data = await analyticsService.getPerformanceMetrics(period)
+        break
 
-    return NextResponse.json({
-      summary: {
-        totalTickets,
-        openTickets,
-        resolvedTickets,
-        resolutionRate: totalTickets > 0 ? (resolvedTickets / totalTickets * 100).toFixed(1) : 0,
-        avgResolutionTime: avgResolutionTime._count.id || 0 // Temporário até implementar cálculo real
-      },
-      charts: {
-        ticketsByCategory,
-        ticketsByPriority,
-        ticketsPerDay,
-        userPerformance
-      }
-    })
+      case 'timeseries':
+        data = await analyticsService.getTimeSeriesData(period)
+        break
+
+      case 'insights':
+        data = await analyticsService.getInsights(period)
+        break
+
+      default:
+        return createErrorResponse('Tipo de analytics inválido', 400)
+    }
+
+    return createSuccessResponse(data)
   } catch (error) {
-    console.error('Erro ao buscar analytics:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
+

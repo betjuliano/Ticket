@@ -16,7 +16,10 @@ import {
   Mail, 
   Forward,
   Archive,
-  Bot
+  Bot,
+  Plus,
+  Edit,
+  Trash2
 } from 'lucide-react'
 
 // Tipos mais específicos
@@ -69,7 +72,7 @@ const PRIORITY_OPTIONS = [
 ] as const
 
 const STATUS_STYLES = {
-  open: 'bg-blue-600/20 text-blue-300',
+  open: 'bg-blue-500/20 text-blue-400',
   in_progress: 'bg-yellow-600/20 text-yellow-300',
   resolved: 'bg-green-600/20 text-green-300'
 } as const
@@ -133,6 +136,22 @@ export default function CoordinatorTicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showNewTicketModal, setShowNewTicketModal] = useState(false)
+  const [newTicketForm, setNewTicketForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as TicketPriority,
+    category: 'Sistema' as TicketCategory,
+    userType: 'existing' as 'existing' | 'new',
+    existingUserId: '',
+    newUser: {
+      name: '',
+      email: '',
+      phone: '',
+      sector: '',
+      matricula: ''
+    }
+  })
   
   // Memoização para performance
   const filteredTickets = useMemo(() => {
@@ -146,6 +165,88 @@ export default function CoordinatorTicketsPage() {
       return matchesSearch && matchesStatus && matchesPriority
     })
   }, [tickets, searchTerm, selectedStatus, selectedPriority])
+
+  // Função para criar novo chamado
+  const handleCreateTicket = () => {
+    if (!newTicketForm.title || !newTicketForm.description) {
+      alert('Por favor, preencha todos os campos obrigatórios.')
+      return
+    }
+
+    if (newTicketForm.userType === 'new') {
+      if (!newTicketForm.newUser.name || !newTicketForm.newUser.email || !newTicketForm.newUser.matricula) {
+        alert('Por favor, preencha todos os dados do novo usuário.')
+        return
+      }
+    } else if (!newTicketForm.existingUserId) {
+      alert('Por favor, selecione um usuário existente.')
+      return
+    }
+
+    const newTicketId = `TKT-${String(tickets.length + 1).padStart(3, '0')}`
+    const currentDate = new Date().toLocaleString('pt-BR')
+    
+    let ticketUser: TicketUser
+    
+    if (newTicketForm.userType === 'new') {
+      // Criar novo usuário
+      ticketUser = {
+        name: newTicketForm.newUser.name,
+        matricula: newTicketForm.newUser.matricula,
+        email: newTicketForm.newUser.email,
+        phone: newTicketForm.newUser.phone,
+        sector: newTicketForm.newUser.sector,
+        admissionDate: currentDate.split(' ')[0]
+      }
+      
+      // Simular envio de email de recuperação de senha
+      console.log(`Email de recuperação enviado para: ${ticketUser.email}`)
+      alert(`Novo usuário criado! Email de configuração de senha enviado para ${ticketUser.email}`)
+    } else {
+      // Usar usuário existente
+      const existingTicket = tickets.find(t => t.user.matricula === newTicketForm.existingUserId)
+      if (!existingTicket) {
+        alert('Usuário não encontrado.')
+        return
+      }
+      ticketUser = existingTicket.user
+    }
+
+    const newTicket: Ticket = {
+      id: newTicketId,
+      title: newTicketForm.title,
+      description: newTicketForm.description,
+      status: 'open',
+      priority: newTicketForm.priority,
+      category: newTicketForm.category,
+      created: currentDate,
+      lastUpdate: currentDate,
+      user: ticketUser,
+      responses: []
+    }
+
+    setTickets(prev => [newTicket, ...prev])
+    
+    // Resetar formulário
+    setNewTicketForm({
+      title: '',
+      description: '',
+      priority: 'medium',
+      category: 'Sistema',
+      userType: 'existing',
+      existingUserId: '',
+      newUser: {
+        name: '',
+        email: '',
+        phone: '',
+        sector: '',
+        matricula: ''
+      }
+    })
+    
+    setShowNewTicketModal(false)
+    alert('Chamado criado com sucesso!')
+  }
 
   // Funções otimizadas com useCallback (manter apenas esta versão)
   const handleArchiveTicket = useCallback(async (ticketId: string) => {
@@ -185,11 +286,58 @@ export default function CoordinatorTicketsPage() {
       if (!response.ok) {
         throw new Error('Falha ao encaminhar ticket')
       }
+      
+      alert('Ticket encaminhado com sucesso!')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Erro desconhecido')
     } finally {
       setIsLoading(false)
     }
+  }, [])
+
+  const handleEditTicket = useCallback((ticketId: string) => {
+    // Implementar modal de edição ou redirecionamento
+    alert(`Funcionalidade de edição será implementada para o ticket: ${ticketId}`)
+  }, [])
+
+  const handleDeleteTicket = useCallback(async (ticketId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este ticket?')) {
+      return
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Falha ao excluir ticket')
+      }
+      
+      setTickets(prev => prev.filter(t => t.id !== ticketId))
+      setSelectedTicket(null)
+      alert('Ticket excluído com sucesso!')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Erro desconhecido')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const handleSendEmail = useCallback((ticket: Ticket) => {
+    const subject = encodeURIComponent(`Ticket ${ticket.id}: ${ticket.title}`)
+    const body = encodeURIComponent(`Olá ${ticket.user.name},\n\nSeu ticket foi atualizado:\n\nTítulo: ${ticket.title}\nDescrição: ${ticket.description}\nStatus: ${ticket.status}\nPrioridade: ${ticket.priority}\n\nAtenciosamente,\nEquipe de Suporte`)
+    const mailtoLink = `mailto:${ticket.user.email}?subject=${subject}&body=${body}`
+    window.open(mailtoLink, '_blank')
+  }, [])
+
+  const handleSendWhatsApp = useCallback((ticket: Ticket) => {
+    const phone = ticket.user.phone.replace(/\D/g, '') // Remove caracteres não numéricos
+    const message = encodeURIComponent(`Olá ${ticket.user.name}! Seu ticket ${ticket.id} foi atualizado. Título: ${ticket.title}. Status: ${ticket.status}. Prioridade: ${ticket.priority}.`)
+    const whatsappLink = `https://wa.me/55${phone}?text=${message}`
+    window.open(whatsappLink, '_blank')
   }, [])
 
   // Componente para Badge de Status
@@ -226,9 +374,16 @@ export default function CoordinatorTicketsPage() {
           <p className="text-sm text-blue-200">Gerencie todos os chamados do sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+          <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white">
             <Filter className="w-4 h-4 mr-2" />
             Filtros
+          </Button>
+          <Button 
+            onClick={() => setShowNewTicketModal(true)}
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Chamado
           </Button>
         </div>
       </div>
@@ -238,7 +393,7 @@ export default function CoordinatorTicketsPage() {
         <CardContent className="p-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-300" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-400" />
               <Input
                 placeholder="Buscar por título, usuário, matrícula..."
                 value={searchTerm}
@@ -359,8 +514,8 @@ export default function CoordinatorTicketsPage() {
 
       {/* Ticket Detail Modal */}
       {selectedTicket && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-neutral-900 border-neutral-700">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-slate-900 border-neutral-700">
             <CardHeader className="border-b border-neutral-700">
               <div className="flex justify-between items-start">
                 <div>
@@ -381,7 +536,7 @@ export default function CoordinatorTicketsPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                   {/* User Info */}
-                  <Card className="bg-neutral-800 border-neutral-700">
+                  <Card className="bg-slate-800 border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">
                         INFORMAÇÕES DO USUÁRIO
@@ -427,7 +582,7 @@ export default function CoordinatorTicketsPage() {
                   </Card>
 
                   {/* AI Suggestion Panel */}
-                  <Card className="bg-neutral-800 border-neutral-700">
+                  <Card className="bg-slate-800 border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
                         <Bot className="w-4 h-4" />
@@ -444,7 +599,7 @@ export default function CoordinatorTicketsPage() {
                         {showAiPanel ? "Gerando..." : "Gerar Sugestão"}
                       </Button>
                       {showAiPanel && (
-                        <div className="p-3 bg-neutral-900 border border-neutral-600 rounded text-xs text-neutral-300">
+                        <div className="p-3 bg-slate-900 border border-neutral-600 rounded text-xs text-neutral-300">
                           {aiSuggestion || "Analisando ticket..."}
                         </div>
                       )}
@@ -455,7 +610,7 @@ export default function CoordinatorTicketsPage() {
                 {/* Main Content */}
                 <div className="xl:col-span-2 space-y-6">
                   {/* Ticket Details */}
-                  <Card className="bg-neutral-800 border-neutral-700">
+                  <Card className="bg-slate-800 border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">
                         DETALHES DO CHAMADO
@@ -502,7 +657,7 @@ export default function CoordinatorTicketsPage() {
                       </div>
                       <div>
                         <span className="text-xs text-neutral-400">DESCRIÇÃO</span>
-                        <p className="text-sm text-white mt-1 p-3 bg-neutral-900 border border-neutral-600 rounded">
+                        <p className="text-sm text-white mt-1 p-3 bg-slate-900 border border-neutral-600 rounded">
                           {selectedTicket.description}
                         </p>
                       </div>
@@ -510,7 +665,7 @@ export default function CoordinatorTicketsPage() {
                   </Card>
 
                   {/* Response Section */}
-                  <Card className="bg-neutral-800 border-neutral-700">
+                  <Card className="bg-slate-800 border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">
                         RESPOSTA / ENCAMINHAMENTO
@@ -519,21 +674,27 @@ export default function CoordinatorTicketsPage() {
                     <CardContent className="space-y-4">
                       <Textarea
                         placeholder="Digite sua resposta..."
-                        className="bg-neutral-900 border-neutral-600 text-white min-h-[100px]"
+                        className="bg-slate-900 border-neutral-600 text-white min-h-[100px]"
                         defaultValue={aiSuggestion}
                       />
                       <div className="flex flex-wrap gap-2">
-                        <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                        <Button 
+                          className="bg-orange-500 hover:bg-orange-600 text-white"
+                          onClick={() => handleSendEmail(selectedTicket)}
+                        >
                           <Mail className="w-4 h-4 mr-2" />
                           Enviar por E-mail
                         </Button>
-                        <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                        <Button 
+                          className="bg-orange-500 hover:bg-orange-600 text-white"
+                          onClick={() => handleSendWhatsApp(selectedTicket)}
+                        >
                           <Phone className="w-4 h-4 mr-2" />
                           Enviar por WhatsApp
                         </Button>
                         <Button
                           variant="outline"
-                          className="border-neutral-700 text-neutral-400 hover:bg-neutral-800"
+                          className="border-neutral-700 text-neutral-400 hover:bg-slate-800"
                           onClick={() => handleForwardTicket(selectedTicket.id, 'coordinator-id')}
                         >
                           <Forward className="w-4 h-4 mr-2" />
@@ -541,11 +702,27 @@ export default function CoordinatorTicketsPage() {
                         </Button>
                         <Button
                           variant="outline"
-                          className="border-neutral-700 text-neutral-400 hover:bg-neutral-800"
+                          className="border-neutral-700 text-neutral-400 hover:bg-slate-800"
                           onClick={() => handleArchiveTicket(selectedTicket.id)}
                         >
                           <Archive className="w-4 h-4 mr-2" />
                           Arquivar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-blue-700 text-blue-400 hover:bg-blue-800"
+                          onClick={() => handleEditTicket(selectedTicket.id)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-red-700 text-red-400 hover:bg-red-800"
+                          onClick={() => handleDeleteTicket(selectedTicket.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
                         </Button>
                       </div>
                     </CardContent>
@@ -556,10 +733,197 @@ export default function CoordinatorTicketsPage() {
           </Card>
         </div>
       )}
-    // Remover qualquer código duplicado após o fechamento do componente
-    // O arquivo deve terminar assim:
+
+      {/* Modal de Novo Chamado */}
+      {showNewTicketModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-white/20 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">Novo Chamado</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowNewTicketModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ×
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Informações do Chamado */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Informações do Chamado</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Título</label>
+                    <Input
+                      value={newTicketForm.title}
+                      onChange={(e) => setNewTicketForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Descreva brevemente o problema"
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
+                    <Textarea
+                      value={newTicketForm.description}
+                      onChange={(e) => setNewTicketForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Descreva detalhadamente o problema"
+                      className="bg-slate-700 border-slate-600 text-white min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Prioridade</label>
+                      <Select value={newTicketForm.priority} onValueChange={(value: TicketPriority) => setNewTicketForm(prev => ({ ...prev, priority: value }))}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">Alta</SelectItem>
+                          <SelectItem value="medium">Média</SelectItem>
+                          <SelectItem value="low">Baixa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
+                      <Select value={newTicketForm.category} onValueChange={(value: TicketCategory) => setNewTicketForm(prev => ({ ...prev, category: value }))}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Sistema">Sistema</SelectItem>
+                          <SelectItem value="Rede">Rede</SelectItem>
+                          <SelectItem value="Hardware">Hardware</SelectItem>
+                          <SelectItem value="Software">Software</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seleção de Usuário */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Usuário</h3>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      variant={newTicketForm.userType === 'existing' ? 'default' : 'outline'}
+                      onClick={() => setNewTicketForm(prev => ({ ...prev, userType: 'existing' }))}
+                      className={newTicketForm.userType === 'existing' ? 'bg-blue-500 hover:bg-blue-600' : 'border-slate-600 text-gray-300'}
+                    >
+                      Usuário Existente
+                    </Button>
+                    <Button
+                      variant={newTicketForm.userType === 'new' ? 'default' : 'outline'}
+                      onClick={() => setNewTicketForm(prev => ({ ...prev, userType: 'new' }))}
+                      className={newTicketForm.userType === 'new' ? 'bg-blue-500 hover:bg-blue-600' : 'border-slate-600 text-gray-300'}
+                    >
+                      Novo Usuário
+                    </Button>
+                  </div>
+
+                  {newTicketForm.userType === 'existing' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Selecionar Usuário</label>
+                      <Select value={newTicketForm.existingUserId} onValueChange={(value) => setNewTicketForm(prev => ({ ...prev, existingUserId: value }))}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectValue placeholder="Selecione um usuário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {initialTickets.map(ticket => (
+                            <SelectItem key={ticket.user.matricula} value={ticket.user.matricula}>
+                              {ticket.user.name} - {ticket.user.matricula}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo</label>
+                          <Input
+                            value={newTicketForm.newUser.name}
+                            onChange={(e) => setNewTicketForm(prev => ({ ...prev, newUser: { ...prev.newUser, name: e.target.value } }))}
+                            placeholder="Nome do usuário"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Matrícula</label>
+                          <Input
+                            value={newTicketForm.newUser.matricula}
+                            onChange={(e) => setNewTicketForm(prev => ({ ...prev, newUser: { ...prev.newUser, matricula: e.target.value } }))}
+                            placeholder="Matrícula do usuário"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                          <Input
+                            type="email"
+                            value={newTicketForm.newUser.email}
+                            onChange={(e) => setNewTicketForm(prev => ({ ...prev, newUser: { ...prev.newUser, email: e.target.value } }))}
+                            placeholder="email@empresa.com"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
+                          <Input
+                            value={newTicketForm.newUser.phone}
+                            onChange={(e) => setNewTicketForm(prev => ({ ...prev, newUser: { ...prev.newUser, phone: e.target.value } }))}
+                            placeholder="(11) 99999-9999"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Setor</label>
+                        <Input
+                          value={newTicketForm.newUser.sector}
+                          onChange={(e) => setNewTicketForm(prev => ({ ...prev, newUser: { ...prev.newUser, sector: e.target.value } }))}
+                          placeholder="Setor do usuário"
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    onClick={() => setShowNewTicketModal(false)}
+                    variant="outline"
+                    className="flex-1 border-slate-600 text-gray-300 hover:bg-slate-700"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleCreateTicket}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  >
+                    Criar Chamado
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-// NÃO deve haver código adicional aqui

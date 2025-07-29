@@ -39,13 +39,14 @@ export default function DashboardLayout({
   }
 
   const userRole = session?.user?.role === 'COORDINATOR' || session?.user?.role === 'ADMIN' ? 'coordinator' : 'user'
+  const isAdminOrCoordinator = session?.user?.role === 'ADMIN' || session?.user?.role === 'COORDINATOR'
 
   return (
-    <div className="flex h-screen bg-black text-white">
+    <div className="flex h-screen bg-slate-900 text-white">
       {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-neutral-900 border-r border-neutral-700 transition-all duration-300 flex flex-col`}>
+      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-slate-800 border-r border-slate-600 transition-all duration-300 flex flex-col`}>
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-neutral-700">
+        <div className="p-4 border-b border-slate-600">
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
               <div>
@@ -66,7 +67,7 @@ export default function DashboardLayout({
 
         {/* User Info */}
         {!sidebarCollapsed && (
-          <div className="p-4 border-b border-neutral-700">
+          <div className="p-4 border-b border-slate-600">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
                 <span className="text-xs font-bold text-black">
@@ -105,7 +106,7 @@ export default function DashboardLayout({
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left transition-colors ${
                   isActive
                     ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
-                    : 'text-neutral-400 hover:text-orange-500 hover:bg-neutral-800'
+                    : 'text-slate-300 hover:text-orange-500 hover:bg-slate-700'
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -121,7 +122,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
-        <div className="bg-neutral-900 border-b border-neutral-700 p-4">
+        <div className="bg-slate-800 border-b border-slate-600 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -130,7 +131,7 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-xs text-neutral-500">LAST UPDATE: {new Date().toLocaleString()}</div>
+              <div className="text-xs text-neutral-500">ÚLTIMA ATUALIZAÇÃO: {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}</div>
               <Button variant="ghost" size="icon" className="text-neutral-400 hover:text-orange-500">
                 <Bell className="w-4 h-4" />
               </Button>

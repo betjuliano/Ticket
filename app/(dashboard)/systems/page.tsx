@@ -11,7 +11,8 @@ import { Settings, Mail, MessageSquare, Database, Shield, Bell, Server, Zap, Sav
 
 export default function SystemsPage() {
   const { data: session } = useSession()
-  const userRole = session?.user?.role === 'COORDINATOR' ? 'coordinator' : 'user'
+  const userRole = session?.user?.role === 'COORDINATOR' || session?.user?.role === 'ADMIN' ? 'coordinator' : 'user'
+  const isAdminOrCoordinator = session?.user?.role === 'ADMIN' || session?.user?.role === 'COORDINATOR'
   const [activeTab, setActiveTab] = useState("email")
 
   // Função para salvar configurações
@@ -155,7 +156,7 @@ export default function SystemsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">TEMPLATES DE E-MAIL</CardTitle>
             </CardHeader>
@@ -164,7 +165,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">NOVO TICKET</label>
                 <Textarea 
                   placeholder="Template para notificação de novo ticket..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-neutral-600 text-white"
                   defaultValue="Olá {nome}, seu ticket {id} foi criado com sucesso. Acompanhe o status em nosso sistema."
                 />
               </div>
@@ -172,7 +173,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">RESPOSTA DO COORDENADOR</label>
                 <Textarea 
                   placeholder="Template para resposta do coordenador..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-slate-600 text-white"
                   defaultValue="Olá {nome}, temos uma atualização sobre seu ticket {id}: {resposta}"
                 />
               </div>
@@ -180,7 +181,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">TICKET FINALIZADO</label>
                 <Textarea 
                   placeholder="Template para ticket finalizado..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-slate-600 text-white"
                   defaultValue="Olá {nome}, seu ticket {id} foi finalizado. Obrigado por usar nosso sistema de suporte."
                 />
               </div>
@@ -192,7 +193,7 @@ export default function SystemsPage() {
       {/* WhatsApp Configuration */}
       {activeTab === "whatsapp" && (
         <div className="space-y-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
@@ -205,7 +206,7 @@ export default function SystemsPage() {
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">API ENDPOINT</label>
                   <Input 
                     placeholder="https://api.whatsapp.com/send"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-neutral-600 text-white"
                     defaultValue="https://api.whatsapp.business/v1/messages"
                   />
                 </div>
@@ -214,14 +215,14 @@ export default function SystemsPage() {
                   <Input 
                     type="password"
                     placeholder="••••••••••••••••"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-neutral-600 text-white"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">NÚMERO REMETENTE</label>
                   <Input 
                     placeholder="5511999999999"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-neutral-600 text-white"
                     defaultValue="5511987654321"
                   />
                 </div>
@@ -229,7 +230,7 @@ export default function SystemsPage() {
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">WEBHOOK URL</label>
                   <Input 
                     placeholder="https://sistema.empresa.com/webhook"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-neutral-600 text-white"
                   />
                 </div>
               </div>
@@ -238,7 +239,7 @@ export default function SystemsPage() {
                   <Switch id="whatsapp-enabled" defaultChecked />
                   <label htmlFor="whatsapp-enabled" className="text-sm text-neutral-300">Habilitar WhatsApp</label>
                 </div>
-                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent">
+                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-slate-800 hover:text-neutral-300 bg-transparent">
                   <TestTube className="w-4 h-4 mr-2" />
                   Testar Integração
                 </Button>
@@ -246,7 +247,7 @@ export default function SystemsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">TEMPLATES WHATSAPP</CardTitle>
             </CardHeader>
@@ -255,7 +256,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">NOVO TICKET</label>
                 <Textarea 
                   placeholder="Template para WhatsApp..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-slate-600 text-white"
                   defaultValue="🎫 *Ticket Criado* \nOlá {nome}! Seu ticket {id} foi criado. Acompanhe: {link}"
                 />
               </div>
@@ -263,7 +264,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">RESPOSTA</label>
                 <Textarea 
                   placeholder="Template para resposta..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-slate-600 text-white"
                   defaultValue="📝 *Atualização do Ticket {id}* \n{resposta} \n\nAcesse: {link}"
                 />
               </div>
@@ -275,7 +276,7 @@ export default function SystemsPage() {
       {/* AI Configuration */}
       {activeTab === "ai" && (
         <div className="space-y-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
                 <Zap className="w-4 h-4" />
@@ -286,7 +287,7 @@ export default function SystemsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">PROVEDOR DE IA</label>
-                  <select className="w-full p-2 bg-neutral-800 border border-neutral-600 text-white rounded">
+                  <select className="w-full p-2 bg-slate-800 border border-neutral-600 text-white rounded">
                     <option value="openai">OpenAI GPT</option>
                     <option value="anthropic">Anthropic Claude</option>
                     <option value="google">Google Gemini</option>
@@ -295,7 +296,7 @@ export default function SystemsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">MODELO</label>
-                  <select className="w-full p-2 bg-neutral-800 border border-neutral-600 text-white rounded">
+                  <select className="w-full p-2 bg-slate-800 border border-neutral-600 text-white rounded">
                     <option value="gpt-4">GPT-4</option>
                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                     <option value="gpt-4-turbo">GPT-4 Turbo</option>
@@ -306,7 +307,7 @@ export default function SystemsPage() {
                   <Input 
                     type="password"
                     placeholder="sk-••••••••••••••••••••••••••••••••••"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-neutral-600 text-white"
                   />
                 </div>
                 <div>
@@ -317,7 +318,7 @@ export default function SystemsPage() {
                     max="1"
                     step="0.1"
                     placeholder="0.7"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-slate-600 text-white"
                     defaultValue="0.7"
                   />
                 </div>
@@ -335,7 +336,7 @@ export default function SystemsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">PROMPT SYSTEM</CardTitle>
             </CardHeader>
@@ -344,7 +345,7 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">PROMPT PRINCIPAL</label>
                 <Textarea 
                   placeholder="Prompt principal para a IA..."
-                  className="bg-neutral-800 border-neutral-600 text-white min-h-[120px]"
+                  className="bg-slate-800 border-neutral-600 text-white min-h-[120px]"
                   defaultValue="Você é um assistente especializado em suporte técnico. Analise o ticket e forneça uma resposta profissional e útil baseada na knowledge base disponível. Seja claro, objetivo e empático."
                 />
               </div>
@@ -352,11 +353,11 @@ export default function SystemsPage() {
                 <label className="text-sm font-medium text-neutral-300 mb-2 block">CONTEXTO ADICIONAL</label>
                 <Textarea 
                   placeholder="Contexto adicional sobre a empresa/sistema..."
-                  className="bg-neutral-800 border-neutral-600 text-white"
+                  className="bg-slate-800 border-slate-600 text-white"
                   defaultValue="Nossa empresa é uma instituição educacional com foco em tecnologia. Temos sistemas internos para gestão acadêmica e administrativa."
                 />
               </div>
-              <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent">
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white bg-transparent">
                 <TestTube className="w-4 h-4 mr-2" />
                 Testar Prompt
               </Button>
@@ -368,7 +369,7 @@ export default function SystemsPage() {
       {/* Security Configuration */}
       {activeTab === "security" && (
         <div className="space-y-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
                 <Shield className="w-4 h-4" />
@@ -400,7 +401,7 @@ export default function SystemsPage() {
                   <Input 
                     type="number"
                     placeholder="30"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-slate-600 text-white"
                     defaultValue="30"
                   />
                 </div>
@@ -409,7 +410,7 @@ export default function SystemsPage() {
                   <Input 
                     type="number"
                     placeholder="5"
-                    className="bg-neutral-800 border-neutral-600 text-white"
+                    className="bg-slate-800 border-slate-600 text-white"
                     defaultValue="5"
                   />
                 </div>
@@ -417,7 +418,7 @@ export default function SystemsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">BACKUP E RECUPERAÇÃO</CardTitle>
             </CardHeader>
@@ -429,7 +430,7 @@ export default function SystemsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-300 mb-2 block">FREQUÊNCIA</label>
-                  <select className="w-full p-2 bg-neutral-800 border border-neutral-600 text-white rounded">
+                  <select className="w-full p-2 bg-slate-800 border border-neutral-600 text-white rounded">
                     <option value="daily">Diário</option>
                     <option value="weekly">Semanal</option>
                     <option value="monthly">Mensal</option>
@@ -437,11 +438,11 @@ export default function SystemsPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent">
+                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-slate-800 hover:text-neutral-300 bg-transparent">
                   <Database className="w-4 h-4 mr-2" />
                   Fazer Backup Agora
                 </Button>
-                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent">
+                <Button variant="outline" className="border-neutral-700 text-neutral-400 hover:bg-slate-800 hover:text-neutral-300 bg-transparent">
                   <Server className="w-4 h-4 mr-2" />
                   Restaurar Backup
                 </Button>
@@ -454,7 +455,7 @@ export default function SystemsPage() {
       {/* Notifications Configuration */}
       {activeTab === "notifications" && (
         <div className="space-y-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className="bg-slate-900 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider flex items-center gap-2">
                 <Bell className="w-4 h-4" />
@@ -463,28 +464,28 @@ export default function SystemsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                <div className="flex items-center justify-between p-3 bg-slate-800 rounded">
                   <div>
                     <h4 className="text-sm font-medium text-white">Novos Tickets</h4>
                     <p className="text-xs text-neutral-400">Notificar quando um novo ticket for criado</p>
                   </div>
                   <Switch id="notify-new-tickets" defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                <div className="flex items-center justify-between p-3 bg-slate-800 rounded">
                   <div>
                     <h4 className="text-sm font-medium text-white">Respostas de Usuários</h4>
                     <p className="text-xs text-neutral-400">Notificar quando um usuário responder</p>
                   </div>
                   <Switch id="notify-user-responses" defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                <div className="flex items-center justify-between p-3 bg-slate-800 rounded">
                   <div>
                     <h4 className="text-sm font-medium text-white">Tickets Urgentes</h4>
                     <p className="text-xs text-neutral-400">Notificar imediatamente para tickets urgentes</p>
                   </div>
                   <Switch id="notify-urgent" defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded">
+                <div className="flex items-center justify-between p-3 bg-slate-800 rounded">
                   <div>
                     <h4 className="text-sm font-medium text-white">Relatórios Diários</h4>
                     <p className="text-xs text-neutral-400">Enviar resumo diário por e-mail</p>

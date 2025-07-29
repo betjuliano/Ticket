@@ -1,6 +1,7 @@
 "use client"
 
-import { useToast } from "@/hooks/use-toast"
+// useToast lives under components/ui rather than a generic hooks folder.
+import { useToast } from "@/components/ui/use-toast"
 import {
   Toast,
   ToastClose,

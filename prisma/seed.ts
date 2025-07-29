@@ -29,7 +29,7 @@ async function main() {
     {
       email: 'admjulianoo@gmail.com',
       name: 'Juliano Admin',
-      password: await bcrypt.hash('123456', 10),
+      password: await bcrypt.hash('Adm4125', 10),
       role: 'ADMIN' as const
     },
     {

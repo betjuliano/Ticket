@@ -3,7 +3,6 @@ import OpenAI from 'openai'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-// Remover esta linha duplicada: import { OpenAI } from 'openai'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY

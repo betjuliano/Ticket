@@ -19,7 +19,7 @@ export function BreadcrumbNav({ items }: BreadcrumbNavProps) {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => router.push('/dashboard')}
+        onClick={() => router.push('/')}
         className="text-blue-300 hover:text-white p-1"
       >
         <Home className="w-4 h-4" />

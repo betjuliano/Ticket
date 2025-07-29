@@ -5,11 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Usar SQLite para desenvolvimento local
+// Usar SQLite temporariamente (trocar para PostgreSQL quando Supabase estiver configurado)
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL") // Não necessário para SQLite
 }
 
 // ========================================
@@ -38,6 +38,7 @@ model User {
   ticketAttachments Attachment[]
   userSessions      Session[]
   userLogs          UserLog[]
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -171,6 +172,23 @@ model TicketLog {
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@map("ticket_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  userId    String
+  relatedId String?
+  data      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
 // ========================================

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Ticket } from '@/data/mockTickets'
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/components/ui/use-toast'
 
 import { renderHook, act } from '@testing-library/react'
 import { useTickets } from '@/lib/hooks/useTickets'
