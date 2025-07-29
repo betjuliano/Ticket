@@ -16,7 +16,7 @@
 
 ### 2. Domínio e DNS
 - Domínio `iadm.iaprojetos.com.br` apontando para o IP do servidor
-- Subdomínio `traefik.iadm.iaprojetos.com.br` (opcional, para dashboard)
+- Subdomínio `traefik.iaprojetos.com.br` (para dashboard do Traefik)
 
 ### 3. Configurações de Firewall
 ```bash
@@ -91,8 +91,8 @@ docker-compose -f docker-compose.yml --env-file .env.production logs -f ticket-a
 - ✅ Teste login/autenticação
 - ✅ Verifique funcionalidades principais
 
-### 2. Dashboard Traefik (Opcional)
-- ✅ Acesse: `https://traefik.iadm.iaprojetos.com.br`
+### 2. Dashboard Traefik
+- ✅ Acesse: `https://traefik.iaprojetos.com.br`
 - ✅ Login: `admin` / `admin123` (altere a senha!)
 
 ### 3. Certificados SSL
@@ -221,4 +221,6 @@ Em caso de problemas:
 
 ---
 
-**✅ Deploy configurado para: `https://iadm.iaprojetos.com.br`**
+**✅ Deploy configurado para:**
+- **Aplicação**: `https://iadm.iaprojetos.com.br`
+- **Traefik Dashboard**: `https://traefik.iaprojetos.com.br`
