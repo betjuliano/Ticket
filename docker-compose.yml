@@ -50,7 +50,7 @@ services:
     labels:
       # Dashboard do Traefik
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
