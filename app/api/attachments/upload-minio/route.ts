@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinIOService } from '@/lib/minio-client';
+import { MinIOService } from '@/lib/minio-service';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
