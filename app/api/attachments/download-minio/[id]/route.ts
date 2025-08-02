@@ -19,7 +19,11 @@ export async function GET(
     if (session?.user) {
       user = { id: session.user.id, role: session.user.role };
     } else {
-      const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+      const authHeader = request.headers.get('Authorization');
+      let token: string | null = null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7).trim();
+      }
       if (token) {
         try {
           const decoded = verifyJWT(token);
