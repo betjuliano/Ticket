@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSuccessResponse, createErrorResponse, handleApiError, logRequest } from '@/lib/api-utils'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, canUserAccessTicket } from '@/lib/auth'
 import { z } from 'zod'
 
 const createCommentSchema = z.object({
@@ -23,9 +23,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const ticketId = searchParams.get('ticketId')
-    
+
     if (!ticketId) {
       return createErrorResponse('ticketId é obrigatório', 400)
+    }
+
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      ticketId
+    )
+
+    if (!hasAccess) {
+      return createErrorResponse('Acesso negado', 403)
     }
 
     const comments = await prisma.comment.findMany({
@@ -56,6 +66,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const validatedData = createCommentSchema.parse(body)
+
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      validatedData.ticketId
+    )
+
+    if (!hasAccess) {
+      return createErrorResponse('Acesso negado', 403)
+    }
 
     const newComment = await prisma.comment.create({
       data: {

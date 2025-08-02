@@ -91,6 +91,29 @@ export const verifyJWT = (token: string): any => {
   }
 }
 
+// Verifica se o usuário tem permissão para acessar um ticket
+export const canUserAccessTicket = async (
+  userId: string,
+  role: string | undefined,
+  ticketId: string
+) => {
+  if (!userId) return false
+
+  // Coordenadores e administradores têm acesso total
+  if (role === 'ADMIN' || role === 'COORDINATOR') {
+    return true
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { createdById: true, assignedToId: true }
+  })
+
+  if (!ticket) return false
+
+  return ticket.createdById === userId || ticket.assignedToId === userId
+}
+
 // Middleware de autorização
 export const requireAuth = (handler: any) => {
   return async (req: any, res: any) => {

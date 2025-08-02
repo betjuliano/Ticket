@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSuccessResponse, createErrorResponse, handleApiError, logRequest } from '@/lib/api-utils'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions, canUserAccessTicket } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
@@ -23,6 +23,16 @@ export async function POST(request: NextRequest) {
 
     if (!file || !ticketId) {
       return createErrorResponse('Arquivo e ticketId são obrigatórios', 400)
+    }
+
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      ticketId
+    )
+
+    if (!hasAccess) {
+      return createErrorResponse('Acesso negado', 403)
     }
 
     // Validar tipo de arquivo
@@ -85,6 +95,16 @@ export async function GET(request: NextRequest) {
     
     if (!ticketId) {
       return createErrorResponse('ticketId é obrigatório', 400)
+    }
+
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      ticketId
+    )
+
+    if (!hasAccess) {
+      return createErrorResponse('Acesso negado', 403)
     }
 
     const attachments = await prisma.attachment.findMany({
