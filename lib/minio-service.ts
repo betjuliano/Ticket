@@ -26,9 +26,23 @@ export async function uploadFile(
 }
 
 export function extractKeyFromUrl(url: string): string {
-  const { pathname } = new URL(url);
-  const [, , ...rest] = pathname.split('/');
-  return rest.join('/');
+  try {
+    const { pathname } = new URL(url);
+    const parts = pathname.split('/');
+    // Expecting: ['', bucketName, ...keyParts]
+    if (parts.length < 3 || !parts[1] || !parts[2]) {
+      throw new Error(`Malformed MinIO URL: ${url}`);
+    }
+    const [, , ...rest] = parts;
+    const key = rest.join('/');
+    if (!key) {
+      throw new Error(`Could not extract key from URL: ${url}`);
+    }
+    return key;
+  } catch (err) {
+    // Optionally, you could log the error here
+    throw new Error(`Invalid URL provided to extractKeyFromUrl: ${url}. Error: ${(err as Error).message}`);
+  }
 }
 
 export async function getSignedDownloadUrl(
