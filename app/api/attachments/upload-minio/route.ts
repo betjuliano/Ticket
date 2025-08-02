@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinIOService } from '@/lib/minio-client';
+import { uploadFile } from '@/lib/minio-service';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -119,12 +119,11 @@ export async function POST(request: NextRequest) {
     // Gerar nome único para o arquivo
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const fileExtension = file.name.split('.').pop() || '';
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const uniqueFileName = `${timestamp}_${randomSuffix}_${sanitizedName}`;
 
     // Upload para MinIO
-    const fileUrl = await MinIOService.uploadFile(
+    const fileUrl = await uploadFile(
       buffer,
       uniqueFileName,
       file.type,
@@ -236,7 +235,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Método OPTIONS para CORS
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
