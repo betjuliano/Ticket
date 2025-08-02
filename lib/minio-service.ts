@@ -26,6 +26,9 @@ export class MinIOService {
 
   static extractKeyFromUrl(url: string): string {
     const prefix = `${minioConfig.publicUrl.replace(/\/$/, '')}/${minioConfig.bucketName}/`;
+    if (!url.startsWith(prefix)) {
+      throw new Error(`URL does not match expected MinIO prefix: ${prefix}`);
+    }
     return url.replace(prefix, '');
   }
 
