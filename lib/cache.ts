@@ -34,7 +34,7 @@ class CacheManager {
   }
 
   // Definir valor no cache
-  async set(key: string, value: any, options: CacheOptions = {}): Promise<void> {
+  async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
     try {
       const cacheKey = this.generateKey(key, options.prefix)
       const ttl = options.ttl || this.defaultTTL
@@ -186,11 +186,11 @@ class CacheManager {
   }
 
   // Obter estatísticas do cache
-  async getStats(): Promise<any> {
+  async getStats(): Promise<{ memory: string; keyspace: string; connected: boolean } | null> {
     try {
       const info = await redis.info('memory')
       const keyspace = await redis.info('keyspace')
-      
+
       return {
         memory: info,
         keyspace: keyspace,

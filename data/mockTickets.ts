@@ -1,27 +1,4 @@
-export interface TicketUser {
-  id: string
-  name: string
-  matricula: string
-  email: string
-  telefone: string
-  setor: string
-  dataAdmissao: string
-  avatar?: string
-}
-
-export interface Ticket {
-  id: string
-  title: string
-  description: string
-  status: 'open' | 'in_progress' | 'resolved' | 'closed'
-  priority: 'low' | 'medium' | 'high' | 'critical'
-  category: string
-  assignedTo?: string
-  createdBy: string
-  createdAt: string
-  updatedAt: string
-  user: TicketUser
-}
+import { Ticket, TicketUser } from '@/types/ticket'
 
 export const mockUsers: TicketUser[] = [
   {
@@ -29,9 +6,9 @@ export const mockUsers: TicketUser[] = [
     name: 'João Silva',
     matricula: '12345',
     email: 'joao.silva@empresa.com',
-    telefone: '(11) 99999-9999',
-    setor: 'TI',
-    dataAdmissao: '2023-01-15',
+    phone: '(11) 99999-9999',
+    sector: 'TI',
+    admissionDate: '2023-01-15',
     avatar: '/placeholder-user.jpg'
   },
   {
@@ -39,18 +16,18 @@ export const mockUsers: TicketUser[] = [
     name: 'Maria Santos',
     matricula: '12346',
     email: 'maria.santos@empresa.com',
-    telefone: '(11) 88888-8888',
-    setor: 'Financeiro',
-    dataAdmissao: '2022-08-20'
+    phone: '(11) 88888-8888',
+    sector: 'Financeiro',
+    admissionDate: '2022-08-20'
   },
   {
     id: 'user3',
     name: 'Pedro Costa',
     matricula: '12347',
     email: 'pedro.costa@empresa.com',
-    telefone: '(11) 77777-7777',
-    setor: 'RH',
-    dataAdmissao: '2023-03-10'
+    phone: '(11) 77777-7777',
+    sector: 'RH',
+    admissionDate: '2023-03-10'
   }
 ]
 
