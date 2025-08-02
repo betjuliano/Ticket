@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinIOService } from '@/lib/minio-client';
+import {
+  extractKeyFromUrl,
+  getSignedDownloadUrl,
+} from '@/lib/minio-service';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions, canUserAccessTicket } from '@/lib/auth';
@@ -69,11 +72,11 @@ export async function GET(
 
     try {
       // Extrair key da URL do MinIO
-      const key = MinIOService.extractKeyFromUrl(attachment.url);
+      const key = extractKeyFromUrl(attachment.url);
       console.log(`🔑 Key extraída: ${key}`);
 
       // Gerar URL assinada para download (válida por 1 hora)
-      const signedUrl = await MinIOService.getSignedDownloadUrl(key, 3600);
+      const signedUrl = await getSignedDownloadUrl(key, 3600);
       console.log(`✅ URL assinada gerada`);
 
       // Log da ação de download
