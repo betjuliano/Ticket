@@ -33,13 +33,13 @@ function Write-ColorOutput($ForegroundColor) {
 }
 
 function Test-PortainerConnection {
-    Write-ColorOutput Yellow "🔍 Testando conexão com Portainer..."
+    Write-ColorOutput Yellow "[INFO] Testando conexao com Portainer..."
     try {
         $response = Invoke-RestMethod -Uri "$PORTAINER_URL/api/status" -Method GET -Headers $headers
-        Write-ColorOutput Green "✅ Conexão com Portainer OK - Versão: $($response.Version)"
+        Write-ColorOutput Green "[OK] Conexao com Portainer OK - Versao: $($response.Version)"
         return $true
     } catch {
-        Write-ColorOutput Red "❌ Erro ao conectar com Portainer: $($_.Exception.Message)"
+        Write-ColorOutput Red "[ERRO] Erro ao conectar com Portainer: $($_.Exception.Message)"
         return $false
     }
 }
@@ -60,13 +60,13 @@ function Remove-Stack {
     param([object]$Stack)
     
     if ($Stack) {
-        Write-ColorOutput Yellow "🗑️ Removendo stack existente: $($Stack.Name)"
+        Write-ColorOutput Yellow "[INFO] Removendo stack existente: $($Stack.Name)"
         try {
             Invoke-RestMethod -Uri "$PORTAINER_URL/api/stacks/$($Stack.Id)" -Method DELETE -Headers $headers
-            Write-ColorOutput Green "✅ Stack removido com sucesso"
+            Write-ColorOutput Green "[OK] Stack removido com sucesso"
             Start-Sleep -Seconds 5
         } catch {
-            Write-ColorOutput Red "❌ Erro ao remover stack: $($_.Exception.Message)"
+            Write-ColorOutput Red "[ERRO] Erro ao remover stack: $($_.Exception.Message)"
             return $false
         }
     }
@@ -74,16 +74,16 @@ function Remove-Stack {
 }
 
 function Deploy-Stack {
-    Write-ColorOutput Yellow "🚀 Iniciando deploy do stack: $StackName"
+    Write-ColorOutput Yellow "[INFO] Iniciando deploy do stack: $StackName"
     
     # Verificar se arquivos existem
     if (-not (Test-Path "docker-compose.portainer.yml")) {
-        Write-ColorOutput Red "❌ Arquivo docker-compose.portainer.yml não encontrado"
+        Write-ColorOutput Red "[ERRO] Arquivo docker-compose.portainer.yml nao encontrado"
         return $false
     }
     
     if (-not (Test-Path ".env.portainer")) {
-        Write-ColorOutput Red "❌ Arquivo .env.portainer não encontrado"
+        Write-ColorOutput Red "[ERRO] Arquivo .env.portainer nao encontrado"
         return $false
     }
     
@@ -116,12 +116,12 @@ function Deploy-Stack {
     
     # Deploy
     try {
-        Write-ColorOutput Yellow "📦 Enviando stack para Portainer..."
+        Write-ColorOutput Yellow "[INFO] Enviando stack para Portainer..."
         $response = Invoke-RestMethod -Uri "$PORTAINER_URL/api/stacks" -Method POST -Headers $headers -Body $payload
-        Write-ColorOutput Green "✅ Stack deployado com sucesso! ID: $($response.Id)"
+        Write-ColorOutput Green "[OK] Stack deployado com sucesso! ID: $($response.Id)"
         return $true
     } catch {
-        Write-ColorOutput Red "❌ Erro ao deployar stack: $($_.Exception.Message)"
+        Write-ColorOutput Red "[ERRO] Erro ao deployar stack: $($_.Exception.Message)"
         if ($_.Exception.Response) {
             $errorDetails = $_.Exception.Response.GetResponseStream()
             $reader = New-Object System.IO.StreamReader($errorDetails)
@@ -137,7 +137,7 @@ function Get-StackStatus {
     
     $stack = Get-ExistingStack -Name $Name
     if ($stack) {
-        Write-ColorOutput Green "📊 Status do Stack: $($stack.Name)"
+        Write-ColorOutput Green "[STATUS] Status do Stack: $($stack.Name)"
         Write-ColorOutput White "   ID: $($stack.Id)"
         Write-ColorOutput White "   Status: $($stack.Status)"
         Write-ColorOutput White "   Endpoint: $($stack.EndpointId)"
@@ -147,35 +147,35 @@ function Get-StackStatus {
             $services = Invoke-RestMethod -Uri "$PORTAINER_URL/api/endpoints/$ENDPOINT_ID/docker/services" -Method GET -Headers $headers
             $stackServices = $services | Where-Object { $_.Spec.Labels."com.docker.stack.namespace" -eq $Name }
             
-            Write-ColorOutput Yellow "🔧 Serviços do Stack:"
+            Write-ColorOutput Yellow "[SERVICOS] Servicos do Stack:"
             foreach ($service in $stackServices) {
                 $replicas = "$($service.Spec.Mode.Replicated.Replicas)/$($service.ServiceStatus.RunningTasks)"
-                Write-ColorOutput White "   - $($service.Spec.Name): $replicas réplicas"
+                Write-ColorOutput White "   - $($service.Spec.Name): $replicas replicas"
             }
         } catch {
-            Write-ColorOutput Red "❌ Erro ao buscar serviços: $($_.Exception.Message)"
+            Write-ColorOutput Red "[ERRO] Erro ao buscar servicos: $($_.Exception.Message)"
         }
     } else {
-        Write-ColorOutput Red "❌ Stack '$Name' não encontrado"
+        Write-ColorOutput Red "[ERRO] Stack '$Name' nao encontrado"
     }
 }
 
 function Show-Help {
     Write-ColorOutput Cyan @"
-🎯 SCRIPT DE DEPLOY PORTAINER - SISTEMA DE TICKETS
+[HELP] SCRIPT DE DEPLOY PORTAINER - SISTEMA DE TICKETS
 
-Uso: .\deploy-portainer.ps1 [AÇÃO] [OPÇÕES]
+Uso: .\deploy-portainer.ps1 [ACAO] [OPCOES]
 
-Ações disponíveis:
-  deploy     - Faz deploy do stack (padrão)
+Acoes disponiveis:
+  deploy     - Faz deploy do stack (padrao)
   status     - Mostra status do stack
   remove     - Remove o stack
   redeploy   - Remove e faz deploy novamente
   help       - Mostra esta ajuda
 
-Opções:
-  -StackName <nome>  - Nome do stack (padrão: ticket-system)
-  -Force             - Força operação sem confirmação
+Opcoes:
+  -StackName <nome>  - Nome do stack (padrao: ticket-system)
+  -Force             - Forca operacao sem confirmacao
 
 Exemplos:
   .\deploy-portainer.ps1
@@ -190,7 +190,7 @@ Exemplos:
 # MAIN SCRIPT
 # ========================================
 
-Write-ColorOutput Cyan "🎯 DEPLOY PORTAINER - SISTEMA DE TICKETS"
+Write-ColorOutput Cyan "[DEPLOY] PORTAINER - SISTEMA DE TICKETS"
 Write-ColorOutput Cyan "==========================================="
 
 # Verificar conexão
@@ -202,7 +202,7 @@ switch ($Action.ToLower()) {
     "deploy" {
         $existingStack = Get-ExistingStack -Name $StackName
         if ($existingStack -and -not $Force) {
-            Write-ColorOutput Yellow "⚠️ Stack '$StackName' já existe. Use 'redeploy' ou -Force para sobrescrever."
+            Write-ColorOutput Yellow "[AVISO] Stack '$StackName' ja existe. Use 'redeploy' ou -Force para sobrescrever."
             exit 1
         }
         
@@ -213,7 +213,7 @@ switch ($Action.ToLower()) {
         }
         
         if (Deploy-Stack) {
-            Write-ColorOutput Green "🎉 Deploy concluído com sucesso!"
+            Write-ColorOutput Green "[SUCESSO] Deploy concluido com sucesso!"
             Start-Sleep -Seconds 3
             Get-StackStatus -Name $StackName
         } else {
@@ -228,11 +228,11 @@ switch ($Action.ToLower()) {
     "remove" {
         $existingStack = Get-ExistingStack -Name $StackName
         if ($existingStack) {
-            if ($Force -or (Read-Host "Confirma remoção do stack '$StackName'? (y/N)") -eq "y") {
+            if ($Force -or (Read-Host "Confirma remocao do stack '$StackName'? (y/N)") -eq "y") {
                 Remove-Stack -Stack $existingStack
             }
         } else {
-            Write-ColorOutput Yellow "⚠️ Stack '$StackName' não encontrado"
+            Write-ColorOutput Yellow "[AVISO] Stack '$StackName' nao encontrado"
         }
     }
     
@@ -245,7 +245,7 @@ switch ($Action.ToLower()) {
         }
         
         if (Deploy-Stack) {
-            Write-ColorOutput Green "🎉 Redeploy concluído com sucesso!"
+            Write-ColorOutput Green "[SUCESSO] Redeploy concluido com sucesso!"
             Start-Sleep -Seconds 3
             Get-StackStatus -Name $StackName
         } else {
@@ -258,10 +258,10 @@ switch ($Action.ToLower()) {
     }
     
     default {
-        Write-ColorOutput Red "❌ Ação inválida: $Action"
+        Write-ColorOutput Red "[ERRO] Acao invalida: $Action"
         Show-Help
         exit 1
     }
 }
 
-Write-ColorOutput Cyan "\n🏁 Script finalizado."
+Write-ColorOutput Cyan "\n[INFO] Script finalizado."

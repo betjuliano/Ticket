@@ -1,0 +1,50 @@
+# Configuração estática do Traefik
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# API e Dashboard
+api:
+  dashboard: true
+  insecure: true  # Para desenvolvimento, remover em produção
+
+# Entrypoints
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+
+# Providers
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik
+
+# Certificados SSL
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@iaprojetos.com.br
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# Logs
+log:
+  level: INFO
+
+accessLog: {}
+
+# Métricas (opcional)
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
