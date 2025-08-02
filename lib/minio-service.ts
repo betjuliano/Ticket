@@ -45,10 +45,21 @@ export function extractKeyFromUrl(url: string): string {
   }
 }
 
+const MIN_EXPIRES_IN = 60; // 1 minute
+const MAX_EXPIRES_IN = 604800; // 7 days
+
 export async function getSignedDownloadUrl(
   key: string,
   expiresIn = 3600,
 ): Promise<string> {
+  if (typeof expiresIn !== 'number' || isNaN(expiresIn)) {
+    throw new Error('expiresIn must be a number');
+  }
+  if (expiresIn < MIN_EXPIRES_IN || expiresIn > MAX_EXPIRES_IN) {
+    throw new Error(
+      `expiresIn must be between ${MIN_EXPIRES_IN} and ${MAX_EXPIRES_IN} seconds`
+    );
+  }
   const cmd = new GetObjectCommand({
     Bucket: minioConfig.bucketName,
     Key: key,
