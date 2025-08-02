@@ -34,12 +34,25 @@ export async function uploadFile(
 }
 
 export function extractKeyFromUrl(url: string): string {
-  const expectedHost = new URL(minioConfig.publicUrl).host;
-  const { host, pathname } = new URL(url);
+  const expectedUrl = new URL(minioConfig.publicUrl);
+  const actualUrl = new URL(url);
 
-  if (host !== expectedHost) {
-    throw new Error(`URL does not match expected MinIO host: ${expectedHost}`);
+  // Normalize hostnames and ports for comparison
+  const expectedHostname = expectedUrl.hostname;
+  const expectedPort = expectedUrl.port || (expectedUrl.protocol === 'https:' ? '443' : expectedUrl.protocol === 'http:' ? '80' : '');
+  const actualHostname = actualUrl.hostname;
+  const actualPort = actualUrl.port || (actualUrl.protocol === 'https:' ? '443' : actualUrl.protocol === 'http:' ? '80' : '');
+
+  if (
+    expectedHostname !== actualHostname ||
+    expectedPort !== actualPort
+  ) {
+    throw new Error(
+      `URL does not match expected MinIO host: ${expectedUrl.host}`
+    );
   }
+
+  const pathname = actualUrl.pathname;
 
   const segments = pathname.split('/').filter(Boolean);
   if (segments[0] !== minioConfig.bucketName) {
