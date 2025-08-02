@@ -22,7 +22,20 @@ export async function uploadFile(
       Metadata: metadata,
     }),
   );
-  return `${minioConfig.publicUrl}/${minioConfig.bucketName}/${key}`;
+  function joinUrlParts(...parts: string[]): string {
+    return parts
+      .map((part, idx) => {
+        if (idx === 0) return part.replace(/\/+$/, ''); // remove trailing slash from first part
+        if (idx === parts.length - 1) return part.replace(/^\/+/, ''); // remove leading slash from last part
+        return part.replace(/^\/+|\/+$/g, ''); // remove leading and trailing slashes from middle parts
+      })
+      .filter(Boolean)
+      .join('/');
+  }
+
+  const publicUrl = minioConfig.publicUrl.replace(/\/+$/, '');
+  const bucketName = minioConfig.bucketName.replace(/^\/+|\/+$/g, '');
+  return joinUrlParts(publicUrl, bucketName, key);
 }
 
 export function extractKeyFromUrl(url: string): string {
