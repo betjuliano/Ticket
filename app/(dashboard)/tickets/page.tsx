@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { 
-  Search, 
-  Filter, 
-  User, 
-  Clock, 
-  Phone, 
-  Mail, 
+import {
+  Search,
+  Filter,
+  User,
+  Clock,
+  Phone,
+  Mail,
   Forward,
   Archive,
   Bot,
@@ -21,40 +21,9 @@ import {
   Edit,
   Trash2
 } from 'lucide-react'
+import { Ticket, TicketUser, TicketResponse, TicketStatus, TicketPriority } from '@/types/ticket'
 
-// Tipos mais específicos
-type TicketStatus = 'open' | 'in_progress' | 'resolved'
-type TicketPriority = 'high' | 'medium' | 'low'
 type TicketCategory = 'Sistema' | 'Rede' | 'Hardware' | 'Software'
-
-interface TicketUser {
-  name: string
-  matricula: string
-  email: string
-  phone: string
-  admissionDate: string
-  sector: string
-}
-
-interface TicketResponse {
-  author: string
-  message: string
-  timestamp: string
-  type: string
-}
-
-interface Ticket {
-  id: string
-  title: string
-  description: string
-  status: TicketStatus
-  priority: TicketPriority
-  category: TicketCategory
-  created: string
-  lastUpdate: string
-  user: TicketUser
-  responses: TicketResponse[]
-}
 
 // Constantes
 const STATUS_OPTIONS = [
@@ -92,8 +61,9 @@ const initialTickets: Ticket[] = [
     status: "open",
     priority: "high",
     category: "Sistema",
-    created: "2025-01-20 10:00",
-    lastUpdate: "2025-01-20 10:00",
+    createdBy: '12345',
+    createdAt: "2025-01-20 10:00",
+    updatedAt: "2025-01-20 10:00",
     user: {
       name: "João Silva",
       matricula: "12345",
@@ -111,8 +81,9 @@ const initialTickets: Ticket[] = [
     status: "in_progress",
     priority: "medium",
     category: "Rede",
-    created: "2025-01-19 14:30",
-    lastUpdate: "2025-01-20 09:15",
+    createdBy: '67890',
+    createdAt: "2025-01-19 14:30",
+    updatedAt: "2025-01-20 09:15",
     user: {
       name: "Maria Santos",
       matricula: "67890",
@@ -125,7 +96,6 @@ const initialTickets: Ticket[] = [
   }
 ];
 
-// REMOVER a primeira declaração export default e manter apenas uma
 export default function CoordinatorTicketsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
@@ -219,8 +189,9 @@ export default function CoordinatorTicketsPage() {
       status: 'open',
       priority: newTicketForm.priority,
       category: newTicketForm.category,
-      created: currentDate,
-      lastUpdate: currentDate,
+      createdBy: ticketUser.matricula,
+      createdAt: currentDate,
+      updatedAt: currentDate,
       user: ticketUser,
       responses: []
     }
@@ -478,7 +449,7 @@ export default function CoordinatorTicketsPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {ticket.created}
+                      {ticket.createdAt}
                     </div>
                   </div>
                 </div>

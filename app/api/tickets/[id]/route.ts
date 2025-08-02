@@ -1,18 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Tipo para Ticket (mesmo do arquivo anterior)
-interface Ticket {
-  id: string
-  title: string
-  description: string
-  status: 'open' | 'in_progress' | 'resolved' | 'closed'
-  priority: 'low' | 'medium' | 'high' | 'critical'
-  assignedTo?: string
-  createdBy: string
-  createdAt: string
-  updatedAt: string
-  category: string
-}
+import { Ticket } from '@/types/ticket'
 
 // Mock data - em produção, isso viria do banco de dados
 let mockTickets: Ticket[] = [

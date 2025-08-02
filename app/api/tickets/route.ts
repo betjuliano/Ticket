@@ -1,29 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createTicketSchema, ticketFiltersSchema } from '@/lib/validations'
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
-  handleApiError, 
-  logRequest, 
+import {
+  createSuccessResponse,
+  handleApiError,
+  logRequest,
   sanitizeInput,
   paginate,
   generateId,
   formatDate
 } from '@/lib/api-utils'
-
-// Tipo para Ticket
-interface Ticket {
-  id: string
-  title: string
-  description: string
-  status: 'open' | 'in_progress' | 'resolved' | 'closed'
-  priority: 'low' | 'medium' | 'high' | 'critical'
-  assignedTo?: string
-  createdBy: string
-  createdAt: string
-  updatedAt: string
-  category: string
-}
+import { Ticket } from '@/types/ticket'
 
 // Mock data - em produção, isso viria do banco de dados
 let mockTickets: Ticket[] = [
