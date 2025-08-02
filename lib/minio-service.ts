@@ -21,7 +21,10 @@ export class MinIOService {
 
     await minioClient.send(command);
 
-    return `${minioConfig.publicUrl}/${minioConfig.bucketName}/${key}`;
+    // Normalize publicUrl to remove trailing slash
+    const normalizedPublicUrl = minioConfig.publicUrl.replace(/\/+$/, '');
+
+    return `${normalizedPublicUrl}/${minioConfig.bucketName}/${key}`;
   }
 
   static extractKeyFromUrl(url: string): string {
