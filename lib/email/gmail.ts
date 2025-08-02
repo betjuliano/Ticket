@@ -1,7 +1,20 @@
 import { gmail_v1, google } from 'googleapis'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import nodemailer from 'nodemailer'
 
 const gmail = google.gmail({ version: 'v1' })
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+})
 
 export async function processIncomingEmails() {
   try {
@@ -60,15 +73,37 @@ async function processEmailMessage(auth: any, messageId: string) {
       where: { email: senderEmail }
     })
 
-    // Se não existir, criar usuário temporário
+    // Se não existir, criar usuário com senha aleatória e token de redefinição
     if (!user) {
+      const tempPassword = crypto.randomUUID()
+      const hashedPassword = await bcrypt.hash(tempPassword, 10)
+      const resetToken = crypto.randomBytes(32).toString('hex')
+      const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hora
+
       user = await prisma.user.create({
         data: {
           email: senderEmail,
           name: from.split('<')[0].trim() || senderEmail,
-          password: 'temp_password', // Será solicitado reset na primeira tentativa de login
-          role: 'USER'
-        }
+          password: hashedPassword,
+          role: 'USER',
+          resetToken,
+          resetTokenExpiry,
+        },
+      })
+
+      const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM,
+        to: senderEmail,
+        subject: 'Defina sua senha - Sistema de Tickets',
+        html: `
+          <p>Olá ${user.name},</p>
+          <p>Uma conta foi criada automaticamente para você no Sistema de Tickets.</p>
+          <p>Clique no link abaixo para definir sua senha:</p>
+          <a href="${resetUrl}">Definir senha</a>
+          <p>Este link expira em 1 hora.</p>
+        `,
       })
     }
 
