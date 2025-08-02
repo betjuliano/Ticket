@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MinIOService } from '@/lib/minio-client';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions, canUserAccessTicket } from '@/lib/auth';
+import { authOptions, canUserAccessTicket, verifyJWT } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -10,11 +10,32 @@ export async function GET(
 ) {
   try {
     const attachmentId = params.id;
-    
+
     console.log(`📥 Solicitação de download para anexo: ${attachmentId}`);
 
     const session = await getServerSession(authOptions);
-    if (!session) {
+    let user = null;
+
+    if (session?.user) {
+      user = { id: session.user.id, role: session.user.role };
+    } else {
+      const authHeader = request.headers.get('Authorization');
+      let token: string | null = null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7).trim();
+      }
+      if (token) {
+        try {
+          const decoded = verifyJWT(token);
+          user = { id: decoded.id, role: decoded.role };
+        } catch (err) {
+          // Token inválido será tratado como não autenticado
+          console.error('Erro ao verificar JWT:', err);
+        }
+      }
+    }
+
+    if (!user) {
       return NextResponse.json(
         { error: 'Não autenticado' },
         { status: 401 }
@@ -55,8 +76,8 @@ export async function GET(
     console.log(`👤 Usuário: ${attachment.user.name}`);
 
     const hasAccess = await canUserAccessTicket(
-      session.user.id,
-      session.user.role,
+      user.id,
+      user.role,
       attachment.ticketId
     );
 
@@ -84,7 +105,7 @@ export async function GET(
             ticketId: attachment.ticketId,
             action: 'ATTACHMENT_DOWNLOADED',
             details: `Anexo "${attachment.originalName}" foi baixado`,
-            userId: session.user.id,
+            userId: user.id,
             createdAt: new Date(),
           },
         });
@@ -141,7 +162,28 @@ export async function HEAD(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    let user = null;
+
+    if (session?.user) {
+      user = { id: session.user.id, role: session.user.role };
+    } else {
+      const authHeader = request.headers.get('Authorization');
+      let token: string | null = null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7).trim();
+      }
+      if (token) {
+        try {
+          const decoded = verifyJWT(token);
+          user = { id: decoded.id, role: decoded.role };
+        } catch (err) {
+          // Token inválido
+          console.error('Erro ao verificar JWT:', err);
+        }
+      }
+    }
+
+    if (!user) {
       return new NextResponse(null, { status: 401 });
     }
 
@@ -163,8 +205,8 @@ export async function HEAD(
     }
 
     const hasAccess = await canUserAccessTicket(
-      session.user.id,
-      session.user.role,
+      user.id,
+      user.role,
       attachment.ticketId
     );
 
