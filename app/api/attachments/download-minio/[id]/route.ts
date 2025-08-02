@@ -28,8 +28,9 @@ export async function GET(
         try {
           const decoded = verifyJWT(token);
           user = { id: decoded.id, role: decoded.role };
-        } catch {
+        } catch (err) {
           // Token inválido será tratado como não autenticado
+          console.error('Erro ao verificar JWT:', err);
         }
       }
     }
