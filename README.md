@@ -1,405 +1,323 @@
-# Ticket System - Sistema de Gerenciamento de Chamados
+# 🎫 Ticket System - Sistema de Gerenciamento de Chamados
 
-![Version](https://img.shields.io/badge/version-2.1.7-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
-![Traefik](https://img.shields.io/badge/traefik-configured-orange.svg)
-
-Sistema completo de gerenciamento de chamados (tickets) com interface cyberpunk, pronto para produção com Docker, Traefik e certificação SSL automática.
+Sistema completo de gerenciamento de tickets/chamados desenvolvido com Next.js 15, React 19, TypeScript e PostgreSQL.
 
 ## 🚀 Características
 
-### Funcionalidades Principais
-- **Dashboard Interativo**: Visão geral completa do sistema
-- **Gerenciamento de Tickets**: Criação, edição, atribuição e acompanhamento
-- **Sistema de Usuários**: Controle de acesso com diferentes níveis (Usuário, Coordenador, Admin)
-- **Base de Conhecimento**: Documentação e soluções
-- **Interface Responsiva**: Funciona perfeitamente em desktop e mobile
-- **Tema Cyberpunk**: Design moderno e atrativo
+- **Frontend Moderno**: Next.js 15 + React 19 + TypeScript
+- **UI/UX**: Tailwind CSS + Radix UI + Shadcn/ui
+- **Backend**: API Routes do Next.js + Prisma ORM
+- **Banco de Dados**: PostgreSQL
+- **Autenticação**: NextAuth.js com JWT
+- **Containerização**: Docker + Docker Compose
+- **Deploy**: Pronto para Portainer + Traefik
 
-### Tecnologias Utilizadas
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, PostgreSQL, Redis
-- **Containerização**: Docker, Docker Compose
-- **Proxy Reverso**: Traefik com SSL automático
-- **Componentes UI**: Radix UI, Shadcn/ui
-- **Validação**: Zod
-- **Ícones**: Lucide React
+## 📋 Funcionalidades
 
-### Arquitetura de Produção
-- **Escalabilidade**: Configuração preparada para múltiplas instâncias
-- **Segurança**: Headers de segurança, rate limiting, validação robusta
-- **Monitoramento**: Health checks, logs estruturados
-- **Backup**: Scripts automatizados de backup
-- **SSL/TLS**: Certificados automáticos via Let's Encrypt
+### ✅ Implementadas
+- Sistema de autenticação completo (login/cadastro)
+- Dashboard com métricas em tempo real
+- Gerenciamento de tickets/chamados
+- Sistema de usuários e permissões
+- Interface responsiva e moderna
+- API RESTful completa
+- Containerização Docker
 
-## 📋 Pré-requisitos
+### 🔄 Em Desenvolvimento
+- Sistema de comentários em tickets
+- Upload de anexos
+- Notificações em tempo real
+- Relatórios avançados
+- Knowledge Base
 
-### Para Desenvolvimento
+## 🛠️ Tecnologias Utilizadas
+
+### Frontend
+- **Next.js 15**: Framework React com SSR/SSG
+- **React 19**: Biblioteca de interface
+- **TypeScript**: Tipagem estática
+- **Tailwind CSS**: Framework CSS utilitário
+- **Radix UI**: Componentes acessíveis
+- **Shadcn/ui**: Sistema de design
+
+### Backend
+- **Next.js API Routes**: Endpoints da API
+- **Prisma ORM**: Mapeamento objeto-relacional
+- **PostgreSQL**: Banco de dados relacional
+- **NextAuth.js**: Autenticação
+- **bcryptjs**: Hash de senhas
+- **Zod**: Validação de schemas
+
+### DevOps
+- **Docker**: Containerização
+- **Docker Compose**: Orquestração de containers
+- **Traefik**: Proxy reverso e SSL
+- **Portainer**: Gerenciamento de containers
+
+## 🏗️ Arquitetura
+
+```
+ticket-system/
+├── app/                    # App Router do Next.js
+│   ├── api/               # API Routes
+│   ├── auth/              # Páginas de autenticação
+│   ├── tickets/           # Páginas de tickets
+│   └── globals.css        # Estilos globais
+├── components/            # Componentes React
+│   ├── ui/               # Componentes base (Shadcn)
+│   └── ...               # Componentes específicos
+├── lib/                   # Utilitários e configurações
+│   ├── auth.ts           # Configuração NextAuth
+│   ├── prisma.ts         # Cliente Prisma
+│   └── validations.ts    # Schemas Zod
+├── prisma/               # Schema e migrações
+├── scripts/              # Scripts de automação
+├── types/                # Definições TypeScript
+└── docker-compose.yml    # Configuração Docker
+```
+
+## 🚀 Execução Local
+
+### Pré-requisitos
 - Node.js 20+
-- Docker e Docker Compose
-- Git
+- PostgreSQL 15+
+- npm ou yarn
 
-### Para Produção
-- VPS com Docker e Docker Compose
-- Domínio configurado
-- Portainer (opcional, mas recomendado)
-
-## 🛠️ Instalação
-
-### 1. Clone o Repositório
+### 1. Clonar o Repositório
 ```bash
 git clone https://github.com/betjuliano/Ticket.git
 cd Ticket
 ```
 
-### 2. Configuração de Ambiente
-
-#### Para Desenvolvimento
+### 2. Instalar Dependências
 ```bash
-cp .env.development .env
+npm install
 ```
 
-#### Para Produção
+### 3. Configurar Banco de Dados
 ```bash
-cp .env.production .env
-# Edite o arquivo .env com suas configurações
-nano .env
+# Instalar PostgreSQL (Ubuntu/Debian)
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Iniciar serviço
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Configurar usuário e banco
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+sudo -u postgres createdb ticket_system
 ```
 
-**⚠️ IMPORTANTE**: Altere todas as senhas padrão no arquivo `.env` antes de usar em produção!
-
-### 3. Deploy Automático
-
-#### Desenvolvimento
+### 4. Configurar Variáveis de Ambiente
 ```bash
-./deploy.sh development
+cp .env.example .env
 ```
 
-#### Produção
-```bash
-./deploy.sh production
+Edite o arquivo `.env` com suas configurações:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_system"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
 ```
 
-### 4. Deploy Manual (Alternativo)
-
+### 5. Executar Migrações
 ```bash
-# Iniciar serviços
+npx prisma generate
+npx prisma db push
+```
+
+### 6. Criar Usuário Administrador
+```bash
+node seed-user.js
+```
+
+### 7. Iniciar Aplicação
+```bash
+npm run dev
+```
+
+A aplicação estará disponível em: http://localhost:3000
+
+**Credenciais de teste:**
+- Email: `admin@ticket.local`
+- Senha: `admin123`
+
+## 🐳 Deploy com Docker
+
+### Desenvolvimento Local
+```bash
+# Build e iniciar todos os serviços
 docker-compose up -d
 
-# Verificar status
-docker-compose ps
-
-# Ver logs
+# Verificar logs
 docker-compose logs -f
 ```
 
-## 🔧 Configuração
+### Produção com Portainer
 
-### Variáveis de Ambiente Principais
-
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `DOMAIN` | Domínio da aplicação | `ticket.seudominio.com` |
-| `ACME_EMAIL` | Email para Let's Encrypt | `admin@seudominio.com` |
-| `POSTGRES_PASSWORD` | Senha do PostgreSQL | `senha_super_segura` |
-| `REDIS_PASSWORD` | Senha do Redis | `senha_redis_segura` |
-| `NEXTAUTH_SECRET` | Chave secreta NextAuth | `chave_32_caracteres_ou_mais` |
-
-### Configuração do Domínio
-
-1. Configure seu domínio para apontar para o IP da VPS
-2. Certifique-se de que as portas 80 e 443 estão abertas
-3. Aguarde a propagação DNS (pode levar até 24h)
-
-### Configuração do Email (Opcional)
-
-Para notificações por email, configure as variáveis SMTP:
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=seu-email@gmail.com
-SMTP_PASS=sua-senha-de-app
-```
-
-## 🐳 Docker e Portainer
-
-### Usando com Portainer
-
-1. Acesse seu Portainer
-2. Vá em "Stacks" → "Add Stack"
-3. Cole o conteúdo do `docker-compose.yml`
-4. Configure as variáveis de ambiente
-5. Deploy
-
-### Comandos Docker Úteis
-
+#### 1. Preparar Ambiente
 ```bash
-# Ver logs da aplicação
-docker-compose logs -f ticket-app
+# Fazer build da aplicação
+./scripts/build.sh
 
-# Reiniciar apenas a aplicação
-docker-compose restart ticket-app
-
-# Backup do banco de dados
-docker exec ticket-postgres pg_dump -U ticket_user ticket_db > backup.sql
-
-# Restaurar backup
-docker exec -i ticket-postgres psql -U ticket_user ticket_db < backup.sql
-
-# Acessar container da aplicação
-docker exec -it ticket-app sh
-
-# Ver uso de recursos
-docker stats
+# Configurar variáveis de ambiente
+cp .env.production .env.production.local
+# Editar .env.production.local com suas configurações
 ```
 
-## 🔐 Segurança
+#### 2. Deploy no Portainer
+1. Acesse seu Portainer
+2. Vá em **Stacks** → **Add Stack**
+3. Nome: `ticket-system`
+4. Copie o conteúdo de `docker-compose.portainer.yml`
+5. Configure as variáveis de ambiente:
+   - `POSTGRES_PASSWORD`: Senha do PostgreSQL
+   - `NEXTAUTH_SECRET`: Chave secreta para JWT
+   - `NEXTAUTH_URL`: URL da aplicação
+   - `DOMAIN`: Domínio para Traefik
+   - `APP_PORT`: Porta da aplicação (padrão: 3000)
 
-### Configurações Implementadas
-- Headers de segurança (HSTS, CSP, etc.)
-- Rate limiting
-- Validação de entrada com Zod
-- Sanitização de dados
-- Autenticação robusta
-- Criptografia de senhas
+#### 3. Configurar Traefik (se necessário)
+```yaml
+# traefik.yml
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
 
-### Recomendações Adicionais
-1. **Altere todas as senhas padrão**
-2. **Configure firewall na VPS**
-3. **Mantenha o sistema atualizado**
-4. **Configure backups automáticos**
-5. **Monitore logs regularmente**
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: seu-email@exemplo.com
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+```
 
 ## 📊 Monitoramento
 
-### Health Checks
-- Endpoint: `/api/health`
-- Verifica status da aplicação, memória e uptime
-- Integrado com Docker health checks
-
-### Logs
-- Logs estruturados em JSON
-- Diferentes níveis (debug, info, warn, error)
-- Rotação automática de logs
-
-### Métricas
-- Uptime do sistema
-- Número de tickets ativos
-- Usuários conectados
-- Performance da aplicação
-
-## 🔄 Backup e Restauração
-
-### Backup Automático
-O script de deploy cria backups automáticos em produção:
+### Logs da Aplicação
 ```bash
-./deploy.sh production
+# Docker Compose
+docker-compose logs -f app
+
+# Portainer
+# Acesse Containers → ticket-app → Logs
 ```
 
-### Backup Manual
+### Métricas do Banco
 ```bash
-# Backup completo
-mkdir -p backups
-docker exec ticket-postgres pg_dump -U ticket_user ticket_db > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+# Conectar ao PostgreSQL
+docker exec -it ticket-postgres psql -U postgres -d ticket_system
 
-# Backup dos uploads
-docker cp ticket-app:/app/uploads backups/uploads_$(date +%Y%m%d_%H%M%S)
+# Verificar tabelas
+\dt
+
+# Verificar usuários
+SELECT id, name, email, role FROM "User";
 ```
 
-### Restauração
+## 🔧 Manutenção
+
+### Backup do Banco de Dados
 ```bash
-# Restaurar banco de dados
-docker exec -i ticket-postgres psql -U ticket_user ticket_db < backups/backup_YYYYMMDD_HHMMSS.sql
+# Criar backup
+docker exec ticket-postgres pg_dump -U postgres ticket_system > backup.sql
 
-# Restaurar uploads
-docker cp backups/uploads_YYYYMMDD_HHMMSS ticket-app:/app/uploads
+# Restaurar backup
+docker exec -i ticket-postgres psql -U postgres ticket_system < backup.sql
 ```
 
-## 🌐 URLs de Acesso
-
-### Produção
-- **Aplicação**: `https://seudominio.com`
-- **Dashboard Traefik**: `https://traefik.seudominio.com`
-
-### Desenvolvimento
-- **Aplicação**: `http://localhost`
-- **Dashboard Traefik**: `http://localhost:8080`
-
-## 👥 Usuários Padrão
-
-O sistema cria usuários padrão para teste:
-
-| Email | Senha | Tipo |
-|-------|-------|------|
-| `admin@ticket.local` | `admin123` | Administrador |
-| `coordenador@ticket.local` | `coord123` | Coordenador |
-| `usuario@ticket.local` | `user123` | Usuário |
-
-**⚠️ ALTERE ESSAS SENHAS IMEDIATAMENTE EM PRODUÇÃO!**
-
-## 🔧 Desenvolvimento
-
-### Estrutura do Projeto
-```
-Ticket/
-├── app/                    # Aplicação Next.js
-│   ├── api/               # API Routes
-│   ├── dashboard/         # Páginas do dashboard
-│   ├── tickets/           # Gerenciamento de tickets
-│   └── ...
-├── components/            # Componentes React
-├── lib/                   # Utilitários e validações
-├── public/               # Arquivos estáticos
-├── docker-compose.yml    # Configuração Docker
-├── Dockerfile           # Imagem da aplicação
-├── deploy.sh           # Script de deploy
-└── init-db.sql        # Inicialização do banco
-```
-
-### Comandos de Desenvolvimento
+### Atualização da Aplicação
 ```bash
-# Instalar dependências
-pnpm install
+# Parar serviços
+docker-compose down
 
-# Executar em modo desenvolvimento
-pnpm dev
-
-# Build da aplicação
-pnpm build
-
-# Executar testes
-pnpm test
-
-# Lint do código
-pnpm lint
-```
-
-## 🚀 Deploy em Produção
-
-### Checklist Pré-Deploy
-- [ ] Domínio configurado e propagado
-- [ ] Portas 80 e 443 abertas
-- [ ] Docker e Docker Compose instalados
-- [ ] Arquivo `.env` configurado
-- [ ] Senhas padrão alteradas
-- [ ] Backup dos dados existentes (se houver)
-
-### Processo de Deploy
-1. **Preparação**:
-   ```bash
-   git clone https://github.com/betjuliano/Ticket.git
-   cd Ticket
-   cp .env.production .env
-   nano .env  # Configurar variáveis
-   ```
-
-2. **Deploy**:
-   ```bash
-   ./deploy.sh production
-   ```
-
-3. **Verificação**:
-   - Acesse a aplicação no navegador
-   - Verifique o dashboard do Traefik
-   - Teste login com usuários padrão
-   - Verifique certificado SSL
-
-### Atualizações
-```bash
 # Atualizar código
 git pull origin main
 
-# Redeploy
-./deploy.sh production clean
+# Rebuild e reiniciar
+docker-compose up -d --build
 ```
 
 ## 🐛 Solução de Problemas
 
-### Problemas Comuns
-
-#### Aplicação não inicia
+### Erro de Conexão com Banco
 ```bash
-# Verificar logs
-docker-compose logs -f ticket-app
+# Verificar se PostgreSQL está rodando
+docker-compose ps
 
-# Verificar configurações
-docker-compose config
-```
-
-#### Certificado SSL não funciona
-- Verifique se o domínio está propagado
-- Confirme que as portas 80 e 443 estão abertas
-- Verifique logs do Traefik: `docker-compose logs traefik`
-
-#### Banco de dados não conecta
-```bash
-# Verificar status do PostgreSQL
-docker-compose ps postgres
-
-# Verificar logs
+# Verificar logs do banco
 docker-compose logs postgres
 
 # Testar conexão
-docker exec -it ticket-postgres psql -U ticket_user ticket_db
+docker exec ticket-postgres pg_isready -U postgres
 ```
 
-#### Performance lenta
-- Verifique uso de recursos: `docker stats`
-- Analise logs da aplicação
-- Considere aumentar recursos da VPS
-
-### Logs Importantes
+### Erro de Autenticação
 ```bash
-# Logs da aplicação
-docker-compose logs -f ticket-app
+# Verificar variáveis de ambiente
+docker exec ticket-app env | grep NEXTAUTH
 
-# Logs do Traefik
-docker-compose logs -f traefik
-
-# Logs do banco de dados
-docker-compose logs -f postgres
-
-# Todos os logs
-docker-compose logs -f
+# Regenerar secret
+openssl rand -base64 32
 ```
 
-## 📞 Suporte
+### Erro de Build
+```bash
+# Limpar cache do Docker
+docker system prune -a
 
-### Documentação Adicional
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Docker Documentation](https://docs.docker.com/)
-- [Traefik Documentation](https://doc.traefik.io/traefik/)
+# Rebuild sem cache
+docker-compose build --no-cache
+```
 
-### Contribuição
+## 📝 Changelog
+
+### v1.0.0 (Atual)
+- ✅ Sistema de autenticação completo
+- ✅ Dashboard com métricas
+- ✅ CRUD de tickets
+- ✅ Sistema de usuários
+- ✅ Containerização Docker
+- ✅ Deploy para Portainer
+
+### Próximas Versões
+- 🔄 Sistema de comentários
+- 🔄 Upload de arquivos
+- 🔄 Notificações push
+- 🔄 Relatórios PDF
+- 🔄 API mobile
+
+## 🤝 Contribuição
+
 1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 🎯 Roadmap
+## 👨‍💻 Autor
 
-### Próximas Funcionalidades
-- [ ] Notificações em tempo real
-- [ ] Integração com Slack/Teams
-- [ ] Relatórios avançados
-- [ ] API REST completa
-- [ ] Mobile app
-- [ ] Integração com LDAP/AD
+**Juliano Alves**
+- GitHub: [@betjuliano](https://github.com/betjuliano)
+- Email: juliano@exemplo.com
 
-### Melhorias Planejadas
-- [ ] Testes automatizados
-- [ ] CI/CD pipeline
-- [ ] Monitoramento com Prometheus
-- [ ] Logs centralizados com ELK
-- [ ] Backup automático para cloud
+## 🙏 Agradecimentos
+
+- [Next.js](https://nextjs.org/)
+- [Prisma](https://prisma.io/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Radix UI](https://radix-ui.com/)
+- [Shadcn/ui](https://ui.shadcn.com/)
 
 ---
 
-**Desenvolvido com ❤️ para facilitar o gerenciamento de chamados de TI**
+**🎯 Sistema pronto para produção com Docker + Portainer + Traefik!**
 

@@ -1,39 +1,55 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { withAuth } from "next-auth/middleware"
+import { NextResponse } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request })
-  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
-  const isApiAuthRoute = request.nextUrl.pathname.startsWith('/api/auth')
-  const isPublicRoute = request.nextUrl.pathname === '/' || isAuthPage || isApiAuthRoute
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token
+    const { pathname } = req.nextUrl
 
-  // Se não está autenticado e não está em rota pública
-  if (!token && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+    // Definir permissões por rota
+    const routePermissions = {
+      '/dashboard': ['ADMIN', 'COORDINATOR'],
+      '/tickets': ['ADMIN', 'COORDINATOR', 'USER'],
+      '/knowledge': ['ADMIN', 'COORDINATOR', 'USER'],
+      '/users': ['ADMIN'],
+      '/systems': ['ADMIN'],
+      '/analytics': ['ADMIN', 'COORDINATOR'],
+    }
+
+    // Verificar se a rota requer permissões específicas
+    const requiredRoles = routePermissions[pathname as keyof typeof routePermissions]
+    
+    if (requiredRoles && !requiredRoles.includes(token?.role as string)) {
+      // Redirecionar para a primeira rota permitida baseada no role
+      const userRole = token?.role as string
+      let redirectPath = '/tickets' // padrão para USER
+      
+      if (userRole === 'ADMIN') {
+        redirectPath = '/dashboard'
+      } else if (userRole === 'COORDINATOR') {
+        redirectPath = '/dashboard'
+      }
+      
+      return NextResponse.redirect(new URL(redirectPath, req.url))
+    }
+
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token
+    },
   }
-
-  // Se está autenticado e tenta acessar página de login
-  if (token && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  const response = NextResponse.next()
-
-  // Headers de segurança
-  response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=()'
-  )
-
-  return response
-}
+)
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
-  ],
+    '/dashboard/:path*',
+    '/tickets/:path*',
+    '/knowledge/:path*',
+    '/users/:path*',
+    '/systems/:path*',
+    '/analytics/:path*'
+  ]
 }
+

@@ -1,7 +1,6 @@
 # Dependências
 node_modules
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
@@ -18,7 +17,6 @@ build/
 .env.production.local
 
 # Logs
-logs
 *.log
 
 # Runtime data
@@ -27,41 +25,17 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory usado por ferramentas como istanbul
+# Coverage directory used by tools like istanbul
 coverage/
 
-# Diretório de dependências do nyc test coverage
+# nyc test coverage
 .nyc_output
-
-# Grunt intermediate storage
-.grunt
-
-# Bower dependency directory
-bower_components
-
-# node-waf configuration
-.lock-wscript
-
-# Compiled binary addons
-build/Release
 
 # Dependency directories
 jspm_packages/
 
-# TypeScript v1 declaration files
-typings/
-
 # Optional npm cache directory
 .npm
-
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -72,42 +46,17 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache
-.cache
-.parcel-cache
+# dotenv environment variables file
+.env
 
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-
-# Gatsby files
-.cache/
-public
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS generated files
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Git
@@ -119,17 +68,21 @@ Dockerfile*
 docker-compose*
 .dockerignore
 
-# Documentation
+# Documentação
 README.md
-CHANGELOG.md
-LICENSE
+docs/
 
-# CI/CD
-.github/
-.gitlab-ci.yml
-.travis.yml
-.circleci/
+# Testes
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
 
-# Análise e documentação do projeto
-analise_projeto.md
+# Outros
+.eslintrc.json
+.prettierrc
+.editorconfig
+seed-user.js
+analise-problemas.md
 

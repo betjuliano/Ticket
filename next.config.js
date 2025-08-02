@@ -2,7 +2,6 @@
 const nextConfig = {
   // Configurações de produção
   reactStrictMode: true,
-  swcMinify: true,
   
   // Configurações de output para Docker
   output: 'standalone',
@@ -11,23 +10,14 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      'iadm.iaprojetos.com.br',
-      's3.iaprojetos.com.br',
-      'supabase.iaprojetos.com.br'
     ],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.iaprojetos.com.br',
+        hostname: '**',
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 's3.iaprojetos.com.br',
-        port: '',
-        pathname: '/**',
-      }
     ],
   },
   
@@ -72,30 +62,14 @@ const nextConfig = {
   // Configurações de compressão
   compress: true,
   
-  // Configurações de bundle analyzer (apenas em desenvolvimento)
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config, { isServer }) => {
-      if (!isServer) {
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            openAnalyzer: false,
-          })
-        );
-      }
-      return config;
-    },
-  }),
-  
-  // Configurações experimentais
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  // Configurações de pacotes externos para servidor
+  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   
   // Configurações de variáveis de ambiente
   env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    DATABASE_URL: process.env.DATABASE_URL,
   },
   
   // Configurações de TypeScript
@@ -110,3 +84,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+

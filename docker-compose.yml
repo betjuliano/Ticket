@@ -1,113 +1,74 @@
 version: '3.8'
 
 services:
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticket-postgres
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"  # Dashboard do Traefik
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ticket_system}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik:/etc/traefik
-      - ./letsencrypt:/letsencrypt
-    command:
-      # API e Dashboard
-      - --api.dashboard=true
-      - --api.insecure=true
-      
-      # Providers
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      
-      # Entrypoints
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      
-      # Certificados SSL automáticos
-      - --certificatesresolvers.letsencrypt.acme.email=admin@iaprojetos.com.br
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      
-      # Redirecionamento HTTP para HTTPS
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.iadm.iaprojetos.com.br`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - traefik
+      - ticket-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`iadm.iaprojetos.com.br`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
-    networks:
-      - traefik
-
+  # Aplicação Next.js
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ticket-app
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-    volumes:
-      - ./uploads:/app/uploads
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ticket_system}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-here}
+    ports:
+      - "3000:3000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+    networks:
+      - ticket-network
     labels:
+      # Labels para Traefik (se usado)
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.iadm.iaprojetos.com.br`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.app.loadbalancer.server.port=3000"
-    networks:
-      - traefik
+      - "traefik.http.routers.ticket.rule=Host(\`ticket.localhost\`)"
+      - "traefik.http.routers.ticket.entrypoints=web"
+      - "traefik.http.services.ticket.loadbalancer.server.port=3000"
 
-  postgres:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=ticketsystem
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres123
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    networks:
-      - traefik
-
+  # Redis para cache (opcional)
   redis:
     image: redis:7-alpine
+    container_name: ticket-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     networks:
-      - traefik
+      - ticket-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
-  portainer_data:
+    driver: local
 
 networks:
-  traefik:
+  ticket-network:
     driver: bridge
 

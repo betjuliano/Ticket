@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createTicketSchema, ticketFiltersSchema } from '@/lib/validations'
 import {
   createSuccessResponse,
+  createErrorResponse,
   handleApiError,
   logRequest,
   sanitizeInput,
@@ -9,51 +10,19 @@ import {
   generateId,
   formatDate
 } from '@/lib/api-utils'
-import { Ticket } from '@/types/ticket'
-
-// Mock data - em produção, isso viria do banco de dados
-let mockTickets: Ticket[] = [
-  {
-    id: '1',
-    title: 'Sistema de login não funciona',
-    description: 'Usuários não conseguem fazer login no sistema',
-    status: 'open',
-    priority: 'high',
-    createdBy: 'user1',
-    createdAt: '2025-01-20T10:00:00Z',
-    updatedAt: '2025-01-20T10:00:00Z',
-    category: 'Sistema'
-  },
-  {
-    id: '2',
-    title: 'Lentidão na rede',
-    description: 'Rede corporativa está muito lenta',
-    status: 'in_progress',
-    priority: 'medium',
-    assignedTo: 'tech1',
-    createdBy: 'user2',
-    createdAt: '2025-01-19T14:30:00Z',
-    updatedAt: '2025-01-20T09:15:00Z',
-    category: 'Rede'
-  },
-  {
-    id: '3',
-    title: 'Impressora não funciona',
-    description: 'Impressora do setor financeiro não está imprimindo',
-    status: 'resolved',
-    priority: 'low',
-    assignedTo: 'tech2',
-    createdBy: 'user3',
-    createdAt: '2025-01-18T09:00:00Z',
-    updatedAt: '2025-01-19T16:30:00Z',
-    category: 'Hardware'
-  }
-]
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET - Listar tickets
 export async function GET(request: NextRequest) {
   try {
     logRequest('GET', '/api/tickets')
+    
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return createErrorResponse('Não autenticado', 401)
+    }
     
     const { searchParams } = new URL(request.url)
     
@@ -68,27 +37,77 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit'),
     })
 
-    let filteredTickets = mockTickets
-
-    // Aplicar filtros
+    // Construir filtros para Prisma
+    const where: any = {}
+    
     if (filters.status) {
-      filteredTickets = filteredTickets.filter(ticket => ticket.status === filters.status)
+      where.status = filters.status
     }
     if (filters.priority) {
-      filteredTickets = filteredTickets.filter(ticket => ticket.priority === filters.priority)
+      where.priority = filters.priority
     }
     if (filters.assignedTo) {
-      filteredTickets = filteredTickets.filter(ticket => ticket.assignedTo === filters.assignedTo)
+      where.assignedToId = filters.assignedTo
     }
     if (filters.category) {
-      filteredTickets = filteredTickets.filter(ticket => ticket.category === filters.category)
+      where.category = filters.category
     }
     if (filters.createdBy) {
-      filteredTickets = filteredTickets.filter(ticket => ticket.createdBy === filters.createdBy)
+      where.createdById = filters.createdBy
     }
 
-    // Aplicar paginação
-    const paginatedResult = paginate(filteredTickets, filters.page, filters.limit)
+    // Se não for admin ou coordenador, mostrar apenas tickets próprios ou atribuídos
+    if (!['ADMIN', 'COORDINATOR'].includes(session.user.role)) {
+      where.OR = [
+        { createdById: session.user.id },
+        { assignedToId: session.user.id }
+      ]
+    }
+
+    // Buscar tickets com relacionamentos
+    const tickets = await prisma.ticket.findMany({
+      where,
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        _count: {
+          select: {
+            comments: true,
+            attachments: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip: (filters.page - 1) * filters.limit,
+      take: filters.limit
+    })
+
+    // Contar total para paginação
+    const total = await prisma.ticket.count({ where })
+
+    const paginatedResult = {
+      data: tickets,
+      meta: {
+        page: filters.page,
+        limit: filters.limit,
+        total,
+        totalPages: Math.ceil(total / filters.limit)
+      }
+    }
 
     return createSuccessResponse(paginatedResult.data, undefined, paginatedResult.meta)
   } catch (error) {
@@ -101,27 +120,49 @@ export async function POST(request: NextRequest) {
   try {
     logRequest('POST', '/api/tickets')
     
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return createErrorResponse('Não autenticado', 401)
+    }
+    
     const body = await request.json()
     const sanitizedBody = sanitizeInput(body)
     
     // Validar dados de entrada
-    const validatedData = createTicketSchema.parse(sanitizedBody)
+    const validatedData = createTicketSchema.parse({
+      ...sanitizedBody,
+      createdBy: session.user.id // Usar ID do usuário da sessão
+    })
 
-    const newTicket: Ticket = {
-      id: generateId(),
-      title: validatedData.title,
-      description: validatedData.description,
-      status: 'open',
-      priority: validatedData.priority,
-      assignedTo: validatedData.assignedTo,
-      createdBy: validatedData.createdBy,
-      createdAt: formatDate(new Date()),
-      updatedAt: formatDate(new Date()),
-      category: validatedData.category
-    }
-
-    // Em produção, salvar no banco de dados
-    mockTickets.push(newTicket)
+    // Criar ticket no banco de dados
+    const newTicket = await prisma.ticket.create({
+      data: {
+        title: validatedData.title,
+        description: validatedData.description,
+        priority: validatedData.priority,
+        category: validatedData.category,
+        tags: '', // Inicializar vazio, pode ser atualizado depois
+        createdById: session.user.id,
+        assignedToId: validatedData.assignedTo || null,
+        status: 'OPEN'
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    })
 
     return createSuccessResponse(newTicket, 'Ticket criado com sucesso')
   } catch (error) {

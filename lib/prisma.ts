@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client'
-import { supabase } from './supabase'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -22,23 +21,6 @@ prisma.$use(async (params: any, next: any) => {
   return result
 })
 
-// Middleware para soft delete
-prisma.$use(async (params: any, next: any) => {
-  if (params.action === 'delete') {
-    params.action = 'update'
-    params.args['data'] = { deletedAt: new Date() }
-  }
-  if (params.action === 'deleteMany') {
-    params.action = 'updateMany'
-    if (params.args.data != undefined) {
-      params.args.data['deletedAt'] = new Date()
-    } else {
-      params.args['data'] = { deletedAt: new Date() }
-    }
-  }
-  return next(params)
-})
-
 // Middleware para sanitização de dados
 prisma.$use(async (params: any, next: any) => {
   // Sanitizar inputs antes de salvar no banco
@@ -59,6 +41,3 @@ prisma.$use(async (params: any, next: any) => {
 })
 
 export default prisma
-
-// Adicione funções helper para usar Supabase em vez de Prisma diretamente
-export { supabase }

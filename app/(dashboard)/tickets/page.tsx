@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -97,6 +98,15 @@ const initialTickets: Ticket[] = [
 ];
 
 export default function CoordinatorTicketsPage() {
+  const { data: session } = useSession()
+  const userRole = session?.user?.role
+  const isAdmin = userRole === 'ADMIN'
+  const isCoordinator = userRole === 'COORDINATOR'
+  const isUser = userRole === 'USER'
+  const canCreateTickets = isAdmin || isCoordinator
+  const canEditAllTickets = isAdmin || isCoordinator
+  const canDeleteTickets = isAdmin
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [aiSuggestion, setAiSuggestion] = useState('')
@@ -125,7 +135,14 @@ export default function CoordinatorTicketsPage() {
   
   // Memoização para performance
   const filteredTickets = useMemo(() => {
-    return tickets.filter(ticket => {
+    let ticketsToFilter = tickets
+    
+    // Se for usuário comum, mostrar apenas seus próprios tickets
+    if (isUser && session?.user?.id) {
+      ticketsToFilter = tickets.filter(ticket => ticket.createdBy === session.user.id)
+    }
+    
+    return ticketsToFilter.filter(ticket => {
       const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            ticket.user.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -134,7 +151,7 @@ export default function CoordinatorTicketsPage() {
       
       return matchesSearch && matchesStatus && matchesPriority
     })
-  }, [tickets, searchTerm, selectedStatus, selectedPriority])
+  }, [tickets, searchTerm, selectedStatus, selectedPriority, isUser, session?.user?.id])
 
   // Função para criar novo chamado
   const handleCreateTicket = () => {
@@ -337,61 +354,63 @@ export default function CoordinatorTicketsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 space-y-6">
+    <div className="min-h-screen tactical-layout p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">CENTRAL DE TICKETS</h1>
-          <p className="text-sm text-blue-200">Gerencie todos os chamados do sistema</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-wider">CENTRAL DE TICKETS</h1>
+          <p className="text-sm text-muted-foreground">Gerencie todos os chamados do sistema</p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white">
+          <Button className="tactical-button">
             <Filter className="w-4 h-4 mr-2" />
             Filtros
           </Button>
-          <Button 
-            onClick={() => setShowNewTicketModal(true)}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Chamado
-          </Button>
+          {canCreateTickets && (
+            <Button 
+              onClick={() => setShowNewTicketModal(true)}
+              className="tactical-button bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Chamado
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+      <Card className="tactical-card">
         <CardContent className="p-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por título, usuário, matrícula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-200 focus:border-blue-400 focus:ring-blue-400"
+                className="pl-10 tactical-input"
               />
             </div>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white focus:border-blue-400 focus:ring-blue-400">
+              <SelectTrigger className="w-40 tactical-input">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="all" className="text-white hover:bg-slate-700">Todos</SelectItem>
-                <SelectItem value="open" className="text-white hover:bg-slate-700">Abertos</SelectItem>
-                <SelectItem value="in_progress" className="text-white hover:bg-slate-700">Em Andamento</SelectItem>
-                <SelectItem value="resolved" className="text-white hover:bg-slate-700">Resolvidos</SelectItem>
+              <SelectContent className="tactical-card">
+                <SelectItem value="all" className="text-foreground hover:bg-accent">Todos</SelectItem>
+                <SelectItem value="open" className="text-foreground hover:bg-accent">Abertos</SelectItem>
+                <SelectItem value="in_progress" className="text-foreground hover:bg-accent">Em Andamento</SelectItem>
+                <SelectItem value="resolved" className="text-foreground hover:bg-accent">Resolvidos</SelectItem>
               </SelectContent>
             </Select>
             <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-              <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white focus:border-blue-400 focus:ring-blue-400">
+              <SelectTrigger className="w-40 tactical-input">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="all" className="text-white hover:bg-slate-700">Todas</SelectItem>
-                <SelectItem value="high" className="text-white hover:bg-slate-700">Alta</SelectItem>
-                <SelectItem value="medium" className="text-white hover:bg-slate-700">Média</SelectItem>
-                <SelectItem value="low" className="text-white hover:bg-slate-700">Baixa</SelectItem>
+              <SelectContent className="tactical-card">
+                <SelectItem value="all" className="text-foreground hover:bg-accent">Todas</SelectItem>
+                <SelectItem value="high" className="text-foreground hover:bg-accent">Alta</SelectItem>
+                <SelectItem value="medium" className="text-foreground hover:bg-accent">Média</SelectItem>
+                <SelectItem value="low" className="text-foreground hover:bg-accent">Baixa</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -403,25 +422,25 @@ export default function CoordinatorTicketsPage() {
         {filteredTickets.map((ticket) => (
           <Card
             key={ticket.id}
-            className="bg-white/10 backdrop-blur-lg border-white/20 hover:border-blue-400/50 transition-colors cursor-pointer"
+            className="tactical-card-hover cursor-pointer"
             onClick={() => setSelectedTicket(ticket)}
           >
             <CardContent className="p-4">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-sm font-bold text-white">{ticket.title}</h3>
-                    <Badge className="bg-white/20 text-blue-200 text-xs font-mono">{ticket.id}</Badge>
+                    <h3 className="text-sm font-bold text-foreground">{ticket.title}</h3>
+                    <Badge className="bg-muted/20 text-muted-foreground text-xs font-mono">{ticket.id}</Badge>
                   </div>
-                  <p className="text-sm text-blue-200 mb-2">{ticket.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
                   <div className="flex flex-wrap gap-2 mb-2">
                     <Badge
                       className={`${
                         ticket.status === "open"
-                          ? "bg-blue-600/20 text-blue-300"
+                          ? "btn-status-open"
                           : ticket.status === "in_progress"
-                            ? "bg-white/20 text-white"
-                            : "bg-white/20 text-white"
+                            ? "btn-status-progress"
+                            : "btn-status-resolved"
                       }`}
                     >
                       {ticket.status === "open"
@@ -433,16 +452,16 @@ export default function CoordinatorTicketsPage() {
                     <Badge
                       className={`${
                         ticket.priority === "high"
-                          ? "bg-red-500/20 text-red-500"
+                          ? "badge-danger"
                           : ticket.priority === "medium"
-                            ? "bg-orange-500/20 text-orange-500"
-                            : "bg-white/20 text-white"
+                            ? "badge-warning"
+                            : "badge-secondary"
                       }`}
                     >
                       {ticket.priority.toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-blue-300">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
                       {ticket.user.name}
@@ -454,28 +473,32 @@ export default function CoordinatorTicketsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleArchiveTicket(ticket.id)
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    size="sm"
-                  >
-                    <Archive className="w-4 h-4 mr-1" />
-                    Arquivar
-                  </Button>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleForwardTicket(ticket.id, 'coordinator-id')
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    size="sm"
-                  >
-                    <Forward className="w-4 h-4 mr-1" />
-                    Encaminhar
-                  </Button>
+                  {(canEditAllTickets || (isUser && ticket.createdBy === session?.user?.id)) && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleArchiveTicket(ticket.id)
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      size="sm"
+                    >
+                      <Archive className="w-4 h-4 mr-1" />
+                      Arquivar
+                    </Button>
+                  )}
+                  {canEditAllTickets && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleForwardTicket(ticket.id, 'coordinator-id')
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      size="sm"
+                    >
+                      <Forward className="w-4 h-4 mr-1" />
+                      Encaminhar
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

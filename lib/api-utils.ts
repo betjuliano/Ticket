@@ -32,12 +32,14 @@ export function createSuccessResponse<T>(
 // Função para criar respostas de erro
 export function createErrorResponse(
   error: string,
-  status: number = 400
+  status: number = 400,
+  validationErrors?: any[]
 ): NextResponse<ApiResponse> {
   return NextResponse.json(
     {
       success: false,
       error,
+      validationErrors,
     },
     { status }
   )
