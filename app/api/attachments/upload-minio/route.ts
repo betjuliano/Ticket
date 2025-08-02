@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinIOService } from '@/lib/minio-client';
+import { uploadFile } from '@/lib/minio-service';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const uniqueFileName = `${timestamp}_${randomSuffix}_${sanitizedName}`;
 
     // Upload para MinIO
-    const fileUrl = await MinIOService.uploadFile(
+    const fileUrl = await uploadFile(
       buffer,
       uniqueFileName,
       file.type,
