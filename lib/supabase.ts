@@ -10,7 +10,17 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+let cachedAdminClient: ReturnType<typeof createClient> | null = null
+export const getSupabaseAdmin = () => {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('Variável de ambiente ausente: SUPABASE_SERVICE_ROLE_KEY')
+  }
+  if (!cachedAdminClient) {
+    cachedAdminClient = createClient(supabaseUrl, supabaseServiceRoleKey)
+  }
+  return cachedAdminClient
+}
 
 // Helper para validar a existência de variáveis de ambiente necessárias
 export const validateSupabaseEnv = (): void => {
@@ -31,11 +41,12 @@ export const validateSupabaseEnv = (): void => {
 export interface CreateUserParams {
   email: string
   password: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export const createUser = async ({ email, password, metadata }: CreateUserParams) => {
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+  const admin = getSupabaseAdmin()
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
     user_metadata: metadata,
