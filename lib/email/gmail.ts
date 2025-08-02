@@ -1,5 +1,6 @@
-import { gmail_v1, google } from 'googleapis'
+import { google } from 'googleapis'
 import { prisma } from '@/lib/prisma'
+import { findOrCreateUser } from '@/services/user'
 
 const gmail = google.gmail({ version: 'v1' })
 
@@ -55,22 +56,10 @@ async function processEmailMessage(auth: any, messageId: string) {
       body = Buffer.from(message.data.payload.body.data, 'base64').toString()
     }
 
-    // Verificar se o usuário existe
-    let user = await prisma.user.findUnique({
-      where: { email: senderEmail }
-    })
-
-    // Se não existir, criar usuário temporário
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: senderEmail,
-          name: from.split('<')[0].trim() || senderEmail,
-          password: 'temp_password', // Será solicitado reset na primeira tentativa de login
-          role: 'USER'
-        }
-      })
-    }
+    const user = await findOrCreateUser(
+      senderEmail,
+      from.split('<')[0].trim() || senderEmail
+    )
 
     // Criar ticket automaticamente
     const ticket = await prisma.ticket.create({
