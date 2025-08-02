@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MinIOService } from '@/lib/minio-client';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions, canUserAccessTicket } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +12,14 @@ export async function GET(
     const attachmentId = params.id;
     
     console.log(`📥 Solicitação de download para anexo: ${attachmentId}`);
+
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Não autenticado' },
+        { status: 401 }
+      );
+    }
 
     // Buscar anexo no banco de dados
     const attachment = await prisma.attachment.findUnique({
@@ -44,9 +54,18 @@ export async function GET(
     console.log(`🎫 Ticket: ${attachment.ticket.title}`);
     console.log(`👤 Usuário: ${attachment.user.name}`);
 
-    // TODO: Implementar verificação de permissões
-    // Verificar se o usuário atual tem permissão para baixar o arquivo
-    // Por enquanto, permitir download para todos
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      attachment.ticketId
+    );
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Acesso negado' },
+        { status: 403 }
+      );
+    }
 
     try {
       // Extrair key da URL do MinIO
@@ -65,7 +84,7 @@ export async function GET(
             ticketId: attachment.ticketId,
             action: 'ATTACHMENT_DOWNLOADED',
             details: `Anexo "${attachment.originalName}" foi baixado`,
-            userId: attachment.userId, // TODO: usar ID do usuário atual
+            userId: session.user.id,
             createdAt: new Date(),
           },
         });
@@ -121,6 +140,11 @@ export async function HEAD(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new NextResponse(null, { status: 401 });
+    }
+
     const attachment = await prisma.attachment.findUnique({
       where: { id: params.id },
       select: {
@@ -130,11 +154,22 @@ export async function HEAD(
         mimeType: true,
         size: true,
         createdAt: true,
+        ticketId: true,
       },
     });
 
     if (!attachment) {
       return new NextResponse(null, { status: 404 });
+    }
+
+    const hasAccess = await canUserAccessTicket(
+      session.user.id,
+      session.user.role,
+      attachment.ticketId
+    );
+
+    if (!hasAccess) {
+      return new NextResponse(null, { status: 403 });
     }
 
     return new NextResponse(null, {
