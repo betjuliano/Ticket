@@ -5,39 +5,39 @@
 @layer base {
   :root {
     /* Tons de azul escuro para tema tático */
-    --background: 210 40% 8%;          /* Azul muito escuro */
-    --foreground: 210 20% 98%;         /* Texto claro */
-    --card: 210 40% 12%;               /* Cards azul escuro */
-    --card-foreground: 210 20% 98%;    /* Texto dos cards */
-    --popover: 210 40% 12%;            /* Popovers azul escuro */
+    --background: 210 40% 8%; /* Azul muito escuro */
+    --foreground: 210 20% 98%; /* Texto claro */
+    --card: 210 40% 12%; /* Cards azul escuro */
+    --card-foreground: 210 20% 98%; /* Texto dos cards */
+    --popover: 210 40% 12%; /* Popovers azul escuro */
     --popover-foreground: 210 20% 98%; /* Texto dos popovers */
-    --primary: 210 100% 50%;           /* Azul primário */
+    --primary: 210 100% 50%; /* Azul primário */
     --primary-foreground: 210 20% 98%; /* Texto primário */
-    --secondary: 210 40% 18%;          /* Azul secundário */
+    --secondary: 210 40% 18%; /* Azul secundário */
     --secondary-foreground: 210 20% 98%; /* Texto secundário */
-    --muted: 210 40% 15%;              /* Azul muted */
-    --muted-foreground: 210 20% 65%;   /* Texto muted */
-    --accent: 210 100% 50%;            /* Azul accent */
-    --accent-foreground: 210 20% 98%;  /* Texto accent */
-    --destructive: 0 84.2% 60.2%;      /* Vermelho para ações destrutivas */
+    --muted: 210 40% 15%; /* Azul muted */
+    --muted-foreground: 210 20% 65%; /* Texto muted */
+    --accent: 210 100% 50%; /* Azul accent */
+    --accent-foreground: 210 20% 98%; /* Texto accent */
+    --destructive: 0 84.2% 60.2%; /* Vermelho para ações destrutivas */
     --destructive-foreground: 0 0% 98%; /* Texto destrutivo */
-    --border: 210 40% 20%;             /* Bordas azul escuro */
-    --input: 210 40% 15%;              /* Inputs azul escuro */
-    --ring: 210 100% 50%;              /* Ring azul */
-    --chart-1: 210 100% 60%;           /* Gráfico 1 - azul */
-    --chart-2: 200 100% 55%;           /* Gráfico 2 - azul claro */
-    --chart-3: 220 100% 65%;           /* Gráfico 3 - azul escuro */
-    --chart-4: 190 100% 50%;           /* Gráfico 4 - ciano */
-    --chart-5: 230 100% 70%;           /* Gráfico 5 - azul violeta */
+    --border: 210 40% 20%; /* Bordas azul escuro */
+    --input: 210 40% 15%; /* Inputs azul escuro */
+    --ring: 210 100% 50%; /* Ring azul */
+    --chart-1: 210 100% 60%; /* Gráfico 1 - azul */
+    --chart-2: 200 100% 55%; /* Gráfico 2 - azul claro */
+    --chart-3: 220 100% 65%; /* Gráfico 3 - azul escuro */
+    --chart-4: 190 100% 50%; /* Gráfico 4 - ciano */
+    --chart-5: 230 100% 70%; /* Gráfico 5 - azul violeta */
     --radius: 0.5rem;
-    --sidebar-background: 210 40% 8%;  /* Sidebar azul muito escuro */
+    --sidebar-background: 210 40% 8%; /* Sidebar azul muito escuro */
     --sidebar-foreground: 210 20% 98%; /* Texto sidebar */
-    --sidebar-primary: 210 100% 50%;   /* Primário sidebar */
+    --sidebar-primary: 210 100% 50%; /* Primário sidebar */
     --sidebar-primary-foreground: 210 20% 98%; /* Texto primário sidebar */
-    --sidebar-accent: 210 40% 15%;     /* Accent sidebar */
+    --sidebar-accent: 210 40% 15%; /* Accent sidebar */
     --sidebar-accent-foreground: 210 20% 98%; /* Texto accent sidebar */
-    --sidebar-border: 210 40% 20%;     /* Bordas sidebar */
-    --sidebar-ring: 210 100% 50%;      /* Ring sidebar */
+    --sidebar-border: 210 40% 20%; /* Bordas sidebar */
+    --sidebar-ring: 210 100% 50%; /* Ring sidebar */
   }
 
   .dark {
@@ -83,7 +83,12 @@
   }
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, hsl(210, 40%, 8%) 0%, hsl(220, 50%, 12%) 50%, hsl(210, 40%, 8%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 40%, 8%) 0%,
+      hsl(220, 50%, 12%) 50%,
+      hsl(210, 40%, 8%) 100%
+    );
     min-height: 100vh;
   }
 }
@@ -92,47 +97,77 @@
 @layer components {
   .tactical-bg {
     @apply bg-slate-900 text-white;
-    background: linear-gradient(135deg, hsl(210, 40%, 8%) 0%, hsl(220, 50%, 12%) 50%, hsl(210, 40%, 8%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 40%, 8%) 0%,
+      hsl(220, 50%, 12%) 50%,
+      hsl(210, 40%, 8%) 100%
+    );
   }
-  
+
   .tactical-card {
     @apply bg-card/80 backdrop-blur-lg border-border/50;
-    background: linear-gradient(135deg, hsl(210, 40%, 12%) 0%, hsl(220, 40%, 15%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 40%, 12%) 0%,
+      hsl(220, 40%, 15%) 100%
+    );
   }
-  
+
   .tactical-button {
     @apply bg-primary hover:bg-primary/90 text-primary-foreground;
-    background: linear-gradient(135deg, hsl(210, 100%, 50%) 0%, hsl(220, 100%, 55%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 100%, 50%) 0%,
+      hsl(220, 100%, 55%) 100%
+    );
   }
-  
+
   .tactical-button-secondary {
     @apply bg-secondary hover:bg-secondary/90 text-secondary-foreground border border-border;
   }
-  
+
   .tactical-input {
     @apply bg-input border-border text-foreground placeholder:text-muted-foreground;
-    background: linear-gradient(135deg, hsl(210, 40%, 15%) 0%, hsl(220, 40%, 18%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 40%, 15%) 0%,
+      hsl(220, 40%, 18%) 100%
+    );
   }
-  
+
   .tactical-overlay {
     @apply bg-background/80 backdrop-blur-sm;
   }
-  
+
   .tactical-layout {
-    background: linear-gradient(135deg, hsl(210, 40%, 8%) 0%, hsl(220, 50%, 12%) 50%, hsl(210, 40%, 8%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(210, 40%, 8%) 0%,
+      hsl(220, 50%, 12%) 50%,
+      hsl(210, 40%, 8%) 100%
+    );
     min-height: 100vh;
   }
 
   /* Sidebar específico */
   .tactical-sidebar {
     @apply bg-sidebar border-sidebar-border;
-    background: linear-gradient(180deg, hsl(210, 40%, 8%) 0%, hsl(220, 40%, 10%) 100%);
+    background: linear-gradient(
+      180deg,
+      hsl(210, 40%, 8%) 0%,
+      hsl(220, 40%, 10%) 100%
+    );
   }
 
   /* Header específico */
   .tactical-header {
     @apply bg-card/90 backdrop-blur-lg border-b border-border;
-    background: linear-gradient(90deg, hsl(210, 40%, 12%) 0%, hsl(220, 40%, 15%) 100%);
+    background: linear-gradient(
+      90deg,
+      hsl(210, 40%, 12%) 0%,
+      hsl(220, 40%, 15%) 100%
+    );
   }
 
   /* Cards com hover */
@@ -182,15 +217,15 @@
   .priority-urgent {
     @apply border-l-4 border-red-500 bg-red-500/10;
   }
-  
+
   .priority-high {
     @apply border-l-4 border-orange-500 bg-orange-500/10;
   }
-  
+
   .priority-medium {
     @apply border-l-4 border-yellow-500 bg-yellow-500/10;
   }
-  
+
   .priority-low {
     @apply border-l-4 border-green-500 bg-green-500/10;
   }
@@ -201,7 +236,7 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
   }
-  
+
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
   }
@@ -212,13 +247,23 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Scrollbar customizada com tema azul escuro */
@@ -266,9 +311,8 @@
   .tactical-card {
     @apply mx-2;
   }
-  
+
   .tactical-layout {
     @apply px-2;
   }
 }
-

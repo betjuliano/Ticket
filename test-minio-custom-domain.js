@@ -5,12 +5,17 @@
  */
 
 require('dotenv').config({ path: '.env.local' });
-const { S3Client, ListBucketsCommand, CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
+const {
+  S3Client,
+  ListBucketsCommand,
+  CreateBucketCommand,
+  HeadBucketCommand,
+} = require('@aws-sdk/client-s3');
 
 async function testMinIOConnection() {
   console.log('🧪 Testando conexão com MinIO...');
   console.log('📍 Endpoint:', `https://${process.env.MINIO_ENDPOINT}`);
-  
+
   const client = new S3Client({
     endpoint: `https://${process.env.MINIO_ENDPOINT}`,
     region: process.env.MINIO_REGION || 'us-east-1',
@@ -28,7 +33,7 @@ async function testMinIOConnection() {
     const listResult = await client.send(listCommand);
     console.log('✅ Conexão estabelecida!');
     console.log('📦 Buckets encontrados:', listResult.Buckets?.length || 0);
-    
+
     if (listResult.Buckets) {
       listResult.Buckets.forEach(bucket => {
         console.log(`   - ${bucket.Name} (criado em ${bucket.CreationDate})`);
@@ -38,7 +43,7 @@ async function testMinIOConnection() {
     // Verificar se o bucket ticket-attachments existe
     const bucketName = process.env.MINIO_BUCKET_NAME || 'ticket-attachments';
     console.log(`\n🔍 Verificando bucket '${bucketName}'...`);
-    
+
     try {
       const headCommand = new HeadBucketCommand({ Bucket: bucketName });
       await client.send(headCommand);
@@ -47,7 +52,7 @@ async function testMinIOConnection() {
       if (headError.name === 'NotFound') {
         console.log(`⚠️  Bucket '${bucketName}' não encontrado`);
         console.log('🔧 Tentando criar bucket...');
-        
+
         try {
           const createCommand = new CreateBucketCommand({ Bucket: bucketName });
           await client.send(createCommand);
@@ -63,9 +68,8 @@ async function testMinIOConnection() {
     console.log('\n🌐 URLs de acesso:');
     console.log(`   Console: ${process.env.MINIO_CONSOLE_URL}`);
     console.log(`   API: https://${process.env.MINIO_ENDPOINT}`);
-    
+
     console.log('\n✅ Teste concluído com sucesso!');
-    
   } catch (error) {
     console.error('❌ Erro na conexão:', error.message);
     console.log('\n🔧 Verifique:');

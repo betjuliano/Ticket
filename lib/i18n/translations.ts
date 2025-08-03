@@ -10,7 +10,7 @@ export const translations = {
       edit: 'Editar',
       search: 'Buscar',
       filter: 'Filtrar',
-      clear: 'Limpar'
+      clear: 'Limpar',
     },
     tickets: {
       title: 'Tickets',
@@ -28,22 +28,22 @@ export const translations = {
         open: 'Aberto',
         in_progress: 'Em Andamento',
         resolved: 'Resolvido',
-        closed: 'Fechado'
+        closed: 'Fechado',
       },
       priorities: {
         low: 'Baixa',
         medium: 'Média',
         high: 'Alta',
-        critical: 'Crítica'
-      }
+        critical: 'Crítica',
+      },
     },
     dashboard: {
       title: 'Dashboard',
       totalTickets: 'Total de Tickets',
       openTickets: 'Tickets Abertos',
       resolvedTickets: 'Tickets Resolvidos',
-      avgResolutionTime: 'Tempo Médio de Resolução'
-    }
+      avgResolutionTime: 'Tempo Médio de Resolução',
+    },
   },
   en: {
     common: {
@@ -56,7 +56,7 @@ export const translations = {
       edit: 'Edit',
       search: 'Search',
       filter: 'Filter',
-      clear: 'Clear'
+      clear: 'Clear',
     },
     tickets: {
       title: 'Tickets',
@@ -74,24 +74,24 @@ export const translations = {
         open: 'Open',
         in_progress: 'In Progress',
         resolved: 'Resolved',
-        closed: 'Closed'
+        closed: 'Closed',
       },
       priorities: {
         low: 'Low',
         medium: 'Medium',
         high: 'High',
-        critical: 'Critical'
-      }
+        critical: 'Critical',
+      },
     },
     dashboard: {
       title: 'Dashboard',
       totalTickets: 'Total Tickets',
       openTickets: 'Open Tickets',
       resolvedTickets: 'Resolved Tickets',
-      avgResolutionTime: 'Avg Resolution Time'
-    }
-  }
-}
+      avgResolutionTime: 'Avg Resolution Time',
+    },
+  },
+};
 
-export type Language = keyof typeof translations
-export type TranslationKey = keyof typeof translations.pt
+export type Language = keyof typeof translations;
+export type TranslationKey = keyof typeof translations.pt;

@@ -3,12 +3,14 @@
 ## 🖥️ Informações do Servidor
 
 **VPS Configurado:**
+
 - **Host:** 207.180.254.250
 - **Usuário:** root
 - **Comando SSH:** `ssh root@207.180.254.250`
 - **Caminho do projeto:** `/root/ticket-system`
 
 **Portainer:**
+
 - **URL:** https://portainer.iaprojetos.com.br
 - **Usuário:** iaprojetos
 - **Senha:** Admjuliano1@
@@ -39,6 +41,7 @@ graph TD
 ### Método 1: Script Automático (Recomendado)
 
 #### Windows (PowerShell)
+
 ```powershell
 # Dar permissão de execução
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -57,6 +60,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 #### Linux/Mac (Bash)
+
 ```bash
 # Dar permissão de execução
 chmod +x deploy-to-vps.sh
@@ -74,6 +78,7 @@ chmod +x deploy-to-vps.sh
 ### Método 2: Manual
 
 #### 1. Upload dos Arquivos
+
 ```bash
 # Via rsync (Linux/Mac/WSL)
 rsync -avz --delete \
@@ -87,12 +92,14 @@ scp -r . root@207.180.254.250:/root/ticket-system/
 ```
 
 #### 2. Conectar na VPS
+
 ```bash
 ssh root@207.180.254.250
 cd /root/ticket-system
 ```
 
 #### 3. Build da Imagem
+
 ```bash
 # Verificar se Docker está instalado
 docker --version
@@ -105,6 +112,7 @@ docker images | grep ticket-system
 ```
 
 #### 4. Deploy no Portainer
+
 ```bash
 # Via script PowerShell (se disponível)
 pwsh -File deploy-portainer.ps1 deploy -Force
@@ -119,6 +127,7 @@ curl -X POST "https://portainer.iaprojetos.com.br/api/stacks" \
 ## 📁 Arquivos Necessários na VPS
 
 ### Estrutura Mínima
+
 ```
 /root/ticket-system/
 ├── app/                          # Código da aplicação
@@ -137,6 +146,7 @@ curl -X POST "https://portainer.iaprojetos.com.br/api/stacks" \
 ```
 
 ### Arquivos Críticos
+
 - **docker-compose.portainer.yml** - Configuração dos serviços
 - **.env.portainer** - Variáveis de ambiente
 - **Dockerfile** - Instruções de build
@@ -145,6 +155,7 @@ curl -X POST "https://portainer.iaprojetos.com.br/api/stacks" \
 ## 🔧 Configuração da VPS
 
 ### Pré-requisitos
+
 ```bash
 # Atualizar sistema
 sudo apt update && sudo apt upgrade -y
@@ -165,6 +176,7 @@ newgrp docker
 ```
 
 ### Configurar SSH (Opcional)
+
 ```bash
 # Gerar chave SSH (local)
 ssh-keygen -t rsa -b 4096 -C "seu-email@exemplo.com"
@@ -179,6 +191,7 @@ ssh usuario@servidor.com
 ## 🚨 Troubleshooting
 
 ### Problema: "Imagem não encontrada"
+
 ```bash
 # Verificar se a imagem foi criada
 docker images | grep ticket-system
@@ -188,6 +201,7 @@ docker build -t ticket-system:latest .
 ```
 
 ### Problema: "Erro de autenticação no Portainer"
+
 ```bash
 # Verificar token no .env.portainer
 cat .env.portainer | grep PORTAINER_TOKEN
@@ -197,6 +211,7 @@ cat .env.portainer | grep PORTAINER_TOKEN
 ```
 
 ### Problema: "Falha no upload"
+
 ```bash
 # Verificar conectividade SSH
 ssh root@207.180.254.250 "echo 'Conexão OK'"
@@ -209,6 +224,7 @@ ssh root@207.180.254.250 "mkdir -p /root/ticket-system"
 ```
 
 ### Problema: "Container não inicia"
+
 ```bash
 # Verificar logs
 docker logs ticket-system_ticket-system-multidominio
@@ -223,6 +239,7 @@ docker network ls | grep iaprojetos
 ## 📊 Verificações Pós-Deploy
 
 ### 1. Status dos Containers
+
 ```bash
 # Via Docker
 docker ps | grep ticket
@@ -233,6 +250,7 @@ docker ps | grep ticket
 ```
 
 ### 2. Logs da Aplicação
+
 ```bash
 # Logs em tempo real
 docker logs -f ticket-system_ticket-system-multidominio
@@ -242,6 +260,7 @@ docker logs --tail 50 ticket-system_ticket-system-multidominio
 ```
 
 ### 3. Testes de Conectividade
+
 ```bash
 # Testar aplicação
 curl -I https://iadm.iaprojetos.com.br
@@ -256,6 +275,7 @@ curl -I https://portainer.iaprojetos.com.br
 ## 🔄 Atualizações Futuras
 
 ### Deploy Rápido (após primeira configuração)
+
 ```bash
 # Deploy completo
 ./deploy-rapido.ps1
@@ -268,6 +288,7 @@ curl -I https://portainer.iaprojetos.com.br
 ```
 
 ### Via CI/CD (GitHub Actions)
+
 ```yaml
 name: Deploy to VPS
 on:
@@ -279,7 +300,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Deploy to VPS
         run: |
           ./deploy-to-vps.sh \
@@ -292,6 +313,7 @@ jobs:
 ## 📞 Suporte
 
 ### Comandos Úteis
+
 ```bash
 # Status geral
 docker ps
@@ -309,6 +331,7 @@ docker system prune -f
 ```
 
 ### Links Importantes
+
 - **Aplicação:** https://iadm.iaprojetos.com.br
 - **Portainer:** https://portainer.iaprojetos.com.br
 - **Traefik:** https://traefik.iaprojetos.com.br

@@ -1,20 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { userUpdateSchema } from '@/lib/validations'
-import { createSuccessResponse, createErrorResponse, handleApiError } from '@/lib/api-utils'
-import { getServerSession } from 'next-auth'
-import { authOptions, hashPassword } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { userUpdateSchema } from '@/lib/validations';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleApiError,
+} from '@/lib/api-utils';
+import { getServerSession } from 'next-auth';
+import { authOptions, hashPassword } from '@/lib/auth';
 
 // GET - Buscar usuário por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
-    const { id } = await params
-    const session = await getServerSession(authOptions)
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
     if (!session) {
-      return createErrorResponse('Não autenticado', 401)
+      return createErrorResponse('Não autenticado', 401);
     }
 
     const user = await prisma.user.findUnique({
@@ -27,38 +32,43 @@ export async function GET(
         matricula: true,
         telefone: true,
         isActive: true,
-        createdAt: true
-      }
-    })
+        createdAt: true,
+      },
+    });
 
     if (!user) {
-      return createErrorResponse('Usuário não encontrado', 404)
+      return createErrorResponse('Usuário não encontrado', 404);
     }
 
-    return createSuccessResponse(user)
+    return createSuccessResponse(user);
   } catch (error) {
-    return handleApiError(error)
+    return handleApiError(error);
   }
 }
 
 // PUT - Atualizar usuário
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
-    const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session || (!['COORDINATOR', 'ADMIN'].includes(session.user.role) && session.user.id !== id)) {
-      return createErrorResponse('Acesso negado', 403)
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (
+      !session ||
+      (!['COORDINATOR', 'ADMIN'].includes(session.user.role) &&
+        session.user.id !== id)
+    ) {
+      return createErrorResponse('Acesso negado', 403);
     }
 
-    const body = await request.json()
-    const validatedData = userUpdateSchema.parse(body)
+    const body = await request.json();
+    const validatedData = userUpdateSchema.parse(body);
 
     // Se está alterando senha, fazer hash
     if (validatedData.password) {
-      validatedData.password = await hashPassword(validatedData.password)
+      validatedData.password = await hashPassword(validatedData.password);
     }
 
     const updatedUser = await prisma.user.update({
@@ -72,26 +82,27 @@ export async function PUT(
         matricula: true,
         telefone: true,
         isActive: true,
-        updatedAt: true
-      }
-    })
+        updatedAt: true,
+      },
+    });
 
-    return createSuccessResponse(updatedUser, 'Usuário atualizado com sucesso')
+    return createSuccessResponse(updatedUser, 'Usuário atualizado com sucesso');
   } catch (error) {
-    return handleApiError(error)
+    return handleApiError(error);
   }
 }
 
 // DELETE - Desativar usuário (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
-    const { id } = await params
-    const session = await getServerSession(authOptions)
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
     if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
-      return createErrorResponse('Acesso negado', 403)
+      return createErrorResponse('Acesso negado', 403);
     }
 
     const updatedUser = await prisma.user.update({
@@ -101,12 +112,12 @@ export async function DELETE(
         id: true,
         name: true,
         email: true,
-        isActive: true
-      }
-    })
+        isActive: true,
+      },
+    });
 
-    return createSuccessResponse(updatedUser, 'Usuário desativado com sucesso')
+    return createSuccessResponse(updatedUser, 'Usuário desativado com sucesso');
   } catch (error) {
-    return handleApiError(error)
+    return handleApiError(error);
   }
 }

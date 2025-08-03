@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { 
-  BookOpen, 
-  Search, 
-  Plus, 
-  Eye, 
-  Edit, 
+} from '@/components/ui/select';
+import {
+  BookOpen,
+  Search,
+  Plus,
+  Eye,
+  Edit,
   Trash2,
   Star,
   Calendar,
@@ -28,172 +28,176 @@ import {
   Tag,
   Filter,
   Grid,
-  List
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { toast } from 'sonner'
+  List,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  metaDescription?: string
-  published: boolean
-  featured: boolean
-  viewCount: number
-  tags: string[]
-  createdAt: string
-  updatedAt: string
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  metaDescription?: string;
+  published: boolean;
+  featured: boolean;
+  viewCount: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
   category: {
-    id: string
-    name: string
-    icon: string
-    color: string
-  }
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  };
   author: {
-    id: string
-    name: string
-    email: string
-    role: string
-  }
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
 interface Category {
-  id: string
-  name: string
-  description: string
-  icon: string
-  color: string
-  order: number
-  articleCount?: number
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  order: number;
+  articleCount?: number;
 }
 
 export function KnowledgeBase() {
-  const { data: session } = useSession()
-  const [articles, setArticles] = useState<Article[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [publishedFilter, setPublishedFilter] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
+  const { data: session } = useSession();
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [publishedFilter, setPublishedFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
-  const userRole = session?.user?.role
-  const canManage = userRole === 'ADMIN' || userRole === 'COORDINATOR'
+  const userRole = session?.user?.role;
+  const canManage = userRole === 'ADMIN' || userRole === 'COORDINATOR';
 
   // Carregar dados
   useEffect(() => {
-    loadData()
-  }, [selectedCategory, publishedFilter, searchTerm])
+    loadData();
+  }, [selectedCategory, publishedFilter, searchTerm]);
 
   const loadData = async () => {
     try {
-      setIsLoading(true)
-      
+      setIsLoading(true);
+
       // Para usuários comuns, forçar apenas artigos publicados
-      const effectivePublishedFilter = canManage ? publishedFilter : 'true'
-      
+      const effectivePublishedFilter = canManage ? publishedFilter : 'true';
+
       // Carregar categorias e artigos em paralelo
       const [categoriesResponse, articlesResponse] = await Promise.all([
         fetch('/api/knowledge/categories?includeArticleCount=true'),
-        fetch(`/api/knowledge/articles?${new URLSearchParams({
-          ...(selectedCategory && { categoryId: selectedCategory }),
-          ...(effectivePublishedFilter !== 'all' && { published: effectivePublishedFilter }),
-          ...(searchTerm && { search: searchTerm }),
-          limit: '50'
-        })}`)
-      ])
+        fetch(
+          `/api/knowledge/articles?${new URLSearchParams({
+            ...(selectedCategory && { categoryId: selectedCategory }),
+            ...(effectivePublishedFilter !== 'all' && {
+              published: effectivePublishedFilter,
+            }),
+            ...(searchTerm && { search: searchTerm }),
+            limit: '50',
+          })}`
+        ),
+      ]);
 
       if (!categoriesResponse.ok || !articlesResponse.ok) {
-        throw new Error('Erro ao carregar dados')
+        throw new Error('Erro ao carregar dados');
       }
 
       const [categoriesData, articlesData] = await Promise.all([
         categoriesResponse.json(),
-        articlesResponse.json()
-      ])
+        articlesResponse.json(),
+      ]);
 
-      setCategories(categoriesData.data || [])
-      setArticles(articlesData.data || [])
+      setCategories(categoriesData.data || []);
+      setArticles(articlesData.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
-      toast.error('Erro ao carregar dados da Knowledge Base')
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados da Knowledge Base');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Visualizar artigo
   const viewArticle = async (article: Article) => {
     try {
-      const response = await fetch(`/api/knowledge/articles/${article.id}`)
+      const response = await fetch(`/api/knowledge/articles/${article.id}`);
       if (!response.ok) {
-        throw new Error('Erro ao carregar artigo')
+        throw new Error('Erro ao carregar artigo');
       }
-      
-      const data = await response.json()
-      setSelectedArticle(data.data)
+
+      const data = await response.json();
+      setSelectedArticle(data.data);
     } catch (error) {
-      console.error('Erro ao carregar artigo:', error)
-      toast.error('Erro ao carregar artigo')
+      console.error('Erro ao carregar artigo:', error);
+      toast.error('Erro ao carregar artigo');
     }
-  }
+  };
 
   // Deletar artigo
   const deleteArticle = async (articleId: string) => {
     if (!confirm('Tem certeza que deseja deletar este artigo?')) {
-      return
+      return;
     }
 
     try {
       const response = await fetch(`/api/knowledge/articles/${articleId}`, {
-        method: 'DELETE'
-      })
+        method: 'DELETE',
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao deletar artigo')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao deletar artigo');
       }
 
-      setArticles(prev => prev.filter(article => article.id !== articleId))
-      toast.success('Artigo deletado com sucesso')
+      setArticles(prev => prev.filter(article => article.id !== articleId));
+      toast.success('Artigo deletado com sucesso');
     } catch (error) {
-      console.error('Erro ao deletar artigo:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao deletar artigo')
+      console.error('Erro ao deletar artigo:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao deletar artigo'
+      );
     }
-  }
+  };
 
   // Filtrar artigos
   const filteredArticles = articles.filter(article => {
-    if (selectedCategory && article.category.id !== selectedCategory) return false
-    if (publishedFilter === 'true' && !article.published) return false
-    if (publishedFilter === 'false' && article.published) return false
+    if (selectedCategory && article.category.id !== selectedCategory)
+      return false;
+    if (publishedFilter === 'true' && !article.published) return false;
+    if (publishedFilter === 'false' && article.published) return false;
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
+      const searchLower = searchTerm.toLowerCase();
       return (
         article.title.toLowerCase().includes(searchLower) ||
         article.content.toLowerCase().includes(searchLower) ||
         article.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      )
+      );
     }
-    return true
-  })
+    return true;
+  });
 
   // Artigos em destaque
-  const featuredArticles = filteredArticles.filter(article => article.featured)
+  const featuredArticles = filteredArticles.filter(article => article.featured);
 
   // Renderizar visualização de artigo
   if (selectedArticle) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => setSelectedArticle(null)}
-          >
+          <Button variant="outline" onClick={() => setSelectedArticle(null)}>
             ← Voltar
           </Button>
           {canManage && (
@@ -203,7 +207,7 @@ export function KnowledgeBase() {
                 size="sm"
                 onClick={() => {
                   // TODO: Implementar edição
-                  toast.info('Funcionalidade de edição será implementada')
+                  toast.info('Funcionalidade de edição será implementada');
                 }}
               >
                 <Edit className="h-4 w-4 mr-2" />
@@ -229,21 +233,32 @@ export function KnowledgeBase() {
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold">{selectedArticle.title}</h1>
+                  <h1 className="text-3xl font-bold">
+                    {selectedArticle.title}
+                  </h1>
                   {selectedArticle.metaDescription && (
-                    <p className="text-lg text-gray-600">{selectedArticle.metaDescription}</p>
+                    <p className="text-lg text-gray-600">
+                      {selectedArticle.metaDescription}
+                    </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedArticle.featured && (
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                    <Badge
+                      variant="secondary"
+                      className="bg-yellow-100 text-yellow-800"
+                    >
                       <Star className="h-3 w-3 mr-1" />
                       Destaque
                     </Badge>
                   )}
-                  <Badge 
+                  <Badge
                     variant="secondary"
-                    className={selectedArticle.published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                    className={
+                      selectedArticle.published
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }
                   >
                     {selectedArticle.published ? 'Publicado' : 'Rascunho'}
                   </Badge>
@@ -289,14 +304,14 @@ export function KnowledgeBase() {
             </div>
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
             />
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -308,12 +323,16 @@ export function KnowledgeBase() {
             <BookOpen className="h-8 w-8 text-primary" />
             Knowledge Base
           </h1>
-          <p className="text-muted-foreground">Base de conhecimento e documentação</p>
+          <p className="text-muted-foreground">
+            Base de conhecimento e documentação
+          </p>
         </div>
-        
+
         {canManage && (
-          <Button 
-            onClick={() => toast.info('Funcionalidade de criação será implementada')}
+          <Button
+            onClick={() =>
+              toast.info('Funcionalidade de criação será implementada')
+            }
             className="tactical-button"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -332,13 +351,16 @@ export function KnowledgeBase() {
                 <Input
                   placeholder="Buscar artigos..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="tactical-input pl-10"
                 />
               </div>
             </div>
-            
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
@@ -347,7 +369,9 @@ export function KnowledgeBase() {
                 {categories.map(category => (
                   <SelectItem key={category.id} value={category.id}>
                     <div className="flex items-center gap-2">
-                      <span style={{ color: category.color }}>{category.icon}</span>
+                      <span style={{ color: category.color }}>
+                        {category.icon}
+                      </span>
                       <span>{category.name}</span>
                       {category.articleCount !== undefined && (
                         <Badge variant="secondary" className="ml-auto">
@@ -361,7 +385,10 @@ export function KnowledgeBase() {
             </Select>
 
             {canManage && (
-              <Select value={publishedFilter} onValueChange={setPublishedFilter}>
+              <Select
+                value={publishedFilter}
+                onValueChange={setPublishedFilter}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -401,21 +428,29 @@ export function KnowledgeBase() {
             Artigos em Destaque
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredArticles.slice(0, 3).map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            {featuredArticles.slice(0, 3).map(article => (
+              <Card
+                key={article.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <h3 className="font-semibold line-clamp-2">{article.title}</h3>
+                      <h3 className="font-semibold line-clamp-2">
+                        {article.title}
+                      </h3>
                       {article.metaDescription && (
                         <p className="text-sm text-gray-600 line-clamp-2">
                           {article.metaDescription}
                         </p>
                       )}
                     </div>
-                    <Badge 
+                    <Badge
                       variant="secondary"
-                      style={{ backgroundColor: `${article.category.color}20`, color: article.category.color }}
+                      style={{
+                        backgroundColor: `${article.category.color}20`,
+                        color: article.category.color,
+                      }}
                     >
                       {article.category.icon}
                     </Badge>
@@ -476,9 +511,11 @@ export function KnowledgeBase() {
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-500">Nenhum artigo encontrado</p>
               {canManage && (
-                <Button 
+                <Button
                   className="mt-4"
-                  onClick={() => toast.info('Funcionalidade de criação será implementada')}
+                  onClick={() =>
+                    toast.info('Funcionalidade de criação será implementada')
+                  }
                 >
                   Criar primeiro artigo
                 </Button>
@@ -486,17 +523,25 @@ export function KnowledgeBase() {
             </CardContent>
           </Card>
         ) : (
-          <div className={viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-            : 'space-y-4'
-          }>
-            {filteredArticles.map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow">
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                : 'space-y-4'
+            }
+          >
+            {filteredArticles.map(article => (
+              <Card
+                key={article.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold line-clamp-2">{article.title}</h3>
+                        <h3 className="font-semibold line-clamp-2">
+                          {article.title}
+                        </h3>
                         {!article.published && (
                           <Badge variant="outline" className="text-xs">
                             Rascunho
@@ -514,9 +559,12 @@ export function KnowledgeBase() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         variant="secondary"
-                        style={{ backgroundColor: `${article.category.color}20`, color: article.category.color }}
+                        style={{
+                          backgroundColor: `${article.category.color}20`,
+                          color: article.category.color,
+                        }}
                       >
                         <span className="mr-1">{article.category.icon}</span>
                         {article.category.name}
@@ -526,7 +574,11 @@ export function KnowledgeBase() {
                     {article.tags.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
                         {article.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {tag}
                           </Badge>
                         ))}
@@ -571,7 +623,11 @@ export function KnowledgeBase() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toast.info('Funcionalidade de edição será implementada')}
+                            onClick={() =>
+                              toast.info(
+                                'Funcionalidade de edição será implementada'
+                              )
+                            }
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -596,6 +652,5 @@ export function KnowledgeBase() {
         )}
       </div>
     </div>
-  )
+  );
 }
-

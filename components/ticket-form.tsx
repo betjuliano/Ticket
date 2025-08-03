@@ -1,23 +1,36 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Upload, X } from 'lucide-react'
-import { createTicketSchema } from '@/lib/validations'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Upload, X } from 'lucide-react';
+import { createTicketSchema } from '@/lib/validations';
 
 interface TicketFormProps {
-  onSubmit: (data: any) => Promise<void>
-  onCancel?: () => void
-  initialData?: Partial<any>
-  isLoading?: boolean
-  mode?: 'create' | 'edit'
+  onSubmit: (data: any) => Promise<void>;
+  onCancel?: () => void;
+  initialData?: Partial<any>;
+  isLoading?: boolean;
+  mode?: 'create' | 'edit';
 }
 
 const categories = [
@@ -29,18 +42,18 @@ const categories = [
   'Impressora',
   'Telefonia',
   'Acesso',
-  'Outros'
-]
+  'Outros',
+];
 
-export function TicketForm({ 
-  onSubmit, 
-  onCancel, 
-  initialData, 
+export function TicketForm({
+  onSubmit,
+  onCancel,
+  initialData,
   isLoading = false,
-  mode = 'create'
+  mode = 'create',
 }: TicketFormProps) {
-  const [attachments, setAttachments] = useState<File[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(createTicketSchema),
@@ -49,27 +62,27 @@ export function TicketForm({
       description: initialData?.description || '',
       priority: initialData?.priority || 'medium',
       category: initialData?.category || '',
-      ...initialData
-    }
-  })
+      ...initialData,
+    },
+  });
 
   const handleSubmit = async (data: any) => {
     try {
-      setError(null)
-      await onSubmit({ ...data, attachments })
+      setError(null);
+      await onSubmit({ ...data, attachments });
     } catch (err: any) {
-      setError(err.message || 'Erro ao salvar ticket')
+      setError(err.message || 'Erro ao salvar ticket');
     }
-  }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setAttachments(prev => [...prev, ...files])
-  }
+    const files = Array.from(e.target.files || []);
+    setAttachments(prev => [...prev, ...files]);
+  };
 
   const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <Card className="bg-neutral-800 border-neutral-700">
@@ -78,16 +91,19 @@ export function TicketForm({
           {mode === 'create' ? 'Novo Ticket' : 'Editar Ticket'}
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         {error && (
           <Alert className="bg-red-500/10 border-red-500/20 text-red-200 mb-6">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -105,7 +121,7 @@ export function TicketForm({
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -113,7 +129,10 @@ export function TicketForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">Categoria *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger className="bg-neutral-700 border-neutral-600 text-white">
                           <SelectValue placeholder="Selecione uma categoria" />
@@ -121,7 +140,11 @@ export function TicketForm({
                       </FormControl>
                       <SelectContent className="bg-neutral-800 border-neutral-600">
                         {categories.map(category => (
-                          <SelectItem key={category} value={category} className="text-white">
+                          <SelectItem
+                            key={category}
+                            value={category}
+                            className="text-white"
+                          >
                             {category}
                           </SelectItem>
                         ))}
@@ -131,24 +154,35 @@ export function TicketForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white">Prioridade</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger className="bg-neutral-700 border-neutral-600 text-white">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-neutral-800 border-neutral-600">
-                        <SelectItem value="low" className="text-white">Baixa</SelectItem>
-                        <SelectItem value="medium" className="text-white">Média</SelectItem>
-                        <SelectItem value="high" className="text-white">Alta</SelectItem>
-                        <SelectItem value="critical" className="text-white">Crítica</SelectItem>
+                        <SelectItem value="low" className="text-white">
+                          Baixa
+                        </SelectItem>
+                        <SelectItem value="medium" className="text-white">
+                          Média
+                        </SelectItem>
+                        <SelectItem value="high" className="text-white">
+                          Alta
+                        </SelectItem>
+                        <SelectItem value="critical" className="text-white">
+                          Crítica
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -156,7 +190,7 @@ export function TicketForm({
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -174,23 +208,25 @@ export function TicketForm({
                 </FormItem>
               )}
             />
-            
+
             {/* Anexos */}
             <div className="space-y-3">
               <label className="text-sm font-medium text-white">Anexos</label>
-              
+
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="border-neutral-600 text-neutral-300"
-                  onClick={() => document.getElementById('file-upload')?.click()}
+                  onClick={() =>
+                    document.getElementById('file-upload')?.click()
+                  }
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Adicionar Arquivo
                 </Button>
-                
+
                 <input
                   id="file-upload"
                   type="file"
@@ -199,17 +235,22 @@ export function TicketForm({
                   onChange={handleFileChange}
                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt"
                 />
-                
+
                 <span className="text-xs text-neutral-400">
                   Máx. 10MB por arquivo
                 </span>
               </div>
-              
+
               {attachments.length > 0 && (
                 <div className="space-y-2">
                   {attachments.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-neutral-700 p-2 rounded">
-                      <span className="text-sm text-white truncate">{file.name}</span>
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-neutral-700 p-2 rounded"
+                    >
+                      <span className="text-sm text-white truncate">
+                        {file.name}
+                      </span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -224,7 +265,7 @@ export function TicketForm({
                 </div>
               )}
             </div>
-            
+
             <div className="flex gap-3 pt-4">
               <Button
                 type="submit"
@@ -234,7 +275,7 @@ export function TicketForm({
                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {mode === 'create' ? 'Criar Ticket' : 'Salvar Alterações'}
               </Button>
-              
+
               {onCancel && (
                 <Button
                   type="button"
@@ -251,5 +292,5 @@ export function TicketForm({
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,8 +1,7 @@
-'use client'
+'use client';
 
-import { KnowledgeBase } from '@/components/knowledge/KnowledgeBase'
+import { KnowledgeBase } from '@/components/knowledge/KnowledgeBase';
 
 export default function KnowledgePage() {
-  return <KnowledgeBase />
+  return <KnowledgeBase />;
 }
-

@@ -1,29 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { createNotificationSchema, markNotificationReadSchema } from '@/lib/validations'
-import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import {
+  createNotificationSchema,
+  markNotificationReadSchema,
+} from '@/lib/validations';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/notifications - Listar notificações do usuário
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return createErrorResponse('Não autorizado', 401)
+      return createErrorResponse('Não autorizado', 401);
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const unreadOnly = searchParams.get('unreadOnly') === 'true'
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const unreadOnly = searchParams.get('unreadOnly') === 'true';
 
-    const userId = session.user.id
+    const userId = session.user.id;
 
     // Construir filtros
-    const where: any = { userId }
+    const where: any = { userId };
     if (unreadOnly) {
-      where.read = false
+      where.read = false;
     }
 
     // Buscar notificações com paginação
@@ -34,62 +37,62 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.notification.count({ where })
-    ])
+      prisma.notification.count({ where }),
+    ]);
 
     // Contar não lidas
     const unreadCount = await prisma.notification.count({
-      where: { userId, read: false }
-    })
+      where: { userId, read: false },
+    });
 
-    return createSuccessResponse(
-      notifications,
-      undefined,
-      {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        unreadCount,
-      }
-    )
-
+    return createSuccessResponse(notifications, undefined, {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      unreadCount,
+    });
   } catch (error) {
-    console.error('Erro ao buscar notificações:', error)
-    return createErrorResponse('Erro interno do servidor', 500)
+    console.error('Erro ao buscar notificações:', error);
+    return createErrorResponse('Erro interno do servidor', 500);
   }
 }
 
 // POST /api/notifications - Criar nova notificação (apenas admin/sistema)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return createErrorResponse('Não autorizado', 401)
+      return createErrorResponse('Não autorizado', 401);
     }
 
     // Apenas admin pode criar notificações manuais
     if (session.user.role !== 'ADMIN') {
-      return createErrorResponse('Sem permissão para criar notificações', 403)
+      return createErrorResponse('Sem permissão para criar notificações', 403);
     }
 
-    const body = await request.json()
+    const body = await request.json();
 
     // Validar dados
-    const validationResult = createNotificationSchema.safeParse(body)
+    const validationResult = createNotificationSchema.safeParse(body);
     if (!validationResult.success) {
-      return createErrorResponse('Dados inválidos', 400, validationResult.error.errors)
+      return createErrorResponse(
+        'Dados inválidos',
+        400,
+        validationResult.error.errors
+      );
     }
 
-    const { type, title, message, userId, relatedId, data } = validationResult.data
+    const { type, title, message, userId, relatedId, data } =
+      validationResult.data;
 
     // Verificar se usuário de destino existe
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+      where: { id: userId },
+    });
 
     if (!targetUser) {
-      return createErrorResponse('Usuário não encontrado', 404)
+      return createErrorResponse('Usuário não encontrado', 404);
     }
 
     // Criar notificação
@@ -101,51 +104,61 @@ export async function POST(request: NextRequest) {
         userId,
         relatedId,
         data,
-      }
-    })
+      },
+    });
 
-    return createSuccessResponse(notification, 'Notificação criada com sucesso', 201)
-
+    return createSuccessResponse(
+      notification,
+      'Notificação criada com sucesso',
+      201
+    );
   } catch (error) {
-    console.error('Erro ao criar notificação:', error)
-    return createErrorResponse('Erro interno do servidor', 500)
+    console.error('Erro ao criar notificação:', error);
+    return createErrorResponse('Erro interno do servidor', 500);
   }
 }
 
 // PATCH /api/notifications - Marcar notificações como lidas
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return createErrorResponse('Não autorizado', 401)
+      return createErrorResponse('Não autorizado', 401);
     }
 
-    const body = await request.json()
-    const userId = session.user.id
+    const body = await request.json();
+    const userId = session.user.id;
 
     // Se não especificar IDs, marcar todas como lidas
     if (!body.notificationIds) {
       await prisma.notification.updateMany({
-        where: { 
+        where: {
           userId,
-          read: false 
+          read: false,
         },
-        data: { 
+        data: {
           read: true,
-          readAt: new Date()
-        }
-      })
+          readAt: new Date(),
+        },
+      });
 
-      return createSuccessResponse(null, 'Todas as notificações foram marcadas como lidas')
+      return createSuccessResponse(
+        null,
+        'Todas as notificações foram marcadas como lidas'
+      );
     }
 
     // Validar dados
-    const validationResult = markNotificationReadSchema.safeParse(body)
+    const validationResult = markNotificationReadSchema.safeParse(body);
     if (!validationResult.success) {
-      return createErrorResponse('Dados inválidos', 400, validationResult.error.errors)
+      return createErrorResponse(
+        'Dados inválidos',
+        400,
+        validationResult.error.errors
+      );
     }
 
-    const { notificationIds } = validationResult.data
+    const { notificationIds } = validationResult.data;
 
     // Marcar notificações específicas como lidas
     const result = await prisma.notification.updateMany({
@@ -155,18 +168,16 @@ export async function PATCH(request: NextRequest) {
       },
       data: {
         read: true,
-        readAt: new Date()
-      }
-    })
+        readAt: new Date(),
+      },
+    });
 
     return createSuccessResponse(
       { updatedCount: result.count },
       `${result.count} notificação(ões) marcada(s) como lida(s)`
-    )
-
+    );
   } catch (error) {
-    console.error('Erro ao marcar notificações como lidas:', error)
-    return createErrorResponse('Erro interno do servidor', 500)
+    console.error('Erro ao marcar notificações como lidas:', error);
+    return createErrorResponse('Erro interno do servidor', 500);
   }
 }
-

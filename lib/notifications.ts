@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer'
-import { prisma } from './prisma'
-import { logger } from './logger'
+import nodemailer from 'nodemailer';
+import { prisma } from './prisma';
+import { logger } from './logger';
 
 // Tipos de notificação
 export enum NotificationType {
@@ -12,60 +12,64 @@ export enum NotificationType {
   COMMENT_ADDED = 'comment_added',
   KNOWLEDGE_PUBLISHED = 'knowledge_published',
   USER_MENTIONED = 'user_mentioned',
-  SYSTEM_ALERT = 'system_alert'
+  SYSTEM_ALERT = 'system_alert',
 }
 
 // Interface para notificação
 interface Notification {
-  id?: string
-  type: NotificationType
-  title: string
-  message: string
-  userId: string
-  relatedId?: string // ID do ticket, comentário, etc.
-  data?: any // Dados adicionais
-  read?: boolean
-  createdAt?: Date
+  id?: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  userId: string;
+  relatedId?: string; // ID do ticket, comentário, etc.
+  data?: any; // Dados adicionais
+  read?: boolean;
+  createdAt?: Date;
 }
 
 // Interface para configurações de email
 interface EmailConfig {
-  host: string
-  port: number
-  secure: boolean
+  host: string;
+  port: number;
+  secure: boolean;
   auth: {
-    user: string
-    pass: string
-  }
+    user: string;
+    pass: string;
+  };
 }
 
 class NotificationService {
-  private emailTransporter: nodemailer.Transporter | null = null
+  private emailTransporter: nodemailer.Transporter | null = null;
 
   constructor() {
-    this.initializeEmailTransporter()
+    this.initializeEmailTransporter();
   }
 
   private initializeEmailTransporter(): void {
     try {
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      if (
+        process.env.SMTP_HOST &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+      ) {
         const config: EmailConfig = {
           host: process.env.SMTP_HOST,
           port: parseInt(process.env.SMTP_PORT || '587'),
           secure: process.env.SMTP_PORT === '465',
           auth: {
             user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          }
-        }
+            pass: process.env.SMTP_PASS,
+          },
+        };
 
         // Use nodemailer's correct factory function to create a transporter
         // See: https://nodemailer.com/transports/
-        this.emailTransporter = nodemailer.createTransport(config)
-        logger.info('Email transporter initialized')
+        this.emailTransporter = nodemailer.createTransport(config);
+        logger.info('Email transporter initialized');
       }
     } catch (error) {
-      logger.error('Failed to initialize email transporter', { error })
+      logger.error('Failed to initialize email transporter', { error });
     }
   }
 
@@ -80,17 +84,17 @@ class NotificationService {
           userId: notification.userId,
           relatedId: notification.relatedId,
           data: notification.data ? JSON.stringify(notification.data) : null,
-          read: false
-        }
-      })
+          read: false,
+        },
+      });
 
       logger.info('Notification created', {
         type: notification.type,
         userId: notification.userId,
-        title: notification.title
-      })
+        title: notification.title,
+      });
     } catch (error) {
-      logger.error('Failed to create notification', { error, notification })
+      logger.error('Failed to create notification', { error, notification });
     }
   }
 
@@ -102,8 +106,8 @@ class NotificationService {
     text?: string
   ): Promise<boolean> {
     if (!this.emailTransporter) {
-      logger.warn('Email transporter not configured')
-      return false
+      logger.warn('Email transporter not configured');
+      return false;
     }
 
     try {
@@ -112,37 +116,40 @@ class NotificationService {
         to,
         subject,
         html,
-        text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
-      })
+        text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+      });
 
-      logger.info('Email sent successfully', { to, subject })
-      return true
+      logger.info('Email sent successfully', { to, subject });
+      return true;
     } catch (error) {
-      logger.error('Failed to send email', { error, to, subject })
-      return false
+      logger.error('Failed to send email', { error, to, subject });
+      return false;
     }
   }
 
   // Notificar criação de ticket
-  async notifyTicketCreated(ticketId: string, createdById: string): Promise<void> {
+  async notifyTicketCreated(
+    ticketId: string,
+    createdById: string
+  ): Promise<void> {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
-          assignedTo: true
-        }
-      })
+          assignedTo: true,
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
       // Notificar coordenadores
       const coordinators = await prisma.user.findMany({
-        where: { role: { in: ['COORDINATOR', 'ADMIN'] } }
-      })
+        where: { role: { in: ['COORDINATOR', 'ADMIN'] } },
+      });
 
       for (const coordinator of coordinators) {
-        if (coordinator.id === createdById) continue
+        if (coordinator.id === createdById) continue;
 
         await this.createNotification({
           type: NotificationType.TICKET_CREATED,
@@ -150,36 +157,42 @@ class NotificationService {
           message: `${ticket.createdBy.name} criou um novo ticket: ${ticket.title}`,
           userId: coordinator.id,
           relatedId: ticketId,
-          data: { ticketId, priority: ticket.priority }
-        })
+          data: { ticketId, priority: ticket.priority },
+        });
 
         // Enviar email se configurado
         if (coordinator.email) {
-          const emailHtml = this.generateTicketCreatedEmail(ticket, coordinator.name)
+          const emailHtml = this.generateTicketCreatedEmail(
+            ticket,
+            coordinator.name
+          );
           await this.sendEmailNotification(
             coordinator.email,
             `Novo Ticket: ${ticket.title}`,
             emailHtml
-          )
+          );
         }
       }
     } catch (error) {
-      logger.error('Failed to notify ticket created', { error, ticketId })
+      logger.error('Failed to notify ticket created', { error, ticketId });
     }
   }
 
   // Notificar atribuição de ticket
-  async notifyTicketAssigned(ticketId: string, assignedToId: string): Promise<void> {
+  async notifyTicketAssigned(
+    ticketId: string,
+    assignedToId: string
+  ): Promise<void> {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
-          assignedTo: true
-        }
-      })
+          assignedTo: true,
+        },
+      });
 
-      if (!ticket || !ticket.assignedTo) return
+      if (!ticket || !ticket.assignedTo) return;
 
       await this.createNotification({
         type: NotificationType.TICKET_ASSIGNED,
@@ -187,43 +200,50 @@ class NotificationService {
         message: `Você foi atribuído ao ticket: ${ticket.title}`,
         userId: assignedToId,
         relatedId: ticketId,
-        data: { ticketId, priority: ticket.priority }
-      })
+        data: { ticketId, priority: ticket.priority },
+      });
 
       // Enviar email
       if (ticket.assignedTo.email) {
-        const emailHtml = this.generateTicketAssignedEmail(ticket, ticket.assignedTo.name)
+        const emailHtml = this.generateTicketAssignedEmail(
+          ticket,
+          ticket.assignedTo.name
+        );
         await this.sendEmailNotification(
           ticket.assignedTo.email,
           `Ticket Atribuído: ${ticket.title}`,
           emailHtml
-        )
+        );
       }
     } catch (error) {
-      logger.error('Failed to notify ticket assigned', { error, ticketId })
+      logger.error('Failed to notify ticket assigned', { error, ticketId });
     }
   }
 
   // Notificar atualização de ticket
-  async notifyTicketUpdated(ticketId: string, updatedById: string, changes: any): Promise<void> {
+  async notifyTicketUpdated(
+    ticketId: string,
+    updatedById: string,
+    changes: any
+  ): Promise<void> {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
-          assignedTo: true
-        }
-      })
+          assignedTo: true,
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
-      const usersToNotify = [ticket.createdById]
+      const usersToNotify = [ticket.createdById];
       if (ticket.assignedToId && ticket.assignedToId !== updatedById) {
-        usersToNotify.push(ticket.assignedToId)
+        usersToNotify.push(ticket.assignedToId);
       }
 
       for (const userId of usersToNotify) {
-        if (userId === updatedById) continue
+        if (userId === updatedById) continue;
 
         await this.createNotification({
           type: NotificationType.TICKET_UPDATED,
@@ -231,11 +251,11 @@ class NotificationService {
           message: `O ticket "${ticket.title}" foi atualizado`,
           userId,
           relatedId: ticketId,
-          data: { ticketId, changes }
-        })
+          data: { ticketId, changes },
+        });
       }
     } catch (error) {
-      logger.error('Failed to notify ticket updated', { error, ticketId })
+      logger.error('Failed to notify ticket updated', { error, ticketId });
     }
   }
 
@@ -249,21 +269,21 @@ class NotificationService {
           ticket: {
             include: {
               createdBy: true,
-              assignedTo: true
-            }
-          }
-        }
-      })
+              assignedTo: true,
+            },
+          },
+        },
+      });
 
-      if (!comment) return
+      if (!comment) return;
 
-      const usersToNotify = [comment.ticket.createdById]
+      const usersToNotify = [comment.ticket.createdById];
       if (comment.ticket.assignedToId) {
-        usersToNotify.push(comment.ticket.assignedToId)
+        usersToNotify.push(comment.ticket.assignedToId);
       }
 
       for (const userId of usersToNotify) {
-        if (userId === comment.userId) continue
+        if (userId === comment.userId) continue;
 
         await this.createNotification({
           type: NotificationType.COMMENT_ADDED,
@@ -271,11 +291,11 @@ class NotificationService {
           message: `${comment.user.name} comentou no ticket: ${comment.ticket.title}`,
           userId,
           relatedId: comment.ticketId,
-          data: { ticketId: comment.ticketId, commentId }
-        })
+          data: { ticketId: comment.ticketId, commentId },
+        });
       }
     } catch (error) {
-      logger.error('Failed to notify comment added', { error, commentId })
+      logger.error('Failed to notify comment added', { error, commentId });
     }
   }
 
@@ -285,14 +305,17 @@ class NotificationService {
       await prisma.notification.updateMany({
         where: {
           id: notificationId,
-          userId
+          userId,
         },
         data: {
-          read: true
-        }
-      })
+          read: true,
+        },
+      });
     } catch (error) {
-      logger.error('Failed to mark notification as read', { error, notificationId })
+      logger.error('Failed to mark notification as read', {
+        error,
+        notificationId,
+      });
     }
   }
 
@@ -302,28 +325,34 @@ class NotificationService {
       await prisma.notification.updateMany({
         where: {
           userId,
-          read: false
+          read: false,
         },
         data: {
-          read: true
-        }
-      })
+          read: true,
+        },
+      });
     } catch (error) {
-      logger.error('Failed to mark all notifications as read', { error, userId })
+      logger.error('Failed to mark all notifications as read', {
+        error,
+        userId,
+      });
     }
   }
 
   // Obter notificações do usuário
-  async getUserNotifications(userId: string, limit: number = 20): Promise<any[]> {
+  async getUserNotifications(
+    userId: string,
+    limit: number = 20
+  ): Promise<any[]> {
     try {
       return await prisma.notification.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
-        take: limit
-      })
+        take: limit,
+      });
     } catch (error) {
-      logger.error('Failed to get user notifications', { error, userId })
-      return []
+      logger.error('Failed to get user notifications', { error, userId });
+      return [];
     }
   }
 
@@ -333,17 +362,20 @@ class NotificationService {
       return await prisma.notification.count({
         where: {
           userId,
-          read: false
-        }
-      })
+          read: false,
+        },
+      });
     } catch (error) {
-      logger.error('Failed to get unread count', { error, userId })
-      return 0
+      logger.error('Failed to get unread count', { error, userId });
+      return 0;
     }
   }
 
   // Templates de email
-  private generateTicketCreatedEmail(ticket: any, recipientName: string): string {
+  private generateTicketCreatedEmail(
+    ticket: any,
+    recipientName: string
+  ): string {
     return `
       <h2>Novo Ticket Criado</h2>
       <p>Olá ${recipientName},</p>
@@ -356,10 +388,13 @@ class NotificationService {
         <p><strong>Descrição:</strong> ${ticket.description}</p>
       </div>
       <p>Acesse o sistema para mais detalhes.</p>
-    `
+    `;
   }
 
-  private generateTicketAssignedEmail(ticket: any, recipientName: string): string {
+  private generateTicketAssignedEmail(
+    ticket: any,
+    recipientName: string
+  ): string {
     return `
       <h2>Ticket Atribuído</h2>
       <p>Olá ${recipientName},</p>
@@ -372,12 +407,11 @@ class NotificationService {
         <p><strong>Descrição:</strong> ${ticket.description}</p>
       </div>
       <p>Acesse o sistema para começar a trabalhar neste ticket.</p>
-    `
+    `;
   }
 }
 
 // Instância singleton do serviço de notificações
-export const notificationService = new NotificationService()
+export const notificationService = new NotificationService();
 
-export default notificationService
-
+export default notificationService;

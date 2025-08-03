@@ -12,7 +12,7 @@ const uploadSchema = z.object({
 // Tipos de arquivo permitidos
 const ALLOWED_TYPES = [
   'image/jpeg',
-  'image/png', 
+  'image/png',
   'image/gif',
   'image/webp',
   'application/pdf',
@@ -31,7 +31,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export async function POST(request: NextRequest) {
   try {
     console.log('📤 Iniciando upload de arquivo...');
-    
+
     // Parse do FormData
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     const validation = uploadSchema.safeParse({ ticketId, userId });
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Dados inválidos',
-          details: validation.error.errors
+          details: validation.error.errors,
         },
         { status: 400 }
       );
@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
     // Validação do tamanho
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { 
+        {
           error: `Arquivo muito grande. Máximo permitido: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-          maxSize: MAX_FILE_SIZE
+          maxSize: MAX_FILE_SIZE,
         },
         { status: 400 }
       );
@@ -76,10 +76,10 @@ export async function POST(request: NextRequest) {
     // Validação do tipo
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { 
+        {
           error: 'Tipo de arquivo não permitido',
           allowedTypes: ALLOWED_TYPES,
-          receivedType: file.type
+          receivedType: file.type,
         },
         { status: 400 }
       );
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Verificar se o ticket existe
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
-      select: { id: true, title: true }
+      select: { id: true, title: true },
     });
 
     if (!ticket) {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     // Verificar se o usuário existe
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     });
 
     if (!user) {
@@ -124,17 +124,12 @@ export async function POST(request: NextRequest) {
     const uniqueFileName = `${timestamp}_${randomSuffix}_${sanitizedName}`;
 
     // Upload para MinIO
-    const fileUrl = await uploadFile(
-      buffer,
-      uniqueFileName,
-      file.type,
-      {
-        ticketId,
-        userId,
-        originalName: file.name,
-        uploadedAt: new Date().toISOString(),
-      }
-    );
+    const fileUrl = await uploadFile(buffer, uniqueFileName, file.type, {
+      ticketId,
+      userId,
+      originalName: file.name,
+      uploadedAt: new Date().toISOString(),
+    });
 
     console.log('✅ Upload para MinIO concluído:', fileUrl);
 
@@ -197,17 +192,17 @@ export async function POST(request: NextRequest) {
         name: user.name,
       },
     });
-
   } catch (error) {
     console.error('❌ Erro no upload:', error);
-    
+
     // Erro específico do MinIO
     if (error instanceof Error && error.message.includes('MinIO')) {
       return NextResponse.json(
-        { 
+        {
           error: 'Erro no serviço de armazenamento',
-          details: 'Verifique se o MinIO está rodando e configurado corretamente',
-          hint: 'Execute: docker-compose -f docker-compose.minio.yml up -d'
+          details:
+            'Verifique se o MinIO está rodando e configurado corretamente',
+          hint: 'Execute: docker-compose -f docker-compose.minio.yml up -d',
         },
         { status: 503 }
       );
@@ -216,9 +211,9 @@ export async function POST(request: NextRequest) {
     // Erro de banco de dados
     if (error instanceof Error && error.message.includes('Prisma')) {
       return NextResponse.json(
-        { 
+        {
           error: 'Erro no banco de dados',
-          details: 'Não foi possível salvar as informações do anexo'
+          details: 'Não foi possível salvar as informações do anexo',
         },
         { status: 500 }
       );
@@ -226,9 +221,12 @@ export async function POST(request: NextRequest) {
 
     // Erro genérico
     return NextResponse.json(
-      { 
+      {
         error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'Tente novamente mais tarde'
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error.message
+            : 'Tente novamente mais tarde',
       },
       { status: 500 }
     );

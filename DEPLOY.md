@@ -5,6 +5,7 @@ Este guia detalha como fazer o deploy do Ticket System em produção usando Dock
 ## 📋 Pré-requisitos
 
 ### Servidor VPS
+
 - Ubuntu 20.04+ ou Debian 11+
 - 2GB RAM mínimo (4GB recomendado)
 - 20GB de espaço em disco
@@ -13,12 +14,14 @@ Este guia detalha como fazer o deploy do Ticket System em produção usando Dock
 - Traefik configurado (opcional, para SSL automático)
 
 ### Domínio
+
 - Domínio próprio apontando para o servidor
 - Subdomínio configurado (ex: tickets.seudominio.com)
 
 ## 🔧 Preparação do Ambiente
 
 ### 1. Instalar Docker (se não instalado)
+
 ```bash
 # Atualizar sistema
 sudo apt update && sudo apt upgrade -y
@@ -36,6 +39,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 ```
 
 ### 2. Instalar Portainer (se não instalado)
+
 ```bash
 # Criar volume para Portainer
 docker volume create portainer_data
@@ -45,6 +49,7 @@ docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /va
 ```
 
 ### 3. Configurar Traefik (opcional)
+
 ```bash
 # Criar rede para Traefik
 docker network create traefik
@@ -119,15 +124,18 @@ docker-compose up -d
 ### Método 1: Via Portainer (Recomendado)
 
 #### 1. Acessar Portainer
+
 - Acesse: `https://seu-servidor:9443`
 - Faça login com suas credenciais
 
 #### 2. Criar Stack
+
 1. Vá em **Stacks** → **Add Stack**
 2. Nome: `ticket-system`
 3. Build method: **Web editor**
 
 #### 3. Configurar Docker Compose
+
 Cole o seguinte conteúdo:
 
 ```yaml
@@ -188,17 +196,19 @@ networks:
 ```
 
 #### 4. Configurar Variáveis de Ambiente
+
 Na seção **Environment variables**, adicione:
 
-| Nome | Valor | Descrição |
-|------|-------|-----------|
-| `POSTGRES_PASSWORD` | `sua_senha_segura` | Senha do PostgreSQL |
-| `NEXTAUTH_SECRET` | `sua_chave_secreta` | Chave para JWT (use: `openssl rand -base64 32`) |
-| `NEXTAUTH_URL` | `https://tickets.seudominio.com` | URL da aplicação |
-| `DOMAIN` | `tickets.seudominio.com` | Domínio para Traefik |
-| `APP_PORT` | `3000` | Porta da aplicação |
+| Nome                | Valor                            | Descrição                                       |
+| ------------------- | -------------------------------- | ----------------------------------------------- |
+| `POSTGRES_PASSWORD` | `sua_senha_segura`               | Senha do PostgreSQL                             |
+| `NEXTAUTH_SECRET`   | `sua_chave_secreta`              | Chave para JWT (use: `openssl rand -base64 32`) |
+| `NEXTAUTH_URL`      | `https://tickets.seudominio.com` | URL da aplicação                                |
+| `DOMAIN`            | `tickets.seudominio.com`         | Domínio para Traefik                            |
+| `APP_PORT`          | `3000`                           | Porta da aplicação                              |
 
 #### 5. Deploy
+
 1. Clique em **Deploy the stack**
 2. Aguarde o download das imagens
 3. Verifique se todos os containers estão rodando
@@ -206,18 +216,21 @@ Na seção **Environment variables**, adicione:
 ### Método 2: Via Linha de Comando
 
 #### 1. Clonar Repositório
+
 ```bash
 git clone https://github.com/betjuliano/Ticket.git
 cd Ticket
 ```
 
 #### 2. Configurar Variáveis
+
 ```bash
 cp .env.production .env.production.local
 nano .env.production.local
 ```
 
 Edite com suas configurações:
+
 ```env
 POSTGRES_PASSWORD=sua_senha_segura
 NEXTAUTH_SECRET=sua_chave_secreta
@@ -227,11 +240,13 @@ APP_PORT=3000
 ```
 
 #### 3. Build da Imagem
+
 ```bash
 docker build -t ticket-system:latest .
 ```
 
 #### 4. Deploy
+
 ```bash
 # Com Traefik
 docker-compose -f docker-compose.portainer.yml up -d
@@ -243,6 +258,7 @@ docker-compose up -d
 ## 🔍 Verificação do Deploy
 
 ### 1. Verificar Containers
+
 ```bash
 # Via Docker
 docker ps
@@ -252,6 +268,7 @@ docker ps
 ```
 
 ### 2. Verificar Logs
+
 ```bash
 # Logs da aplicação
 docker logs ticket-app -f
@@ -261,12 +278,14 @@ docker logs ticket-postgres -f
 ```
 
 ### 3. Testar Aplicação
+
 1. Acesse: `https://tickets.seudominio.com`
 2. Faça login com:
    - Email: `admin@ticket.local`
    - Senha: `admin123`
 
 ### 4. Verificar SSL (se usando Traefik)
+
 ```bash
 # Verificar certificado
 curl -I https://tickets.seudominio.com
@@ -278,6 +297,7 @@ curl -I http://tickets.seudominio.com
 ## 🔧 Configurações Avançadas
 
 ### Backup Automático
+
 ```bash
 # Criar script de backup
 cat > /opt/backup-ticket.sh << 'EOF'
@@ -304,6 +324,7 @@ echo "0 2 * * * /opt/backup-ticket.sh" | crontab -
 ```
 
 ### Monitoramento
+
 ```bash
 # Instalar ctop para monitoramento
 sudo wget https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 -O /usr/local/bin/ctop
@@ -314,18 +335,20 @@ ctop
 ```
 
 ### Logs Centralizados
+
 ```yaml
 # Adicionar ao docker-compose
 logging:
-  driver: "json-file"
+  driver: 'json-file'
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: '10m'
+    max-file: '3'
 ```
 
 ## 🚨 Solução de Problemas
 
 ### Container não inicia
+
 ```bash
 # Verificar logs
 docker logs ticket-app
@@ -339,6 +362,7 @@ docker network inspect ticket_ticket-network
 ```
 
 ### Erro de conexão com banco
+
 ```bash
 # Verificar se PostgreSQL está rodando
 docker exec ticket-postgres pg_isready -U postgres
@@ -348,6 +372,7 @@ docker exec ticket-app npx prisma db push
 ```
 
 ### SSL não funciona
+
 ```bash
 # Verificar Traefik
 docker logs traefik
@@ -360,6 +385,7 @@ openssl s_client -connect tickets.seudominio.com:443
 ```
 
 ### Performance lenta
+
 ```bash
 # Verificar recursos
 htop
@@ -372,6 +398,7 @@ docker exec -it ticket-postgres psql -U postgres -d ticket_system -c "VACUUM ANA
 ## 📊 Monitoramento de Produção
 
 ### Métricas Importantes
+
 - CPU e RAM dos containers
 - Espaço em disco
 - Conexões do banco de dados
@@ -379,6 +406,7 @@ docker exec -it ticket-postgres psql -U postgres -d ticket_system -c "VACUUM ANA
 - Logs de erro
 
 ### Alertas Recomendados
+
 - Container parado
 - Uso de CPU > 80%
 - Uso de RAM > 90%
@@ -388,6 +416,7 @@ docker exec -it ticket-postgres psql -U postgres -d ticket_system -c "VACUUM ANA
 ## 🔄 Atualizações
 
 ### Atualizar Aplicação
+
 ```bash
 # Parar containers
 docker-compose down
@@ -403,6 +432,7 @@ docker-compose up -d
 ```
 
 ### Atualizar via Portainer
+
 1. Acesse **Images** → **Build**
 2. Faça upload do novo código
 3. Rebuild a imagem
@@ -411,4 +441,3 @@ docker-compose up -d
 ---
 
 **✅ Deploy concluído! Sua aplicação está rodando em produção com Docker + Portainer + Traefik.**
-

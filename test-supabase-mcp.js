@@ -9,7 +9,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 console.log('📋 Configurações:');
 console.log('URL:', supabaseUrl);
-console.log('Key:', supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'Não definida');
+console.log(
+  'Key:',
+  supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'Não definida'
+);
 
 if (!supabaseUrl || !supabaseKey) {
   console.log('❌ Variáveis de ambiente não configuradas!');
@@ -22,9 +25,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function testSupabaseMCP() {
   try {
     console.log('\n🔗 Testando conexão básica...');
-    
+
     // Teste 1: Verificar se consegue conectar
-    const { data: authData, error: authError } = await supabase.auth.getSession();
+    const { data: authData, error: authError } =
+      await supabase.auth.getSession();
     if (authError) {
       console.log('⚠️ Auth error (esperado):', authError.message);
     } else {
@@ -37,7 +41,7 @@ async function testSupabaseMCP() {
       .from('information_schema.tables')
       .select('table_name')
       .eq('table_schema', 'public');
-    
+
     if (tablesError) {
       console.log('⚠️ Erro ao listar tabelas:', tablesError.message);
     } else {
@@ -49,9 +53,8 @@ async function testSupabaseMCP() {
 
     // Teste 3: Verificar permissões básicas
     console.log('\n🔐 Testando permissões...');
-    const { data: permData, error: permError } = await supabase
-      .rpc('version');
-    
+    const { data: permData, error: permError } = await supabase.rpc('version');
+
     if (permError) {
       console.log('⚠️ Erro de permissão:', permError.message);
     } else {
@@ -60,9 +63,11 @@ async function testSupabaseMCP() {
 
     // Teste 4: Verificar se é possível criar uma tabela simples
     console.log('\n🛠️ Testando criação de tabela...');
-    const { data: createData, error: createError } = await supabase
-      .rpc('exec_sql', { sql: 'SELECT 1 as test' });
-    
+    const { data: createData, error: createError } = await supabase.rpc(
+      'exec_sql',
+      { sql: 'SELECT 1 as test' }
+    );
+
     if (createError) {
       console.log('⚠️ Erro ao executar SQL:', createError.message);
     } else {
@@ -75,7 +80,6 @@ async function testSupabaseMCP() {
     console.log('- Configuração: ✅ Correta');
     console.log('- URL:', supabaseUrl);
     console.log('- Pronto para uso com MCP!');
-    
   } catch (error) {
     console.log('❌ Erro geral:', error.message);
   }

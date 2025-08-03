@@ -1,56 +1,59 @@
-'use client'
+'use client';
 
-import { useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { User, Mail, Phone, Bot, Forward, Archive } from 'lucide-react'
-import { Ticket } from '@/types/ticket'
+import { useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { User, Mail, Phone, Bot, Forward, Archive } from 'lucide-react';
+import { Ticket } from '@/types/ticket';
 
 interface TicketDetailModalProps {
-  ticket: Ticket
-  onClose: () => void
-  onArchive: (ticketId: string) => Promise<void>
-  onForward: (ticketId: string, assignedTo: string) => Promise<void>
-  isLoading?: boolean
+  ticket: Ticket;
+  onClose: () => void;
+  onArchive: (ticketId: string) => Promise<void>;
+  onForward: (ticketId: string, assignedTo: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function TicketDetailModal({ 
-  ticket, 
-  onClose, 
-  onArchive, 
-  onForward, 
-  isLoading = false 
+export function TicketDetailModal({
+  ticket,
+  onClose,
+  onArchive,
+  onForward,
+  isLoading = false,
 }: TicketDetailModalProps) {
-  const [aiSuggestion, setAiSuggestion] = useState('')
-  const [showAiPanel, setShowAiPanel] = useState(false)
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const handleAiSuggestion = useCallback(async () => {
-    setShowAiPanel(true)
-    setIsGeneratingAI(true)
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setAiSuggestion(
-        "Com base no problema relatado, sugiro verificar: 1) Se o usuário está usando as credenciais corretas, 2) Se não há bloqueio na conta, 3) Verificar logs do sistema de autenticação."
-      )
-    } catch (error) {
-      setAiSuggestion('Erro ao gerar sugestão. Tente novamente.')
-    } finally {
-      setIsGeneratingAI(false)
-    }
-  }, [])
+    setShowAiPanel(true);
+    setIsGeneratingAI(true);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setAiSuggestion(
+        'Com base no problema relatado, sugiro verificar: 1) Se o usuário está usando as credenciais corretas, 2) Se não há bloqueio na conta, 3) Verificar logs do sistema de autenticação.'
+      );
+    } catch (error) {
+      setAiSuggestion('Erro ao gerar sugestão. Tente novamente.');
+    } finally {
+      setIsGeneratingAI(false);
     }
-  }, [onClose])
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
       onKeyDown={handleKeyDown}
@@ -60,10 +63,13 @@ export function TicketDetailModal({
     >
       <Card
         className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-neutral-900 border-neutral-700"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         <CardHeader>
-          <CardTitle id="ticket-title" className="text-xl font-semibold text-white">
+          <CardTitle
+            id="ticket-title"
+            className="text-xl font-semibold text-white"
+          >
             {ticket.title}
           </CardTitle>
           <div className="flex gap-2 mt-2">
@@ -121,5 +127,5 @@ export function TicketDetailModal({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

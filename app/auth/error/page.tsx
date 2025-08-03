@@ -1,27 +1,33 @@
-'use client'
+'use client';
 
-import { useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle } from 'lucide-react'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AuthErrorPage() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
   const getErrorMessage = (error: string | null) => {
     switch (error) {
       case 'CredentialsSignin':
-        return 'Email ou senha incorretos'
+        return 'Email ou senha incorretos';
       case 'AccessDenied':
-        return 'Acesso negado'
+        return 'Acesso negado';
       case 'Verification':
-        return 'Token de verificação inválido'
+        return 'Token de verificação inválido';
       default:
-        return 'Erro de autenticação'
+        return 'Erro de autenticação';
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
@@ -39,12 +45,10 @@ export default function AuthErrorPage() {
         </CardHeader>
         <CardContent className="text-center">
           <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-            <Link href="/auth/signin">
-              Tentar Novamente
-            </Link>
+            <Link href="/auth/signin">Tentar Novamente</Link>
           </Button>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

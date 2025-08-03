@@ -1,66 +1,77 @@
-import { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createSuccessResponse, createErrorResponse, handleApiError, logRequest } from '@/lib/api-utils'
-import { getServerSession } from 'next-auth'
-import { authOptions, canUserAccessTicket } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleApiError,
+  logRequest,
+} from '@/lib/api-utils';
+import { getServerSession } from 'next-auth';
+import { authOptions, canUserAccessTicket } from '@/lib/auth';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 // POST - Upload de arquivo
 export async function POST(request: NextRequest) {
   try {
-    logRequest('POST', '/api/attachments')
-    
-    const session = await getServerSession(authOptions)
+    logRequest('POST', '/api/attachments');
+
+    const session = await getServerSession(authOptions);
     if (!session) {
-      return createErrorResponse('Não autenticado', 401)
+      return createErrorResponse('Não autenticado', 401);
     }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    const ticketId = formData.get('ticketId') as string
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const ticketId = formData.get('ticketId') as string;
 
     if (!file || !ticketId) {
-      return createErrorResponse('Arquivo e ticketId são obrigatórios', 400)
+      return createErrorResponse('Arquivo e ticketId são obrigatórios', 400);
     }
 
     const hasAccess = await canUserAccessTicket(
       session.user.id,
       session.user.role,
       ticketId
-    )
+    );
 
     if (!hasAccess) {
-      return createErrorResponse('Acesso negado', 403)
+      return createErrorResponse('Acesso negado', 403);
     }
 
     // Validar tipo de arquivo
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain']
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/pdf',
+      'text/plain',
+    ];
     if (!allowedTypes.includes(file.type)) {
-      return createErrorResponse('Tipo de arquivo não permitido', 400)
+      return createErrorResponse('Tipo de arquivo não permitido', 400);
     }
 
     // Validar tamanho (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      return createErrorResponse('Arquivo muito grande (máximo 5MB)', 400)
+      return createErrorResponse('Arquivo muito grande (máximo 5MB)', 400);
     }
 
     // Criar diretório se não existir
-    const uploadDir = join(process.cwd(), 'uploads')
+    const uploadDir = join(process.cwd(), 'uploads');
     if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
+      await mkdir(uploadDir, { recursive: true });
     }
 
     // Gerar nome único para o arquivo
-    const timestamp = Date.now()
-    const filename = `${timestamp}-${file.name}`
-    const filepath = join(uploadDir, filename)
+    const timestamp = Date.now();
+    const filename = `${timestamp}-${file.name}`;
+    const filepath = join(uploadDir, filename);
 
     // Salvar arquivo
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(filepath, buffer);
 
     // Salvar no banco
     const attachment = await prisma.attachment.create({
@@ -70,55 +81,55 @@ export async function POST(request: NextRequest) {
         filesize: file.size,
         mimetype: file.type,
         ticketId,
-        userId: session.user.id
-      }
-    })
+        userId: session.user.id,
+      },
+    });
 
-    return createSuccessResponse(attachment, 'Arquivo enviado com sucesso')
+    return createSuccessResponse(attachment, 'Arquivo enviado com sucesso');
   } catch (error) {
-    return handleApiError(error)
+    return handleApiError(error);
   }
 }
 
 // GET - Listar anexos de um ticket
 export async function GET(request: NextRequest) {
   try {
-    logRequest('GET', '/api/attachments')
-    
-    const session = await getServerSession(authOptions)
+    logRequest('GET', '/api/attachments');
+
+    const session = await getServerSession(authOptions);
     if (!session) {
-      return createErrorResponse('Não autenticado', 401)
+      return createErrorResponse('Não autenticado', 401);
     }
 
-    const { searchParams } = new URL(request.url)
-    const ticketId = searchParams.get('ticketId')
-    
+    const { searchParams } = new URL(request.url);
+    const ticketId = searchParams.get('ticketId');
+
     if (!ticketId) {
-      return createErrorResponse('ticketId é obrigatório', 400)
+      return createErrorResponse('ticketId é obrigatório', 400);
     }
 
     const hasAccess = await canUserAccessTicket(
       session.user.id,
       session.user.role,
       ticketId
-    )
+    );
 
     if (!hasAccess) {
-      return createErrorResponse('Acesso negado', 403)
+      return createErrorResponse('Acesso negado', 403);
     }
 
     const attachments = await prisma.attachment.findMany({
       where: { ticketId },
       include: {
         user: {
-          select: { name: true, email: true }
-        }
+          select: { name: true, email: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
-    })
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return createSuccessResponse(attachments)
+    return createSuccessResponse(attachments);
   } catch (error) {
-    return handleApiError(error)
+    return handleApiError(error);
   }
 }

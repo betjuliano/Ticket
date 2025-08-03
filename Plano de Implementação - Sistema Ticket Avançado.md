@@ -16,6 +16,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 ## Estrutura do Projeto
 
 ### Tecnologias Principais
+
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Banco de Dados**: PostgreSQL (externo: 207.180.254.250)
@@ -26,6 +27,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 - **Documentação**: Swagger/OpenAPI
 
 ### Configurações de Produção
+
 - **Domínio**: https://iaadm.iaprojetos.com.br
 - **Email Principal**: iadaadmufsm@gmail.com
 - **Email Admin**: admjulianoo@gmail.com
@@ -36,6 +38,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 ### 1.1 Análise de Requisitos Detalhada
 
 #### Funcionalidades do Usuário
+
 - Dashboard personalizado com métricas relevantes
 - CRUD completo de tickets (criar, visualizar, editar, comentar)
 - Sistema de busca avançada com filtros
@@ -44,6 +47,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 - Histórico completo de atividades
 
 #### Funcionalidades do Coordenador
+
 - Dashboard administrativo com analytics completos
 - Gerenciamento completo de tickets (atribuição, priorização, fechamento)
 - Relatórios customizáveis e exportação
@@ -52,6 +56,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 - Monitoramento de performance
 
 #### Funcionalidades Administrativas
+
 - Integração automática de email
 - Sistema de notificações multi-canal
 - Backup e recuperação de dados
@@ -61,6 +66,7 @@ Este documento apresenta um plano abrangente para implementar melhorias signific
 ### 1.2 Arquitetura do Sistema
 
 #### Estrutura de Pastas Proposta
+
 ```
 app/
 ├── (dashboard)/
@@ -97,6 +103,7 @@ app/
 #### Modelo de Dados
 
 ##### Tabelas Principais
+
 1. **users** - Usuários do sistema
 2. **tickets** - Tickets de suporte
 3. **comments** - Comentários nos tickets
@@ -109,31 +116,37 @@ app/
 ### 1.3 Cronograma de Implementação
 
 #### Fase 1: Fundação (Semanas 1-2)
+
 - Configuração do banco de dados PostgreSQL externo
 - Migração de dados mock para produção
 - Configuração do ambiente de desenvolvimento
 
 #### Fase 2: CRUD e Interfaces (Semanas 3-4)
+
 - Implementação completa do CRUD de tickets
 - Interfaces de usuário e coordenador
 - Sistema de permissões
 
 #### Fase 3: IA e Email (Semanas 5-6)
+
 - Chat IA para base de conhecimento
 - Integração automática de email
 - Sistema de notificações
 
 #### Fase 4: Analytics e Relatórios (Semanas 7-8)
+
 - Dashboards customizáveis
 - Sistema de relatórios avançados
 - Métricas e KPIs
 
 #### Fase 5: Otimização (Semanas 9-10)
+
 - Cache Redis
 - Otimizações de performance
 - Lazy loading e CDN
 
 #### Fase 6: Documentação e Testes (Semanas 11-12)
+
 - Documentação da API
 - Testes automatizados
 - Deploy de produção
@@ -143,14 +156,16 @@ app/
 ### 2.1 Configuração do PostgreSQL Externo
 
 #### Conexão com Banco Externo
+
 ```typescript
 // lib/database/connection.ts
-const DATABASE_URL = `postgresql://postgres:5100a23f8d3196cfce339c43d475b3e0@207.180.254.250:5432/ticket_system`
+const DATABASE_URL = `postgresql://postgres:5100a23f8d3196cfce339c43d475b3e0@207.180.254.250:5432/ticket_system`;
 ```
 
 #### Schema do Banco de Dados
 
 ##### Tabela Users
+
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -169,6 +184,7 @@ CREATE TABLE users (
 ```
 
 ##### Tabela Tickets
+
 ```sql
 CREATE TABLE tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,6 +212,7 @@ CREATE TABLE tickets (
 ### 2.2 Migrações Prisma
 
 #### Schema Prisma Completo
+
 ```prisma
 // prisma/schema.prisma
 generator client {
@@ -290,12 +307,13 @@ enum Priority {
 ### 2.3 Seeders de Dados Iniciais
 
 #### Dados de Usuários Padrão
+
 ```typescript
 // prisma/seed.ts
-import { PrismaClient, Role } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient, Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
   // Criar usuários padrão
@@ -305,9 +323,9 @@ async function main() {
       name: 'Administrador',
       passwordHash: await bcrypt.hash('admin123', 10),
       role: Role.ADMIN,
-      department: 'TI'
-    }
-  })
+      department: 'TI',
+    },
+  });
 
   const coordinatorUser = await prisma.user.create({
     data: {
@@ -315,9 +333,9 @@ async function main() {
       name: 'Coordenador',
       passwordHash: await bcrypt.hash('coord123', 10),
       role: Role.COORDINATOR,
-      department: 'Suporte'
-    }
-  })
+      department: 'Suporte',
+    },
+  });
 
   // Criar categorias padrão
   const categories = [
@@ -328,8 +346,8 @@ async function main() {
     'Acesso',
     'Impressão',
     'Telefonia',
-    'Outros'
-  ]
+    'Outros',
+  ];
 
   // Criar tickets de exemplo
   for (let i = 1; i <= 10; i++) {
@@ -339,20 +357,20 @@ async function main() {
         description: `Descrição detalhada do problema ${i}`,
         category: categories[Math.floor(Math.random() * categories.length)],
         createdById: adminUser.id,
-        assignedToId: coordinatorUser.id
-      }
-    })
+        assignedToId: coordinatorUser.id,
+      },
+    });
   }
 }
 
 main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });
 ```
 
 ## Fase 3: Implementação do CRUD Completo
@@ -360,6 +378,7 @@ main()
 ### 3.1 Interface do Usuário
 
 #### Dashboard do Usuário
+
 ```typescript
 // app/(dashboard)/user/page.tsx
 import { TicketStats } from '@/components/dashboard/TicketStats'
@@ -373,7 +392,7 @@ export default function UserDashboard() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <QuickActions />
       </div>
-      
+
       <TicketStats />
       <RecentTickets />
     </div>
@@ -382,6 +401,7 @@ export default function UserDashboard() {
 ```
 
 #### Gerenciamento de Tickets
+
 ```typescript
 // app/(dashboard)/user/tickets/page.tsx
 import { TicketList } from '@/components/tickets/TicketList'
@@ -395,7 +415,7 @@ export default function UserTickets() {
         <h1 className="text-3xl font-bold">Meus Tickets</h1>
         <CreateTicketButton />
       </div>
-      
+
       <TicketFilters />
       <TicketList />
     </div>
@@ -406,6 +426,7 @@ export default function UserTickets() {
 ### 3.2 Interface do Coordenador
 
 #### Dashboard Administrativo
+
 ```typescript
 // app/(dashboard)/coordinator/page.tsx
 import { AdminStats } from '@/components/dashboard/AdminStats'
@@ -416,7 +437,7 @@ export default function CoordinatorDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Painel Administrativo</h1>
-      
+
       <AdminStats />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TicketQueue />
@@ -430,47 +451,48 @@ export default function CoordinatorDashboard() {
 ### 3.3 APIs Funcionais
 
 #### API de Tickets Completa
+
 ```typescript
 // app/api/tickets/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { ticketSchema } from '@/lib/validations'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/database';
+import { getServerSession } from 'next-auth';
+import { ticketSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
-    const category = searchParams.get('category')
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const status = searchParams.get('status');
+    const priority = searchParams.get('priority');
+    const category = searchParams.get('category');
 
     const where = {
       ...(status && { status }),
       ...(priority && { priority }),
       ...(category && { category }),
-      ...(session.user.role === 'USER' && { createdById: session.user.id })
-    }
+      ...(session.user.role === 'USER' && { createdById: session.user.id }),
+    };
 
     const tickets = await prisma.ticket.findMany({
       where,
       include: {
         createdBy: { select: { name: true, email: true } },
         assignedTo: { select: { name: true, email: true } },
-        _count: { select: { comments: true, attachments: true } }
+        _count: { select: { comments: true, attachments: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
-      take: limit
-    })
+      take: limit,
+    });
 
-    const total = await prisma.ticket.count({ where })
+    const total = await prisma.ticket.count({ where });
 
     return NextResponse.json({
       tickets,
@@ -478,40 +500,46 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
-    })
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const validatedData = ticketSchema.parse(body)
+    const body = await request.json();
+    const validatedData = ticketSchema.parse(body);
 
     const ticket = await prisma.ticket.create({
       data: {
         ...validatedData,
-        createdById: session.user.id
+        createdById: session.user.id,
       },
       include: {
-        createdBy: { select: { name: true, email: true } }
-      }
-    })
+        createdBy: { select: { name: true, email: true } },
+      },
+    });
 
     // Enviar notificação para coordenadores
-    await sendNewTicketNotification(ticket)
+    await sendNewTicketNotification(ticket);
 
-    return NextResponse.json(ticket, { status: 201 })
+    return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -521,19 +549,20 @@ export async function POST(request: NextRequest) {
 ### 4.1 Chat IA para Base de Conhecimento
 
 #### Implementação do Chat
+
 ```typescript
 // app/api/chat/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { OpenAI } from 'openai'
-import { prisma } from '@/lib/database'
+import { NextRequest, NextResponse } from 'next/server';
+import { OpenAI } from 'openai';
+import { prisma } from '@/lib/database';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, context } = await request.json()
+    const { message, context } = await request.json();
 
     // Buscar documentos relevantes na base de conhecimento
     const knowledgeBase = await prisma.knowledgeBase.findMany({
@@ -541,52 +570,58 @@ export async function POST(request: NextRequest) {
         OR: [
           { title: { contains: message, mode: 'insensitive' } },
           { content: { contains: message, mode: 'insensitive' } },
-          { tags: { hasSome: message.split(' ') } }
-        ]
+          { tags: { hasSome: message.split(' ') } },
+        ],
       },
-      take: 5
-    })
+      take: 5,
+    });
 
     const contextText = knowledgeBase
       .map(doc => `${doc.title}: ${doc.content}`)
-      .join('\n\n')
+      .join('\n\n');
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: 'gpt-3.5-turbo',
       messages: [
         {
-          role: "system",
+          role: 'system',
           content: `Você é um assistente de suporte técnico especializado. Use as informações da base de conhecimento para responder às perguntas dos usuários de forma clara e útil. Se não encontrar informações relevantes, sugira que o usuário abra um ticket.
 
 Base de conhecimento:
-${contextText}`
+${contextText}`,
         },
         {
-          role: "user",
-          content: message
-        }
+          role: 'user',
+          content: message,
+        },
       ],
       max_tokens: 500,
-      temperature: 0.7
-    })
+      temperature: 0.7,
+    });
 
-    const response = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua pergunta.'
+    const response =
+      completion.choices[0]?.message?.content ||
+      'Desculpe, não consegui processar sua pergunta.';
 
     return NextResponse.json({
       response,
       sources: knowledgeBase.map(doc => ({
         title: doc.title,
-        id: doc.id
-      }))
-    })
+        id: doc.id,
+      })),
+    });
   } catch (error) {
-    console.error('Chat AI Error:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    console.error('Chat AI Error:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }
 ```
 
 #### Componente de Chat
+
 ```typescript
 // components/chat/KnowledgeChat.tsx
 'use client'
@@ -657,7 +692,7 @@ export function KnowledgeChat() {
           Assistente IA - Base de Conhecimento
         </h3>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map(message => (
           <div
@@ -692,7 +727,7 @@ export function KnowledgeChat() {
           </div>
         )}
       </div>
-      
+
       <div className="p-4 border-t">
         <div className="flex space-x-2">
           <Input
@@ -714,37 +749,38 @@ export function KnowledgeChat() {
 ### 4.2 Integração Automática de Email
 
 #### Configuração do Gmail
+
 ```typescript
 // lib/email/gmail.ts
-import { google } from 'googleapis'
-import { prisma } from '@/lib/database'
+import { google } from 'googleapis';
+import { prisma } from '@/lib/database';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
   process.env.GMAIL_CLIENT_SECRET,
   process.env.GMAIL_REDIRECT_URI
-)
+);
 
 oauth2Client.setCredentials({
-  refresh_token: process.env.GMAIL_REFRESH_TOKEN
-})
+  refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+});
 
-const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
+const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
 export async function processIncomingEmails() {
   try {
     const response = await gmail.users.messages.list({
       userId: 'me',
-      q: 'to:iadaadmufsm@gmail.com is:unread'
-    })
+      q: 'to:iadaadmufsm@gmail.com is:unread',
+    });
 
-    const messages = response.data.messages || []
+    const messages = response.data.messages || [];
 
     for (const message of messages) {
-      await processEmailMessage(message.id!)
+      await processEmailMessage(message.id!);
     }
   } catch (error) {
-    console.error('Error processing emails:', error)
+    console.error('Error processing emails:', error);
   }
 }
 
@@ -752,29 +788,29 @@ async function processEmailMessage(messageId: string) {
   try {
     const message = await gmail.users.messages.get({
       userId: 'me',
-      id: messageId
-    })
+      id: messageId,
+    });
 
-    const headers = message.data.payload?.headers || []
-    const fromHeader = headers.find(h => h.name === 'From')
-    const subjectHeader = headers.find(h => h.name === 'Subject')
-    
-    const fromEmail = extractEmail(fromHeader?.value || '')
-    const subject = subjectHeader?.value || 'Sem assunto'
-    
+    const headers = message.data.payload?.headers || [];
+    const fromHeader = headers.find(h => h.name === 'From');
+    const subjectHeader = headers.find(h => h.name === 'Subject');
+
+    const fromEmail = extractEmail(fromHeader?.value || '');
+    const subject = subjectHeader?.value || 'Sem assunto';
+
     // Extrair corpo do email
-    const body = extractEmailBody(message.data.payload)
-    
+    const body = extractEmailBody(message.data.payload);
+
     // Verificar se é do admin para extrair email correto
-    let userEmail = fromEmail
+    let userEmail = fromEmail;
     if (fromEmail === 'admjulianoo@gmail.com') {
-      userEmail = extractUserEmailFromBody(body) || fromEmail
+      userEmail = extractUserEmailFromBody(body) || fromEmail;
     }
 
     // Buscar ou criar usuário
     let user = await prisma.user.findUnique({
-      where: { email: userEmail }
-    })
+      where: { email: userEmail },
+    });
 
     if (!user) {
       user = await prisma.user.create({
@@ -782,9 +818,9 @@ async function processEmailMessage(messageId: string) {
           email: userEmail,
           name: extractNameFromEmail(userEmail),
           passwordHash: '', // Será definido no primeiro login
-          role: 'USER'
-        }
-      })
+          role: 'USER',
+        },
+      });
     }
 
     // Criar ticket
@@ -794,65 +830,64 @@ async function processEmailMessage(messageId: string) {
         description: body,
         createdById: user.id,
         emailThreadId: messageId,
-        category: 'Email'
-      }
-    })
+        category: 'Email',
+      },
+    });
 
     // Marcar email como lido
     await gmail.users.messages.modify({
       userId: 'me',
       id: messageId,
       requestBody: {
-        removeLabelIds: ['UNREAD']
-      }
-    })
+        removeLabelIds: ['UNREAD'],
+      },
+    });
 
     // Enviar confirmação
-    await sendTicketConfirmation(userEmail, ticket)
-
+    await sendTicketConfirmation(userEmail, ticket);
   } catch (error) {
-    console.error('Error processing email message:', error)
+    console.error('Error processing email message:', error);
   }
 }
 
 function extractEmail(fromString: string): string {
-  const match = fromString.match(/<(.+)>/)
-  return match ? match[1] : fromString
+  const match = fromString.match(/<(.+)>/);
+  return match ? match[1] : fromString;
 }
 
 function extractEmailBody(payload: any): string {
   if (payload.body?.data) {
-    return Buffer.from(payload.body.data, 'base64').toString()
+    return Buffer.from(payload.body.data, 'base64').toString();
   }
-  
+
   if (payload.parts) {
     for (const part of payload.parts) {
       if (part.mimeType === 'text/plain' && part.body?.data) {
-        return Buffer.from(part.body.data, 'base64').toString()
+        return Buffer.from(part.body.data, 'base64').toString();
       }
     }
   }
-  
-  return 'Corpo do email não disponível'
+
+  return 'Corpo do email não disponível';
 }
 
 function extractUserEmailFromBody(body: string): string | null {
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
-  const emails = body.match(emailRegex)
-  return emails ? emails[0] : null
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+  const emails = body.match(emailRegex);
+  return emails ? emails[0] : null;
 }
 
 async function sendTicketConfirmation(email: string, ticket: any) {
   // Implementar envio de confirmação
-  const nodemailer = require('nodemailer')
-  
+  const nodemailer = require('nodemailer');
+
   const transporter = nodemailer.createTransporter({
     service: 'gmail',
     auth: {
       user: 'iadaadmufsm@gmail.com',
-      pass: process.env.GMAIL_APP_PASSWORD
-    }
-  })
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
 
   await transporter.sendMail({
     from: 'iadaadmufsm@gmail.com',
@@ -867,24 +902,28 @@ async function sendTicketConfirmation(email: string, ticket: any) {
         <li><strong>Status:</strong> ${ticket.status}</li>
       </ul>
       <p>Você pode acompanhar o andamento em: https://iaadm.iaprojetos.com.br</p>
-    `
-  })
+    `,
+  });
 }
 ```
 
 #### Cron Job para Processamento
+
 ```typescript
 // app/api/cron/process-emails/route.ts
-import { NextResponse } from 'next/server'
-import { processIncomingEmails } from '@/lib/email/gmail'
+import { NextResponse } from 'next/server';
+import { processIncomingEmails } from '@/lib/email/gmail';
 
 export async function GET() {
   try {
-    await processIncomingEmails()
-    return NextResponse.json({ success: true })
+    await processIncomingEmails();
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Cron job error:', error)
-    return NextResponse.json({ error: 'Failed to process emails' }, { status: 500 })
+    console.error('Cron job error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process emails' },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -892,15 +931,19 @@ export async function GET() {
 ### 4.3 Configuração OAuth para Gmail
 
 #### Origens JavaScript Autorizadas
+
 Para o domínio `https://iaadm.iaprojetos.com.br`:
+
 - `https://iaadm.iaprojetos.com.br`
 - `https://iaadm.iaprojetos.com.br:443`
 
 #### URIs de Redirecionamento Autorizados
+
 - `https://iaadm.iaprojetos.com.br/api/auth/callback/google`
 - `https://iaadm.iaprojetos.com.br/auth/gmail/callback`
 
 #### Variáveis de Ambiente Necessárias
+
 ```env
 GMAIL_CLIENT_ID=your_gmail_client_id
 GMAIL_CLIENT_SECRET=your_gmail_client_secret
@@ -915,12 +958,12 @@ GMAIL_APP_PASSWORD=your_app_password
 **Data**: 25 de julho de 2025  
 **Versão**: 1.0
 
-
 ## Fase 5: Relatórios, Analytics e Dashboards
 
 ### 5.1 Sistema de Relatórios Avançados
 
 #### Componente de Relatórios Customizáveis
+
 ```typescript
 // components/reports/ReportBuilder.tsx
 'use client'
@@ -975,7 +1018,7 @@ export function ReportBuilder() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config, format })
       })
-      
+
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -991,7 +1034,7 @@ export function ReportBuilder() {
     <div className="space-y-6">
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Configuração do Relatório</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de Relatório</label>
@@ -1004,7 +1047,7 @@ export function ReportBuilder() {
               <option value="performance">Performance</option>
             </Select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Agrupar por</label>
             <Select
@@ -1016,7 +1059,7 @@ export function ReportBuilder() {
               <option value="month">Mês</option>
             </Select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de Gráfico</label>
             <Select
@@ -1029,7 +1072,7 @@ export function ReportBuilder() {
               <option value="area">Área</option>
             </Select>
           </div>
-          
+
           <div className="flex items-end">
             <Button onClick={generateReport} disabled={isLoading}>
               {isLoading ? 'Gerando...' : 'Gerar Relatório'}
@@ -1054,7 +1097,7 @@ export function ReportBuilder() {
               </Button>
             </div>
           </div>
-          
+
           <Chart data={data} type={config.chartType} />
         </Card>
       )}
@@ -1064,45 +1107,53 @@ export function ReportBuilder() {
 ```
 
 #### API de Relatórios
+
 ```typescript
 // app/api/reports/generate/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/database'
-import { getServerSession } from 'next-auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/database';
+import { getServerSession } from 'next-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession();
     if (!session || session.user.role === 'USER') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { type, dateRange, groupBy, filters } = await request.json()
+    const { type, dateRange, groupBy, filters } = await request.json();
 
-    let data = []
+    let data = [];
 
     switch (type) {
       case 'tickets':
-        data = await generateTicketReport(dateRange, groupBy, filters)
-        break
+        data = await generateTicketReport(dateRange, groupBy, filters);
+        break;
       case 'users':
-        data = await generateUserReport(dateRange, groupBy, filters)
-        break
+        data = await generateUserReport(dateRange, groupBy, filters);
+        break;
       case 'performance':
-        data = await generatePerformanceReport(dateRange, groupBy, filters)
-        break
+        data = await generatePerformanceReport(dateRange, groupBy, filters);
+        break;
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Report generation error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('Report generation error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 
-async function generateTicketReport(dateRange: any, groupBy: string, filters: any) {
-  const groupByClause = getGroupByClause(groupBy)
-  
+async function generateTicketReport(
+  dateRange: any,
+  groupBy: string,
+  filters: any
+) {
+  const groupByClause = getGroupByClause(groupBy);
+
   const result = await prisma.$queryRaw`
     SELECT 
       ${groupByClause} as period,
@@ -1117,12 +1168,16 @@ async function generateTicketReport(dateRange: any, groupBy: string, filters: an
     WHERE created_at BETWEEN ${dateRange.start} AND ${dateRange.end}
     GROUP BY ${groupByClause}
     ORDER BY period
-  `
+  `;
 
-  return result
+  return result;
 }
 
-async function generateUserReport(dateRange: any, groupBy: string, filters: any) {
+async function generateUserReport(
+  dateRange: any,
+  groupBy: string,
+  filters: any
+) {
   const result = await prisma.$queryRaw`
     SELECT 
       ${getGroupByClause(groupBy)} as period,
@@ -1133,12 +1188,16 @@ async function generateUserReport(dateRange: any, groupBy: string, filters: any)
     WHERE created_at BETWEEN ${dateRange.start} AND ${dateRange.end}
     GROUP BY ${getGroupByClause(groupBy)}
     ORDER BY period
-  `
+  `;
 
-  return result
+  return result;
 }
 
-async function generatePerformanceReport(dateRange: any, groupBy: string, filters: any) {
+async function generatePerformanceReport(
+  dateRange: any,
+  groupBy: string,
+  filters: any
+) {
   const result = await prisma.$queryRaw`
     SELECT 
       ${getGroupByClause(groupBy)} as period,
@@ -1152,21 +1211,21 @@ async function generatePerformanceReport(dateRange: any, groupBy: string, filter
     WHERE created_at BETWEEN ${dateRange.start} AND ${dateRange.end}
     GROUP BY ${getGroupByClause(groupBy)}
     ORDER BY period
-  `
+  `;
 
-  return result
+  return result;
 }
 
 function getGroupByClause(groupBy: string): string {
   switch (groupBy) {
     case 'day':
-      return "DATE_TRUNC('day', created_at)"
+      return "DATE_TRUNC('day', created_at)";
     case 'week':
-      return "DATE_TRUNC('week', created_at)"
+      return "DATE_TRUNC('week', created_at)";
     case 'month':
-      return "DATE_TRUNC('month', created_at)"
+      return "DATE_TRUNC('month', created_at)";
     default:
-      return "DATE_TRUNC('day', created_at)"
+      return "DATE_TRUNC('day', created_at)";
   }
 }
 ```
@@ -1174,6 +1233,7 @@ function getGroupByClause(groupBy: string): string {
 ### 5.2 Dashboard Avançado com Analytics
 
 #### Componente de Métricas Principais
+
 ```typescript
 // components/dashboard/AdvancedMetrics.tsx
 'use client'
@@ -1375,79 +1435,80 @@ function calculateTrend(data: number[]): number {
 ```
 
 #### API de Analytics
+
 ```typescript
 // app/api/analytics/metrics/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/database'
-import { getServerSession } from 'next-auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/database';
+import { getServerSession } from 'next-auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const range = searchParams.get('range') || '7d'
-    
-    const days = parseInt(range.replace('d', '')) || 7
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const { searchParams } = new URL(request.url);
+    const range = searchParams.get('range') || '7d';
+
+    const days = parseInt(range.replace('d', '')) || 7;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // Métricas básicas
     const totalTickets = await prisma.ticket.count({
-      where: { createdAt: { gte: startDate } }
-    })
+      where: { createdAt: { gte: startDate } },
+    });
 
     const openTickets = await prisma.ticket.count({
-      where: { 
+      where: {
         status: 'OPEN',
-        createdAt: { gte: startDate }
-      }
-    })
+        createdAt: { gte: startDate },
+      },
+    });
 
     const resolvedTickets = await prisma.ticket.count({
-      where: { 
+      where: {
         status: { in: ['RESOLVED', 'CLOSED'] },
-        createdAt: { gte: startDate }
-      }
-    })
+        createdAt: { gte: startDate },
+      },
+    });
 
     // Tempo médio de resolução
-    const avgResolutionResult = await prisma.$queryRaw`
+    const avgResolutionResult = (await prisma.$queryRaw`
       SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))/3600) as avg_hours
       FROM tickets 
       WHERE resolved_at IS NOT NULL 
       AND created_at >= ${startDate}
-    ` as any[]
+    `) as any[];
 
-    const avgResolutionTime = avgResolutionResult[0]?.avg_hours || 0
+    const avgResolutionTime = avgResolutionResult[0]?.avg_hours || 0;
 
     // Satisfação do usuário
-    const satisfactionResult = await prisma.$queryRaw`
+    const satisfactionResult = (await prisma.$queryRaw`
       SELECT AVG(satisfaction_rating) as avg_rating
       FROM tickets 
       WHERE satisfaction_rating IS NOT NULL 
       AND created_at >= ${startDate}
-    ` as any[]
+    `) as any[];
 
-    const userSatisfaction = satisfactionResult[0]?.avg_rating || 0
+    const userSatisfaction = satisfactionResult[0]?.avg_rating || 0;
 
     // Conformidade SLA
-    const slaResult = await prisma.$queryRaw`
+    const slaResult = (await prisma.$queryRaw`
       SELECT 
         COUNT(CASE WHEN resolved_at <= sla_due_date THEN 1 END)::float / COUNT(*)::float as compliance
       FROM tickets 
       WHERE sla_due_date IS NOT NULL 
       AND resolved_at IS NOT NULL
       AND created_at >= ${startDate}
-    ` as any[]
+    `) as any[];
 
-    const slaCompliance = slaResult[0]?.compliance || 0
+    const slaCompliance = slaResult[0]?.compliance || 0;
 
     // Tendências diárias
-    const dailyTrends = await prisma.$queryRaw`
+    const dailyTrends = (await prisma.$queryRaw`
       SELECT 
         DATE_TRUNC('day', created_at) as date,
         COUNT(*) as created,
@@ -1459,10 +1520,10 @@ export async function GET(request: NextRequest) {
       WHERE created_at >= ${startDate}
       GROUP BY DATE_TRUNC('day', created_at)
       ORDER BY date
-    ` as any[]
+    `) as any[];
 
     // Distribuição por categoria
-    const categoryDistribution = await prisma.$queryRaw`
+    const categoryDistribution = (await prisma.$queryRaw`
       SELECT 
         COALESCE(category, 'Sem categoria') as name,
         COUNT(*) as value
@@ -1470,10 +1531,10 @@ export async function GET(request: NextRequest) {
       WHERE created_at >= ${startDate}
       GROUP BY category
       ORDER BY value DESC
-    ` as any[]
+    `) as any[];
 
     // Distribuição por prioridade
-    const priorityDistribution = await prisma.$queryRaw`
+    const priorityDistribution = (await prisma.$queryRaw`
       SELECT 
         priority as name,
         COUNT(*) as value
@@ -1488,7 +1549,7 @@ export async function GET(request: NextRequest) {
           WHEN 'MEDIUM' THEN 4
           WHEN 'LOW' THEN 5
         END
-    ` as any[]
+    `) as any[];
 
     const metrics = {
       totalTickets,
@@ -1500,22 +1561,25 @@ export async function GET(request: NextRequest) {
       trends: {
         ticketsCreated: dailyTrends.map(d => Number(d.created)),
         ticketsResolved: dailyTrends.map(d => Number(d.resolved)),
-        responseTime: dailyTrends.map(d => Number(d.avg_time) || 0)
+        responseTime: dailyTrends.map(d => Number(d.avg_time) || 0),
       },
       categoryDistribution: categoryDistribution.map(c => ({
         name: c.name,
-        value: Number(c.value)
+        value: Number(c.value),
       })),
       priorityDistribution: priorityDistribution.map(p => ({
         name: p.name,
-        value: Number(p.value)
-      }))
-    }
+        value: Number(p.value),
+      })),
+    };
 
-    return NextResponse.json(metrics)
+    return NextResponse.json(metrics);
   } catch (error) {
-    console.error('Analytics error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('Analytics error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -1525,11 +1589,12 @@ export async function GET(request: NextRequest) {
 ### 6.1 Sistema de Notificações
 
 #### Configuração do SendGrid (Gratuito)
+
 ```typescript
 // lib/notifications/email.ts
-import sgMail from '@sendgrid/mail'
+import sgMail from '@sendgrid/mail';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function sendEmailNotification(
   to: string,
@@ -1546,19 +1611,22 @@ export async function sendEmailNotification(
       html,
       ...(templateId && {
         templateId,
-        dynamicTemplateData: templateData
-      })
-    }
+        dynamicTemplateData: templateData,
+      }),
+    };
 
-    await sgMail.send(msg)
-    console.log('Email sent successfully')
+    await sgMail.send(msg);
+    console.log('Email sent successfully');
   } catch (error) {
-    console.error('Email sending error:', error)
-    throw error
+    console.error('Email sending error:', error);
+    throw error;
   }
 }
 
-export async function sendTicketNotification(ticket: any, type: 'created' | 'updated' | 'assigned' | 'resolved') {
+export async function sendTicketNotification(
+  ticket: any,
+  type: 'created' | 'updated' | 'assigned' | 'resolved'
+) {
   const templates = {
     created: {
       subject: `Novo Ticket #${ticket.id.slice(-8)} - ${ticket.title}`,
@@ -1569,7 +1637,7 @@ export async function sendTicketNotification(ticket: any, type: 'created' | 'upd
         <p><strong>Prioridade:</strong> ${ticket.priority}</p>
         <p><strong>Status:</strong> ${ticket.status}</p>
         <p><a href="https://iaadm.iaprojetos.com.br/tickets/${ticket.id}">Ver Ticket</a></p>
-      `
+      `,
     },
     updated: {
       subject: `Ticket Atualizado #${ticket.id.slice(-8)} - ${ticket.title}`,
@@ -1577,7 +1645,7 @@ export async function sendTicketNotification(ticket: any, type: 'created' | 'upd
         <h2>Ticket Atualizado</h2>
         <p>O ticket foi atualizado com novas informações.</p>
         <p><a href="https://iaadm.iaprojetos.com.br/tickets/${ticket.id}">Ver Ticket</a></p>
-      `
+      `,
     },
     assigned: {
       subject: `Ticket Atribuído #${ticket.id.slice(-8)} - ${ticket.title}`,
@@ -1585,7 +1653,7 @@ export async function sendTicketNotification(ticket: any, type: 'created' | 'upd
         <h2>Ticket Atribuído a Você</h2>
         <p>Um novo ticket foi atribuído a você.</p>
         <p><a href="https://iaadm.iaprojetos.com.br/tickets/${ticket.id}">Ver Ticket</a></p>
-      `
+      `,
     },
     resolved: {
       subject: `Ticket Resolvido #${ticket.id.slice(-8)} - ${ticket.title}`,
@@ -1593,64 +1661,76 @@ export async function sendTicketNotification(ticket: any, type: 'created' | 'upd
         <h2>Ticket Resolvido</h2>
         <p>Seu ticket foi resolvido. Por favor, avalie nossa solução.</p>
         <p><a href="https://iaadm.iaprojetos.com.br/tickets/${ticket.id}">Ver Ticket</a></p>
-      `
-    }
-  }
+      `,
+    },
+  };
 
-  const template = templates[type]
-  
+  const template = templates[type];
+
   // Enviar para o criador do ticket
   if (ticket.createdBy?.email) {
-    await sendEmailNotification(ticket.createdBy.email, template.subject, template.html)
+    await sendEmailNotification(
+      ticket.createdBy.email,
+      template.subject,
+      template.html
+    );
   }
 
   // Enviar para o responsável se for diferente do criador
-  if (ticket.assignedTo?.email && ticket.assignedTo.email !== ticket.createdBy?.email) {
-    await sendEmailNotification(ticket.assignedTo.email, template.subject, template.html)
+  if (
+    ticket.assignedTo?.email &&
+    ticket.assignedTo.email !== ticket.createdBy?.email
+  ) {
+    await sendEmailNotification(
+      ticket.assignedTo.email,
+      template.subject,
+      template.html
+    );
   }
 }
 ```
 
 #### WebSockets para Notificações em Tempo Real
+
 ```typescript
 // lib/notifications/websocket.ts
-import { Server as SocketIOServer } from 'socket.io'
-import { Server as HTTPServer } from 'http'
+import { Server as SocketIOServer } from 'socket.io';
+import { Server as HTTPServer } from 'http';
 
-let io: SocketIOServer
+let io: SocketIOServer;
 
 export function initializeWebSocket(server: HTTPServer) {
   io = new SocketIOServer(server, {
     cors: {
-      origin: "https://iaadm.iaprojetos.com.br",
-      methods: ["GET", "POST"]
-    }
-  })
+      origin: 'https://iaadm.iaprojetos.com.br',
+      methods: ['GET', 'POST'],
+    },
+  });
 
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id)
+  io.on('connection', socket => {
+    console.log('User connected:', socket.id);
 
-    socket.on('join-room', (userId) => {
-      socket.join(`user-${userId}`)
-    })
+    socket.on('join-room', userId => {
+      socket.join(`user-${userId}`);
+    });
 
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id)
-    })
-  })
+      console.log('User disconnected:', socket.id);
+    });
+  });
 
-  return io
+  return io;
 }
 
 export function sendRealTimeNotification(userId: string, notification: any) {
   if (io) {
-    io.to(`user-${userId}`).emit('notification', notification)
+    io.to(`user-${userId}`).emit('notification', notification);
   }
 }
 
 export function broadcastToCoordinators(notification: any) {
   if (io) {
-    io.emit('coordinator-notification', notification)
+    io.emit('coordinator-notification', notification);
   }
 }
 ```
@@ -1658,53 +1738,54 @@ export function broadcastToCoordinators(notification: any) {
 ### 6.2 Otimizações de Performance
 
 #### Implementação de Cache Redis
+
 ```typescript
 // lib/cache/redis.ts
-import Redis from 'ioredis'
+import Redis from 'ioredis';
 
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD,
   retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3
-})
+  maxRetriesPerRequest: 3,
+});
 
 export class CacheService {
   static async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await redis.get(key)
-      return value ? JSON.parse(value) : null
+      const value = await redis.get(key);
+      return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error('Cache get error:', error)
-      return null
+      console.error('Cache get error:', error);
+      return null;
     }
   }
 
   static async set(key: string, value: any, ttl: number = 3600): Promise<void> {
     try {
-      await redis.setex(key, ttl, JSON.stringify(value))
+      await redis.setex(key, ttl, JSON.stringify(value));
     } catch (error) {
-      console.error('Cache set error:', error)
+      console.error('Cache set error:', error);
     }
   }
 
   static async del(key: string): Promise<void> {
     try {
-      await redis.del(key)
+      await redis.del(key);
     } catch (error) {
-      console.error('Cache delete error:', error)
+      console.error('Cache delete error:', error);
     }
   }
 
   static async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const keys = await redis.keys(pattern)
+      const keys = await redis.keys(pattern);
       if (keys.length > 0) {
-        await redis.del(...keys)
+        await redis.del(...keys);
       }
     } catch (error) {
-      console.error('Cache invalidate error:', error)
+      console.error('Cache invalidate error:', error);
     }
   }
 }
@@ -1712,28 +1793,29 @@ export class CacheService {
 // Middleware para cache de API
 export function withCache(handler: any, ttl: number = 300) {
   return async (req: any, res: any) => {
-    const cacheKey = `api:${req.url}:${JSON.stringify(req.query)}`
-    
+    const cacheKey = `api:${req.url}:${JSON.stringify(req.query)}`;
+
     // Tentar buscar do cache
-    const cached = await CacheService.get(cacheKey)
+    const cached = await CacheService.get(cacheKey);
     if (cached) {
-      return res.json(cached)
+      return res.json(cached);
     }
 
     // Executar handler original
-    const originalJson = res.json
-    res.json = function(data: any) {
+    const originalJson = res.json;
+    res.json = function (data: any) {
       // Salvar no cache
-      CacheService.set(cacheKey, data, ttl)
-      return originalJson.call(this, data)
-    }
+      CacheService.set(cacheKey, data, ttl);
+      return originalJson.call(this, data);
+    };
 
-    return handler(req, res)
-  }
+    return handler(req, res);
+  };
 }
 ```
 
 #### Otimização de Imagens
+
 ```typescript
 // components/ui/OptimizedImage.tsx
 import Image from 'next/image'
@@ -1748,13 +1830,13 @@ interface OptimizedImageProps {
   priority?: boolean
 }
 
-export function OptimizedImage({ 
-  src, 
-  alt, 
-  width, 
-  height, 
-  className, 
-  priority = false 
+export function OptimizedImage({
+  src,
+  alt,
+  width,
+  height,
+  className,
+  priority = false
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -1764,7 +1846,7 @@ export function OptimizedImage({
       {isLoading && (
         <div className="absolute inset-0 bg-gray-200 animate-pulse" />
       )}
-      
+
       {!error ? (
         <Image
           src={src}
@@ -1793,6 +1875,7 @@ export function OptimizedImage({
 ```
 
 #### Lazy Loading para Componentes
+
 ```typescript
 // components/ui/LazyComponent.tsx
 import { lazy, Suspense } from 'react'
@@ -1836,9 +1919,10 @@ function ComponentSkeleton() {
 ### 7.1 Documentação Swagger/OpenAPI
 
 #### Configuração do Swagger
+
 ```typescript
 // lib/swagger/config.ts
-import { createSwaggerSpec } from 'next-swagger-doc'
+import { createSwaggerSpec } from 'next-swagger-doc';
 
 export const getApiDocs = async () => {
   const spec = createSwaggerSpec({
@@ -1851,26 +1935,26 @@ export const getApiDocs = async () => {
         description: 'API completa para o sistema de gerenciamento de tickets',
         contact: {
           name: 'Suporte Técnico',
-          email: 'iadaadmufsm@gmail.com'
-        }
+          email: 'iadaadmufsm@gmail.com',
+        },
       },
       servers: [
         {
           url: 'https://iaadm.iaprojetos.com.br/api',
-          description: 'Servidor de Produção'
+          description: 'Servidor de Produção',
         },
         {
           url: 'http://localhost:3000/api',
-          description: 'Servidor de Desenvolvimento'
-        }
+          description: 'Servidor de Desenvolvimento',
+        },
       ],
       components: {
         securitySchemes: {
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
-            bearerFormat: 'JWT'
-          }
+            bearerFormat: 'JWT',
+          },
         },
         schemas: {
           Ticket: {
@@ -1879,19 +1963,27 @@ export const getApiDocs = async () => {
               id: { type: 'string', format: 'uuid' },
               title: { type: 'string', maxLength: 500 },
               description: { type: 'string' },
-              status: { 
-                type: 'string', 
-                enum: ['OPEN', 'IN_PROGRESS', 'WAITING_USER', 'WAITING_VENDOR', 'RESOLVED', 'CLOSED', 'CANCELLED'] 
+              status: {
+                type: 'string',
+                enum: [
+                  'OPEN',
+                  'IN_PROGRESS',
+                  'WAITING_USER',
+                  'WAITING_VENDOR',
+                  'RESOLVED',
+                  'CLOSED',
+                  'CANCELLED',
+                ],
               },
-              priority: { 
-                type: 'string', 
-                enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'URGENT'] 
+              priority: {
+                type: 'string',
+                enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'URGENT'],
               },
               category: { type: 'string' },
               createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' }
+              updatedAt: { type: 'string', format: 'date-time' },
             },
-            required: ['title', 'description', 'status', 'priority']
+            required: ['title', 'description', 'status', 'priority'],
           },
           User: {
             type: 'object',
@@ -1901,27 +1993,28 @@ export const getApiDocs = async () => {
               name: { type: 'string' },
               role: { type: 'string', enum: ['USER', 'COORDINATOR', 'ADMIN'] },
               department: { type: 'string' },
-              isActive: { type: 'boolean' }
-            }
+              isActive: { type: 'boolean' },
+            },
           },
           Error: {
             type: 'object',
             properties: {
               error: { type: 'string' },
               message: { type: 'string' },
-              code: { type: 'string' }
-            }
-          }
-        }
+              code: { type: 'string' },
+            },
+          },
+        },
       },
-      security: [{ bearerAuth: [] }]
-    }
-  })
-  return spec
-}
+      security: [{ bearerAuth: [] }],
+    },
+  });
+  return spec;
+};
 ```
 
 #### Página de Documentação
+
 ```typescript
 // app/api/docs/page.tsx
 import { getApiDocs } from '@/lib/swagger/config'
@@ -1930,17 +2023,17 @@ import 'swagger-ui-react/swagger-ui.css'
 
 export default async function ApiDocsPage() {
   const spec = await getApiDocs()
-  
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-4">Documentação da API</h1>
         <p className="text-gray-600">
-          Documentação completa da API do Sistema de Tickets. 
+          Documentação completa da API do Sistema de Tickets.
           Use esta documentação para integrar com o sistema ou entender os endpoints disponíveis.
         </p>
       </div>
-      
+
       <SwaggerUI spec={spec} />
     </div>
   )
@@ -1950,6 +2043,7 @@ export default async function ApiDocsPage() {
 ### 7.2 Dashboard de Saúde do Sistema
 
 #### Componente de Monitoramento
+
 ```typescript
 // components/system/HealthDashboard.tsx
 'use client'
@@ -1958,12 +2052,12 @@ import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Server, 
-  Database, 
-  Wifi, 
-  HardDrive, 
-  Cpu, 
+import {
+  Server,
+  Database,
+  Wifi,
+  HardDrive,
+  Cpu,
   Memory,
   AlertTriangle,
   CheckCircle,
@@ -2187,37 +2281,38 @@ export function HealthDashboard() {
 ```
 
 #### API de Saúde Detalhada
+
 ```typescript
 // app/api/health/detailed/route.ts
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/database'
-import { CacheService } from '@/lib/cache/redis'
-import os from 'os'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/database';
+import { CacheService } from '@/lib/cache/redis';
+import os from 'os';
 
 export async function GET() {
   try {
-    const startTime = Date.now()
+    const startTime = Date.now();
 
     // Testar conexão com banco de dados
-    const dbStart = Date.now()
-    await prisma.$queryRaw`SELECT 1`
-    const dbTime = Date.now() - dbStart
+    const dbStart = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const dbTime = Date.now() - dbStart;
 
     // Testar Redis
-    const redisStart = Date.now()
-    await CacheService.set('health-check', 'ok', 10)
-    await CacheService.get('health-check')
-    const redisTime = Date.now() - redisStart
+    const redisStart = Date.now();
+    await CacheService.set('health-check', 'ok', 10);
+    await CacheService.get('health-check');
+    const redisTime = Date.now() - redisStart;
 
     // Métricas do sistema
-    const cpuUsage = process.cpuUsage()
-    const memUsage = process.memoryUsage()
-    const systemMem = os.totalmem()
-    const freeMem = os.freemem()
+    const cpuUsage = process.cpuUsage();
+    const memUsage = process.memoryUsage();
+    const systemMem = os.totalmem();
+    const freeMem = os.freemem();
 
     // Métricas da aplicação
-    const totalTickets = await prisma.ticket.count()
-    const activeUsers = await prisma.user.count({ where: { isActive: true } })
+    const totalTickets = await prisma.ticket.count();
+    const activeUsers = await prisma.user.count({ where: { isActive: true } });
 
     const health = {
       overall: 'healthy' as const,
@@ -2226,47 +2321,50 @@ export async function GET() {
         api: {
           status: 'healthy',
           responseTime: Date.now() - startTime,
-          uptime: process.uptime()
+          uptime: process.uptime(),
         },
         database: {
           status: dbTime < 1000 ? 'healthy' : 'warning',
           connections: 10, // Placeholder - implementar contagem real
-          queryTime: dbTime
+          queryTime: dbTime,
         },
         redis: {
           status: redisTime < 100 ? 'healthy' : 'warning',
           memory: Math.round(memUsage.rss / 1024 / 1024),
-          connections: 1 // Placeholder
+          connections: 1, // Placeholder
         },
         email: {
           status: 'healthy',
           queueSize: 0,
-          lastSent: new Date().toISOString()
-        }
+          lastSent: new Date().toISOString(),
+        },
       },
       system: {
-        cpu: Math.round((cpuUsage.user + cpuUsage.system) / 1000000 * 100),
+        cpu: Math.round(((cpuUsage.user + cpuUsage.system) / 1000000) * 100),
         memory: Math.round(((systemMem - freeMem) / systemMem) * 100),
         disk: 45, // Placeholder - implementar verificação real
-        uptime: Math.round(os.uptime())
+        uptime: Math.round(os.uptime()),
       },
       metrics: {
         totalRequests: 15420, // Placeholder - implementar contador real
         errorRate: 0.5,
         avgResponseTime: Date.now() - startTime,
         activeUsers,
-        totalTickets
-      }
-    }
+        totalTickets,
+      },
+    };
 
-    return NextResponse.json(health)
+    return NextResponse.json(health);
   } catch (error) {
-    console.error('Health check error:', error)
-    return NextResponse.json({
-      overall: 'critical',
-      error: 'Health check failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 })
+    console.error('Health check error:', error);
+    return NextResponse.json(
+      {
+        overall: 'critical',
+        error: 'Health check failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -2276,6 +2374,7 @@ export async function GET() {
 ### 8.1 Reativação do Menu Lateral
 
 #### Layout Principal com Sidebar
+
 ```typescript
 // app/(dashboard)/layout.tsx
 'use client'
@@ -2296,19 +2395,19 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
+      <Sidebar
+        isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         userRole={session?.user?.role}
       />
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+        <Header
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           user={session?.user}
         />
-        
+
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
           {children}
         </main>
@@ -2319,6 +2418,7 @@ export default function DashboardLayout({
 ```
 
 #### Componente Sidebar Funcional
+
 ```typescript
 // components/layout/Sidebar.tsx
 'use client'
@@ -2432,8 +2532,8 @@ export function Sidebar({ isOpen, onToggle, userRole = 'USER' }: SidebarProps) {
   ]
 
   const toggleExpanded = (title: string) => {
-    setExpandedItems(prev => 
-      prev.includes(title) 
+    setExpandedItems(prev =>
+      prev.includes(title)
         ? prev.filter(item => item !== title)
         : [...prev, title]
     )
@@ -2457,8 +2557,8 @@ export function Sidebar({ isOpen, onToggle, userRole = 'USER' }: SidebarProps) {
           className={cn(
             'flex items-center px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors',
             level > 0 && 'ml-4',
-            isActive 
-              ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
+            isActive
+              ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
               : 'text-gray-700 hover:bg-gray-100'
           )}
           onClick={() => {
@@ -2468,7 +2568,7 @@ export function Sidebar({ isOpen, onToggle, userRole = 'USER' }: SidebarProps) {
           }}
         >
           <item.icon className="mr-3 h-5 w-5" />
-          
+
           {isOpen && (
             <>
               <span className="flex-1">{item.title}</span>
@@ -2558,6 +2658,7 @@ export function Sidebar({ isOpen, onToggle, userRole = 'USER' }: SidebarProps) {
 ### 8.2 Configurações de Produção
 
 #### Variáveis de Ambiente Completas
+
 ```env
 # Database
 DATABASE_URL="postgresql://postgres:5100a23f8d3196cfce339c43d475b3e0@207.180.254.250:5432/ticket_system"
@@ -2601,6 +2702,7 @@ ACME_EMAIL="iadaadmufsm@gmail.com"
 ```
 
 #### Docker Compose Atualizado
+
 ```yaml
 # docker-compose.prod.yml
 version: '3.8'
@@ -2629,19 +2731,19 @@ services:
       - --log.level=INFO
       - --accesslog=true
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      - '80:80'
+      - '443:443'
+      - '8080:8080'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-letsencrypt:/letsencrypt
     networks:
       - ticket-network
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.service=api@internal"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)'
+      - 'traefik.http.routers.traefik.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.traefik.service=api@internal'
 
   redis:
     image: redis:7-alpine
@@ -2653,7 +2755,7 @@ services:
     networks:
       - ticket-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2685,11 +2787,11 @@ services:
       redis:
         condition: service_healthy
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ticket-app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.ticket-app.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ticket-app.entrypoints=websecure"
-      - "traefik.http.services.ticket-app.loadbalancer.server.port=3000"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.ticket-app.rule=Host(`${DOMAIN}`)'
+      - 'traefik.http.routers.ticket-app.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.ticket-app.entrypoints=websecure'
+      - 'traefik.http.services.ticket-app.loadbalancer.server.port=3000'
 
 volumes:
   redis-data:
@@ -2705,84 +2807,103 @@ networks:
 ## Cronograma de Implementação Detalhado
 
 ### Semana 1-2: Fundação
+
 **Dias 1-3: Configuração do Ambiente**
+
 - Configurar conexão com PostgreSQL externo
 - Criar schema do banco de dados
 - Configurar Prisma e migrações
 - Configurar Redis para cache
 
 **Dias 4-7: Estrutura Base**
+
 - Implementar modelos de dados
 - Criar seeders iniciais
 - Configurar autenticação NextAuth
 - Implementar middleware de segurança
 
 **Dias 8-14: APIs Básicas**
+
 - Implementar CRUD completo de tickets
 - Criar APIs de usuários
 - Implementar sistema de permissões
 - Configurar validação com Zod
 
 ### Semana 3-4: Interfaces e CRUD
+
 **Dias 15-21: Interface do Usuário**
+
 - Reativar e melhorar sidebar
 - Implementar dashboard do usuário
 - Criar formulários de tickets
 - Implementar listagem e filtros
 
 **Dias 22-28: Interface do Coordenador**
+
 - Dashboard administrativo
 - Gerenciamento de tickets
 - Sistema de atribuição
 - Relatórios básicos
 
 ### Semana 5-6: IA e Email
+
 **Dias 29-35: Chat IA**
+
 - Integrar OpenAI API
 - Implementar busca na base de conhecimento
 - Criar interface de chat
 - Configurar contexto e respostas
 
 **Dias 36-42: Integração de Email**
+
 - Configurar Gmail API
 - Implementar processamento automático
 - Criar sistema de notificações
 - Configurar SMTP para respostas
 
 ### Semana 7-8: Analytics e Relatórios
+
 **Dias 43-49: Sistema de Relatórios**
+
 - Implementar gerador de relatórios
 - Criar dashboards customizáveis
 - Integrar Chart.js/Recharts
 - Configurar exportação (PDF, Excel, CSV)
 
 **Dias 50-56: Analytics Avançados**
+
 - Implementar métricas em tempo real
 - Criar visualizações interativas
 - Configurar alertas automáticos
 - Implementar trending e insights
 
 ### Semana 9-10: Otimização
+
 **Dias 57-63: Performance**
+
 - Implementar cache Redis
 - Otimizar queries do banco
 - Configurar lazy loading
 - Implementar CDN para assets
 
 **Dias 64-70: Notificações**
+
 - Configurar SendGrid
 - Implementar WebSockets
 - Criar sistema de notificações push
 - Configurar templates de email
 
 ### Semana 11-12: Finalização
+
 **Dias 71-77: Documentação e Testes**
+
 - Criar documentação Swagger
 - Implementar testes automatizados
 - Configurar CI/CD
 - Otimizar para produção
 
 **Dias 78-84: Deploy e Monitoramento**
+
 - Configurar ambiente de produção
 - Implementar dashboard de saúde
 - Configurar monitoramento
@@ -2791,18 +2912,21 @@ networks:
 ## Recursos Necessários
 
 ### Serviços Gratuitos Utilizados
+
 - **SendGrid**: 100 emails/dia gratuitos
 - **OpenAI**: $5 de crédito inicial
 - **Vercel/Netlify**: Deploy gratuito (alternativa)
 - **GitHub Actions**: CI/CD gratuito
 
 ### Custos Estimados (Mensais)
+
 - **VPS**: $10-20/mês
 - **Domínio**: $1-2/mês
 - **OpenAI API**: $5-15/mês (dependendo do uso)
 - **SendGrid Pro** (opcional): $15/mês para mais emails
 
 ### Ferramentas de Desenvolvimento
+
 - **VS Code** com extensões TypeScript/React
 - **Docker Desktop** para desenvolvimento local
 - **Postman** para testes de API
@@ -2811,18 +2935,21 @@ networks:
 ## Métricas de Sucesso
 
 ### Técnicas
+
 - **Performance**: Tempo de resposta < 200ms
 - **Disponibilidade**: Uptime > 99.5%
 - **Segurança**: Zero vulnerabilidades críticas
 - **Cobertura de Testes**: > 80%
 
 ### Funcionais
+
 - **Criação de Tickets**: < 2 minutos
 - **Resolução Média**: < 24 horas
 - **Satisfação do Usuário**: > 4.5/5
 - **Adoção**: 90% dos usuários ativos
 
 ### Negócio
+
 - **ROI**: Economia > 30% vs soluções comerciais
 - **Produtividade**: Aumento de 25% na resolução
 - **Escalabilidade**: Suporte a 1000+ usuários
@@ -2839,4 +2966,3 @@ A implementação seguindo este plano resultará em um sistema moderno, eficient
 **Autor**: Manus AI  
 **Data**: 25 de julho de 2025  
 **Versão**: 1.0
-

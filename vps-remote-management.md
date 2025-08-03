@@ -23,6 +23,7 @@ docker volume ls
 ### 2. Acessar Portainer Remoto
 
 Se o Portainer já está rodando na VPS:
+
 - **URL**: `https://iadm.iaprojetos.com.br`
 - **Dashboard Traefik**: `https://traefik.iadm.iaprojetos.com.br`
 
@@ -85,11 +86,11 @@ services:
       - postgres
       - redis
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.iadm.iaprojetos.com.br`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
-      - "traefik.http.services.app.loadbalancer.server.port=3000"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.app.rule=Host(`app.iadm.iaprojetos.com.br`)'
+      - 'traefik.http.routers.app.entrypoints=websecure'
+      - 'traefik.http.routers.app.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.app.loadbalancer.server.port=3000'
     networks:
       - traefik
 
@@ -243,18 +244,21 @@ crontab -e
 ### Problemas Comuns
 
 1. **Aplicação não carrega**
+
    ```bash
    docker logs ticket-app
    docker exec -it ticket-app sh
    ```
 
 2. **Erro de conexão com banco**
+
    ```bash
    docker logs ticket-postgres
    docker exec -it ticket-postgres psql -U postgres
    ```
 
 3. **Certificado SSL não funciona**
+
    ```bash
    docker logs traefik
    # Verificar se domínio aponta para VPS

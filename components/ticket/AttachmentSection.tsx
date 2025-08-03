@@ -1,269 +1,286 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef } from 'react'
-import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Progress } from '@/components/ui/progress'
-import { 
-  Paperclip, 
-  Upload, 
-  Download, 
-  Trash2, 
-  File, 
-  Image, 
+import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import {
+  Paperclip,
+  Upload,
+  Download,
+  Trash2,
+  File,
+  Image,
   FileText,
   X,
-  Eye
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { toast } from 'sonner'
+  Eye,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Attachment {
-  id: string
-  filename: string
-  originalName: string
-  filepath: string
-  filesize: number
-  mimetype: string
-  isImage: boolean
-  createdAt: string
+  id: string;
+  filename: string;
+  originalName: string;
+  filepath: string;
+  filesize: number;
+  mimetype: string;
+  isImage: boolean;
+  createdAt: string;
   user: {
-    id: string
-    name: string
-    email: string
-    role: string
-  }
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
 interface AttachmentSectionProps {
-  ticketId: string
-  canUpload?: boolean
+  ticketId: string;
+  canUpload?: boolean;
 }
 
-export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSectionProps) {
-  const { data: session } = useSession()
-  const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [dragActive, setDragActive] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+export function AttachmentSection({
+  ticketId,
+  canUpload = true,
+}: AttachmentSectionProps) {
+  const { data: session } = useSession();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const userId = session?.user?.id
-  const userRole = session?.user?.role
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
 
   // Carregar anexos
   useEffect(() => {
-    loadAttachments()
-  }, [ticketId])
+    loadAttachments();
+  }, [ticketId]);
 
   const loadAttachments = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch(`/api/tickets/${ticketId}/attachments`)
-      
+      setIsLoading(true);
+      const response = await fetch(`/api/tickets/${ticketId}/attachments`);
+
       if (!response.ok) {
-        throw new Error('Erro ao carregar anexos')
+        throw new Error('Erro ao carregar anexos');
       }
 
-      const data = await response.json()
-      setAttachments(data.data || [])
+      const data = await response.json();
+      setAttachments(data.data || []);
     } catch (error) {
-      console.error('Erro ao carregar anexos:', error)
-      toast.error('Erro ao carregar anexos')
+      console.error('Erro ao carregar anexos:', error);
+      toast.error('Erro ao carregar anexos');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Upload de arquivo
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
+    if (!files || files.length === 0) return;
 
-    const file = files[0]
-    
+    const file = files[0];
+
     // Validações básicas
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      toast.error('Arquivo muito grande. Tamanho máximo: 10MB')
-      return
+      toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
+      return;
     }
 
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf', 'application/msword', 
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv'
-    ]
+      'text/plain',
+      'text/csv',
+    ];
 
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Tipo de arquivo não permitido')
-      return
+      toast.error('Tipo de arquivo não permitido');
+      return;
     }
 
     try {
-      setIsUploading(true)
-      setUploadProgress(0)
+      setIsUploading(true);
+      setUploadProgress(0);
 
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
 
       // Simular progresso (em produção, usar XMLHttpRequest para progresso real)
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
+            clearInterval(progressInterval);
+            return 90;
           }
-          return prev + 10
-        })
-      }, 200)
+          return prev + 10;
+        });
+      }, 200);
 
       const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
         method: 'POST',
         body: formData,
-      })
+      });
 
-      clearInterval(progressInterval)
-      setUploadProgress(100)
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao fazer upload')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao fazer upload');
       }
 
-      const data = await response.json()
-      setAttachments(prev => [data.data, ...prev])
-      toast.success('Arquivo enviado com sucesso')
-      
+      const data = await response.json();
+      setAttachments(prev => [data.data, ...prev]);
+      toast.success('Arquivo enviado com sucesso');
+
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao fazer upload')
+      console.error('Erro ao fazer upload:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao fazer upload'
+      );
     } finally {
-      setIsUploading(false)
-      setUploadProgress(0)
+      setIsUploading(false);
+      setUploadProgress(0);
     }
-  }
+  };
 
   // Download de arquivo
   const handleDownload = async (attachment: Attachment) => {
     try {
-      const response = await fetch(`/api/attachments/${attachment.id}`)
-      
+      const response = await fetch(`/api/attachments/${attachment.id}`);
+
       if (!response.ok) {
-        throw new Error('Erro ao baixar arquivo')
+        throw new Error('Erro ao baixar arquivo');
       }
 
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = attachment.originalName
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      
-      toast.success('Download iniciado')
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = attachment.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Download iniciado');
     } catch (error) {
-      console.error('Erro ao fazer download:', error)
-      toast.error('Erro ao fazer download')
+      console.error('Erro ao fazer download:', error);
+      toast.error('Erro ao fazer download');
     }
-  }
+  };
 
   // Deletar anexo
   const handleDelete = async (attachment: Attachment) => {
-    if (!confirm(`Tem certeza que deseja deletar "${attachment.originalName}"?`)) {
-      return
+    if (
+      !confirm(`Tem certeza que deseja deletar "${attachment.originalName}"?`)
+    ) {
+      return;
     }
 
     try {
       const response = await fetch(`/api/attachments/${attachment.id}`, {
         method: 'DELETE',
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao deletar anexo')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao deletar anexo');
       }
 
-      setAttachments(prev => prev.filter(a => a.id !== attachment.id))
-      toast.success('Anexo deletado com sucesso')
+      setAttachments(prev => prev.filter(a => a.id !== attachment.id));
+      toast.success('Anexo deletado com sucesso');
     } catch (error) {
-      console.error('Erro ao deletar anexo:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao deletar anexo')
+      console.error('Erro ao deletar anexo:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao deletar anexo'
+      );
     }
-  }
+  };
 
   // Drag and drop handlers
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
+      setDragActive(true);
     } else if (e.type === 'dragleave') {
-      setDragActive(false)
+      setDragActive(false);
     }
-  }
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files)
+      handleFileUpload(e.dataTransfer.files);
     }
-  }
+  };
 
   // Utilitários
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
 
   const getFileIcon = (mimetype: string, isImage: boolean) => {
-    if (isImage) return <Image className="h-5 w-5 text-blue-500" />
-    if (mimetype.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />
-    if (mimetype.includes('word')) return <FileText className="h-5 w-5 text-blue-600" />
-    if (mimetype.includes('excel') || mimetype.includes('sheet')) return <FileText className="h-5 w-5 text-green-600" />
-    return <File className="h-5 w-5 text-gray-500" />
-  }
+    if (isImage) return <Image className="h-5 w-5 text-blue-500" />;
+    if (mimetype.includes('pdf'))
+      return <FileText className="h-5 w-5 text-red-500" />;
+    if (mimetype.includes('word'))
+      return <FileText className="h-5 w-5 text-blue-600" />;
+    if (mimetype.includes('excel') || mimetype.includes('sheet'))
+      return <FileText className="h-5 w-5 text-green-600" />;
+    return <File className="h-5 w-5 text-gray-500" />;
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       case 'COORDINATOR':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'Admin'
+        return 'Admin';
       case 'COORDINATOR':
-        return 'Coordenador'
+        return 'Coordenador';
       default:
-        return 'Usuário'
+        return 'Usuário';
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -290,7 +307,7 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -311,8 +328,8 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
           <div className="space-y-4">
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive 
-                  ? 'border-blue-500 bg-blue-50' 
+                dragActive
+                  ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
               }`}
               onDragEnter={handleDrag}
@@ -339,7 +356,7 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files)}
+                onChange={e => handleFileUpload(e.target.files)}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
               />
             </div>
@@ -364,30 +381,32 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
               <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhum anexo ainda</p>
               {canUpload && (
-                <p className="text-sm">Adicione arquivos para dar contexto ao chamado</p>
+                <p className="text-sm">
+                  Adicione arquivos para dar contexto ao chamado
+                </p>
               )}
             </div>
           ) : (
-            attachments.map((attachment) => (
+            attachments.map(attachment => (
               <div key={attachment.id} className="space-y-3">
                 <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex-shrink-0">
                     {getFileIcon(attachment.mimetype, attachment.isImage)}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium truncate">
                         {attachment.originalName}
                       </span>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={getRoleBadgeColor(attachment.user.role)}
                       >
                         {getRoleLabel(attachment.user.role)}
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
                       <span>{formatFileSize(attachment.filesize)}</span>
                       <span>•</span>
@@ -401,7 +420,7 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -411,8 +430,9 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    
-                    {(userId === attachment.user.id || userRole === 'ADMIN') && (
+
+                    {(userId === attachment.user.id ||
+                      userRole === 'ADMIN') && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -431,6 +451,5 @@ export function AttachmentSection({ ticketId, canUpload = true }: AttachmentSect
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

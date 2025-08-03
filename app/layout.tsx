@@ -1,28 +1,26 @@
-import type { Metadata } from 'next'
-import { Providers } from '@/components/providers'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Providers } from '@/components/providers';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Tactical Operations Dashboard',
   description: 'Tactical command and control system',
-  generator: 'v0.dev'
-}
+  generator: 'v0.dev',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="es">
-      <body 
+      <body
         className="bg-slate-900 text-white font-mono antialiased"
         suppressHydrationWarning={true}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }

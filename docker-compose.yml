@@ -42,7 +42,7 @@ services:
     labels:
       # Labels para Traefik (se usado)
       - "traefik.enable=true"
-      - "traefik.http.routers.ticket.rule=Host(\`ticket.localhost\`)"
+      - "traefik.http.routers.ticket.rule=Host(`ticket.localhost`)"
       - "traefik.http.routers.ticket.entrypoints=web"
       - "traefik.http.services.ticket.loadbalancer.server.port=3000"
 

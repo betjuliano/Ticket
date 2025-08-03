@@ -1,38 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { createKnowledgeArticleSchema } from '@/lib/validations'
-import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { createKnowledgeArticleSchema } from '@/lib/validations';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/knowledge/articles - Listar artigos
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return createErrorResponse('Não autorizado', 401)
+      return createErrorResponse('Não autorizado', 401);
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const search = searchParams.get('search') || ''
-    const categoryId = searchParams.get('categoryId') || ''
-    const published = searchParams.get('published')
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const published = searchParams.get('published');
 
     // Construir filtros
-    const where: any = {}
+    const where: any = {};
 
     // Usuários comuns só veem artigos publicados
     if (session.user.role === 'USER') {
-      where.published = true
+      where.published = true;
     } else if (published !== null && published !== '') {
-      where.published = published === 'true'
+      where.published = published === 'true';
     }
 
     // Filtro por categoria
     if (categoryId) {
-      where.categoryId = categoryId
+      where.categoryId = categoryId;
     }
 
     // Filtro de busca
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { content: { contains: search, mode: 'insensitive' } },
-        { tags: { has: search } }
-      ]
+        { tags: { has: search } },
+      ];
     }
 
     // Buscar artigos com paginação
@@ -56,74 +56,70 @@ export async function GET(request: NextRequest) {
               name: true,
               email: true,
               role: true,
-            }
-          }
+            },
+          },
         },
-        orderBy: [
-          { featured: 'desc' },
-          { updatedAt: 'desc' }
-        ],
+        orderBy: [{ featured: 'desc' }, { updatedAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.knowledgeArticle.count({ where })
-    ])
+      prisma.knowledgeArticle.count({ where }),
+    ]);
 
-    return createSuccessResponse(
-      articles,
-      undefined,
-      {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      }
-    )
-
+    return createSuccessResponse(articles, undefined, {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
-    console.error('Erro ao buscar artigos:', error)
-    return createErrorResponse('Erro interno do servidor', 500)
+    console.error('Erro ao buscar artigos:', error);
+    return createErrorResponse('Erro interno do servidor', 500);
   }
 }
 
 // POST /api/knowledge/articles - Criar novo artigo
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return createErrorResponse('Não autorizado', 401)
+      return createErrorResponse('Não autorizado', 401);
     }
 
     // Apenas coordenadores e admins podem criar artigos
     if (session.user.role === 'USER') {
-      return createErrorResponse('Sem permissão para criar artigos', 403)
+      return createErrorResponse('Sem permissão para criar artigos', 403);
     }
 
-    const body = await request.json()
+    const body = await request.json();
 
     // Validar dados
-    const validationResult = createKnowledgeArticleSchema.safeParse(body)
+    const validationResult = createKnowledgeArticleSchema.safeParse(body);
     if (!validationResult.success) {
-      return createErrorResponse('Dados inválidos', 400, validationResult.error.errors)
+      return createErrorResponse(
+        'Dados inválidos',
+        400,
+        validationResult.error.errors
+      );
     }
 
-    const { 
-      title, 
-      content, 
-      categoryId, 
-      tags, 
-      published, 
+    const {
+      title,
+      content,
+      categoryId,
+      tags,
+      published,
       featured,
-      metaDescription 
-    } = validationResult.data
+      metaDescription,
+    } = validationResult.data;
 
     // Verificar se categoria existe
     const category = await prisma.knowledgeCategory.findUnique({
-      where: { id: categoryId }
-    })
+      where: { id: categoryId },
+    });
 
     if (!category) {
-      return createErrorResponse('Categoria não encontrada', 404)
+      return createErrorResponse('Categoria não encontrada', 404);
     }
 
     // Gerar slug único
@@ -131,14 +127,14 @@ export async function POST(request: NextRequest) {
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
-      .trim()
+      .trim();
 
-    let slug = baseSlug
-    let counter = 1
+    let slug = baseSlug;
+    let counter = 1;
 
     while (await prisma.knowledgeArticle.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${counter}`
-      counter++
+      slug = `${baseSlug}-${counter}`;
+      counter++;
     }
 
     // Criar artigo
@@ -163,16 +159,14 @@ export async function POST(request: NextRequest) {
             name: true,
             email: true,
             role: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
-    return createSuccessResponse(article, 'Artigo criado com sucesso', 201)
-
+    return createSuccessResponse(article, 'Artigo criado com sucesso', 201);
   } catch (error) {
-    console.error('Erro ao criar artigo:', error)
-    return createErrorResponse('Erro interno do servidor', 500)
+    console.error('Erro ao criar artigo:', error);
+    return createErrorResponse('Erro interno do servidor', 500);
   }
 }
-

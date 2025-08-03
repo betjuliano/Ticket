@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,21 +18,21 @@ export async function GET(request: NextRequest) {
         // Em produção, adicionar verificações de banco de dados, cache, etc.
         // database: await checkDatabase(),
         // redis: await checkRedis(),
-      }
-    }
+      },
+    };
 
-    return NextResponse.json(healthStatus, { status: 200 })
+    return NextResponse.json(healthStatus, { status: 200 });
   } catch (error) {
-    console.error('Health check failed:', error)
-    
+    console.error('Health check failed:', error);
+
     return NextResponse.json(
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: 'Health check failed'
+        error: 'Health check failed',
       },
       { status: 503 }
-    )
+    );
   }
 }
 
@@ -55,4 +55,3 @@ export async function GET(request: NextRequest) {
 //     return 'error'
 //   }
 // }
-

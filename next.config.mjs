@@ -2,7 +2,7 @@
 const nextConfig = {
   // Configurações de produção otimizadas
   output: 'standalone',
-  
+
   // Configurações de imagem otimizadas
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -37,7 +37,7 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
 
   // Configurações de cache
@@ -47,7 +47,7 @@ const nextConfig = {
         source: '/api/:path*',
         destination: '/api/:path*',
       },
-    ]
+    ];
   },
 
   // Configurações experimentais para melhor performance
@@ -63,7 +63,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-}
+};
 
-export default nextConfig
-
+export default nextConfig;

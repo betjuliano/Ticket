@@ -3,12 +3,14 @@
 ## 📋 Informações do Ambiente
 
 ### Credenciais do Portainer
+
 - **URL:** https://portainer.iaprojetos.com.br
 - **Usuário:** iaprojetos
 - **Senha:** Admjuliano1@
 - **Token:** yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJpYXByb2pldG9zIiwicm9sZSI6MSwic2NvcGUiOiJkZWZhdWx0IiwiZm9yY2VDaGFuZ2VQYXNzd29yZCI6ZmFsc2UsImV4cCI6MTc1MjEzOTIzOSwiaWF0IjoxNzUyMTEwNDM5LCJqdGkiOiJjMDE2MGY5ZC1jZWFkLTQ1ZjEtOWY4Yi1jNzY4YWRkYWJhN2YifQ.sPR5c2N-6Gfjhmnkhj1yspA64mbn7VOlD9lLIjaeSlI
 
 ### Informações do Swarm
+
 - **Swarm ID:** eg6ahp92i130xiavjv7unmrjg
 - **Rede:** iaprojetos
 - **Traefik Service ID:** y1worprtlx36uc3lu089zk9u0
@@ -23,12 +25,14 @@
 ## 📦 Pré-requisitos
 
 ### 1. Verificar Infraestrutura
+
 - [ ] Traefik está rodando no Swarm
 - [ ] Rede `iaprojetos` existe e está ativa
 - [ ] DNS configurado para os domínios
 - [ ] Certificados SSL funcionando
 
 ### 2. Preparar Imagem Docker
+
 ```bash
 # Build da imagem
 docker build -t ticket-system:latest .
@@ -92,6 +96,7 @@ curl -X POST "$PORTAINER_URL/api/stacks" \
 ## 🔧 Configurações Importantes
 
 ### 1. Variáveis de Ambiente Críticas
+
 ```env
 # Banco de dados
 DATABASE_URL=postgresql://tickets_user:tickets123@postgres:5432/tickets_db
@@ -110,6 +115,7 @@ SMTP_PASS=your-gmail-app-password
 ```
 
 ### 2. Recursos e Limites
+
 - **Aplicação:** 512MB RAM (limite) / 256MB (reserva)
 - **PostgreSQL:** 256MB RAM (limite) / 128MB (reserva)
 - **Redis:** 128MB RAM (limite) / 64MB (reserva)
@@ -117,6 +123,7 @@ SMTP_PASS=your-gmail-app-password
 ## 📊 Monitoramento
 
 ### 1. Verificar Status dos Serviços
+
 ```bash
 # Via Portainer API
 curl -H "Authorization: Bearer $TOKEN" \
@@ -128,16 +135,19 @@ docker service ps ticket-system_ticket-system-multidominio
 ```
 
 ### 2. Logs dos Serviços
+
 - **Portainer:** Services → ticket-system → Logs
 - **CLI:** `docker service logs ticket-system_ticket-system-multidominio`
 
 ### 3. Health Checks
+
 - **Aplicação:** https://iadm.iaprojetos.com.br/api/health
 - **Traefik:** https://traefik.iaprojetos.com.br
 
 ## 🔄 Atualizações
 
 ### 1. Atualizar Imagem
+
 ```bash
 # Build nova versão
 docker build -t ticket-system:v1.1.0 .
@@ -147,6 +157,7 @@ docker build -t ticket-system:v1.1.0 .
 ```
 
 ### 2. Atualizar Configurações
+
 - Portainer → Stacks → ticket-system → Editor
 - Modificar docker-compose ou variáveis
 - Clique em "Update the stack"
@@ -154,6 +165,7 @@ docker build -t ticket-system:v1.1.0 .
 ## 🛠️ Troubleshooting
 
 ### 1. Serviço não inicia
+
 ```bash
 # Verificar logs
 docker service logs ticket-system_ticket-system-multidominio --tail 50
@@ -163,6 +175,7 @@ docker service inspect ticket-system_ticket-system-multidominio
 ```
 
 ### 2. Problemas de Rede
+
 ```bash
 # Verificar rede
 docker network ls | grep iaprojetos
@@ -173,6 +186,7 @@ docker run --rm --network iaprojetos alpine ping postgres
 ```
 
 ### 3. Problemas SSL/Traefik
+
 - Verificar se domínios estão no DNS
 - Verificar logs do Traefik
 - Verificar labels do serviço
@@ -180,6 +194,7 @@ docker run --rm --network iaprojetos alpine ping postgres
 ## 📞 Suporte
 
 ### Comandos Úteis
+
 ```bash
 # Status geral
 docker service ls
@@ -197,6 +212,7 @@ docker stack rm ticket-system
 ```
 
 ### Contatos
+
 - **Portainer:** https://portainer.iaprojetos.com.br
 - **Traefik:** https://traefik.iaprojetos.com.br
 - **Aplicação:** https://iadm.iaprojetos.com.br

@@ -3,6 +3,7 @@
 ## ✅ Status Atual da Configuração
 
 ### O que já está funcionando:
+
 - ✅ **Conexão com Supabase**: Estabelecida
 - ✅ **Cliente Supabase**: Configurado
 - ✅ **Variáveis de ambiente**: Configuradas
@@ -11,6 +12,7 @@
 - ✅ **Scripts SQL**: Criados e prontos
 
 ### O que precisa ser finalizado:
+
 - ⚠️ **Scripts SQL**: Executar no painel do Supabase
 - ⚠️ **Storage**: Configurar bucket manualmente
 - ⚠️ **Credenciais**: Service Role Key
@@ -29,24 +31,28 @@
 3. **Execute os scripts na ordem exata:**
 
 #### Script 1: Migração Principal
+
 ```sql
 -- Copie e cole o conteúdo de: supabase-migration.sql
 -- Cria todas as tabelas, índices e dados iniciais
 ```
 
 #### Script 2: Políticas RLS
+
 ```sql
 -- Copie e cole o conteúdo de: supabase-rls-policies.sql
 -- Configura segurança Row Level Security
 ```
 
 #### Script 3: Storage Setup
+
 ```sql
 -- Copie e cole o conteúdo de: supabase-storage-setup.sql
 -- Configura storage para anexos
 ```
 
 #### Script 4: Real-time Setup
+
 ```sql
 -- Copie e cole o conteúdo de: supabase-realtime-setup.sql
 -- Configura notificações em tempo real
@@ -74,6 +80,7 @@
    - `JWT Secret`
 
 3. **Atualize o `.env.local`:**
+
 ```env
 # Substitua os placeholders:
 SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key_aqui
@@ -91,6 +98,7 @@ node test-supabase-complete.js
 ```
 
 **Resultado esperado:**
+
 - ✅ Todas as verificações devem passar
 - ✅ Tabelas acessíveis
 - ✅ Storage funcionando
@@ -129,17 +137,20 @@ npm run dev
 ## 🔧 Arquivos Criados
 
 ### Scripts SQL:
+
 - `supabase-migration.sql` - Migração principal
 - `supabase-rls-policies.sql` - Políticas de segurança
 - `supabase-storage-setup.sql` - Configuração de storage
 - `supabase-realtime-setup.sql` - Notificações em tempo real
 
 ### Scripts de Configuração:
+
 - `setup-supabase.js` - Configuração automática
 - `setup-supabase-database.js` - Setup do banco
 - `test-supabase-complete.js` - Teste completo
 
 ### Documentação:
+
 - `SUPABASE-SETUP-GUIDE.md` - Guia completo
 - `CONFIGURACAO-FINAL-SUPABASE.md` - Este arquivo
 
@@ -148,15 +159,19 @@ npm run dev
 ## 🆘 Troubleshooting
 
 ### Problema: "permission denied for schema public"
+
 **Solução:** Execute os scripts RLS primeiro
 
 ### Problema: "new row violates row-level security policy"
+
 **Solução:** Configure as políticas RLS antes do storage
 
 ### Problema: Real-time não funciona
+
 **Solução:** Execute o script realtime-setup.sql
 
 ### Problema: Tabelas não encontradas
+
 **Solução:** Execute o script de migração principal
 
 ---
@@ -164,12 +179,14 @@ npm run dev
 ## 📞 Suporte
 
 ### Recursos Úteis:
+
 - [Documentação Supabase](https://supabase.com/docs)
 - [Guia RLS](https://supabase.com/docs/guides/auth/row-level-security)
 - [Storage Guide](https://supabase.com/docs/guides/storage)
 - [Real-time Guide](https://supabase.com/docs/guides/realtime)
 
 ### Comandos Úteis:
+
 ```bash
 # Verificar status:
 node test-supabase-complete.js
@@ -189,6 +206,7 @@ npm run dev
 ## 🎉 Após Configuração Completa
 
 ### Funcionalidades Disponíveis:
+
 - 🎫 **Sistema de Tickets** completo
 - 👥 **Gestão de Usuários** com roles
 - 💬 **Comentários** em tempo real
@@ -199,6 +217,7 @@ npm run dev
 - 📚 **Base de conhecimento**
 
 ### Próximas Melhorias:
+
 - 📧 **Notificações por email**
 - 📱 **App mobile**
 - 📈 **Dashboard analytics**

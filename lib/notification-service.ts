@@ -1,13 +1,13 @@
-import { prisma } from '@/lib/prisma'
-import { NotificationType } from '@prisma/client'
+import { prisma } from '@/lib/prisma';
+import { NotificationType } from '@prisma/client';
 
 interface NotificationData {
-  type: NotificationType
-  title: string
-  message: string
-  userId: string
-  relatedId?: string
-  data?: Record<string, any>
+  type: NotificationType;
+  title: string;
+  message: string;
+  userId: string;
+  relatedId?: string;
+  data?: Record<string, any>;
 }
 
 export class NotificationService {
@@ -15,16 +15,16 @@ export class NotificationService {
   static async create(notificationData: NotificationData) {
     try {
       const notification = await prisma.notification.create({
-        data: notificationData
-      })
+        data: notificationData,
+      });
 
       // TODO: Enviar via WebSocket quando implementado
       // this.sendRealTime(notification)
 
-      return notification
+      return notification;
     } catch (error) {
-      console.error('Erro ao criar notificação:', error)
-      throw error
+      console.error('Erro ao criar notificação:', error);
+      throw error;
     }
   }
 
@@ -36,19 +36,19 @@ export class NotificationService {
         include: {
           createdBy: true,
           assignedTo: true,
-        }
-      })
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
       // Notificar coordenadores e admins
       const coordinatorsAndAdmins = await prisma.user.findMany({
         where: {
           role: { in: ['ADMIN', 'COORDINATOR'] },
           isActive: true,
-          id: { not: createdById } // Não notificar o criador
-        }
-      })
+          id: { not: createdById }, // Não notificar o criador
+        },
+      });
 
       const notifications = coordinatorsAndAdmins.map(user => ({
         type: 'TICKET_CREATED' as NotificationType,
@@ -62,32 +62,36 @@ export class NotificationService {
           createdBy: ticket.createdBy.name,
           priority: ticket.priority,
           category: ticket.category,
-        }
-      }))
+        },
+      }));
 
       // Criar todas as notificações
       await prisma.notification.createMany({
-        data: notifications
-      })
+        data: notifications,
+      });
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao notificar criação de ticket:', error)
+      console.error('Erro ao notificar criação de ticket:', error);
     }
   }
 
   // Notificar atribuição de ticket
-  static async notifyTicketAssigned(ticketId: string, assignedToId: string, assignedById: string) {
+  static async notifyTicketAssigned(
+    ticketId: string,
+    assignedToId: string,
+    assignedById: string
+  ) {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
           assignedTo: true,
-        }
-      })
+        },
+      });
 
-      if (!ticket || !ticket.assignedTo) return
+      if (!ticket || !ticket.assignedTo) return;
 
       // Notificar o usuário atribuído (se não foi ele mesmo que se atribuiu)
       if (assignedToId !== assignedById) {
@@ -103,12 +107,15 @@ export class NotificationService {
             assignedBy: assignedById,
             priority: ticket.priority,
             category: ticket.category,
-          }
-        })
+          },
+        });
       }
 
       // Notificar o criador do ticket (se não foi ele que atribuiu)
-      if (ticket.createdById !== assignedById && ticket.createdById !== assignedToId) {
+      if (
+        ticket.createdById !== assignedById &&
+        ticket.createdById !== assignedToId
+      ) {
         await this.create({
           type: 'TICKET_ASSIGNED',
           title: 'Seu chamado foi atribuído',
@@ -120,47 +127,52 @@ export class NotificationService {
             ticketTitle: ticket.title,
             assignedTo: ticket.assignedTo.name,
             assignedBy: assignedById,
-          }
-        })
+          },
+        });
       }
     } catch (error) {
-      console.error('Erro ao notificar atribuição de ticket:', error)
+      console.error('Erro ao notificar atribuição de ticket:', error);
     }
   }
 
   // Notificar atualização de status
-  static async notifyTicketStatusChanged(ticketId: string, oldStatus: string, newStatus: string, updatedById: string) {
+  static async notifyTicketStatusChanged(
+    ticketId: string,
+    oldStatus: string,
+    newStatus: string,
+    updatedById: string
+  ) {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
           assignedTo: true,
-        }
-      })
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
       const statusLabels: Record<string, string> = {
-        'OPEN': 'Aberto',
-        'IN_PROGRESS': 'Em Andamento',
-        'WAITING_FOR_USER': 'Aguardando Usuário',
-        'WAITING_FOR_THIRD_PARTY': 'Aguardando Terceiros',
-        'RESOLVED': 'Resolvido',
-        'CLOSED': 'Fechado',
-        'CANCELLED': 'Cancelado',
-      }
+        OPEN: 'Aberto',
+        IN_PROGRESS: 'Em Andamento',
+        WAITING_FOR_USER: 'Aguardando Usuário',
+        WAITING_FOR_THIRD_PARTY: 'Aguardando Terceiros',
+        RESOLVED: 'Resolvido',
+        CLOSED: 'Fechado',
+        CANCELLED: 'Cancelado',
+      };
 
-      const usersToNotify = new Set<string>()
+      const usersToNotify = new Set<string>();
 
       // Adicionar criador do ticket
       if (ticket.createdById !== updatedById) {
-        usersToNotify.add(ticket.createdById)
+        usersToNotify.add(ticket.createdById);
       }
 
       // Adicionar usuário atribuído
       if (ticket.assignedToId && ticket.assignedToId !== updatedById) {
-        usersToNotify.add(ticket.assignedToId)
+        usersToNotify.add(ticket.assignedToId);
       }
 
       // Criar notificações
@@ -176,23 +188,27 @@ export class NotificationService {
           oldStatus,
           newStatus,
           updatedBy: updatedById,
-        }
-      }))
+        },
+      }));
 
       if (notifications.length > 0) {
         await prisma.notification.createMany({
-          data: notifications
-        })
+          data: notifications,
+        });
       }
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao notificar mudança de status:', error)
+      console.error('Erro ao notificar mudança de status:', error);
     }
   }
 
   // Notificar novo comentário
-  static async notifyNewComment(commentId: string, ticketId: string, commentUserId: string) {
+  static async notifyNewComment(
+    commentId: string,
+    ticketId: string,
+    commentUserId: string
+  ) {
     try {
       const comment = await prisma.comment.findUnique({
         where: { id: commentId },
@@ -202,23 +218,26 @@ export class NotificationService {
             include: {
               createdBy: true,
               assignedTo: true,
-            }
-          }
-        }
-      })
+            },
+          },
+        },
+      });
 
-      if (!comment) return
+      if (!comment) return;
 
-      const usersToNotify = new Set<string>()
+      const usersToNotify = new Set<string>();
 
       // Adicionar criador do ticket
       if (comment.ticket.createdById !== commentUserId) {
-        usersToNotify.add(comment.ticket.createdById)
+        usersToNotify.add(comment.ticket.createdById);
       }
 
       // Adicionar usuário atribuído
-      if (comment.ticket.assignedToId && comment.ticket.assignedToId !== commentUserId) {
-        usersToNotify.add(comment.ticket.assignedToId)
+      if (
+        comment.ticket.assignedToId &&
+        comment.ticket.assignedToId !== commentUserId
+      ) {
+        usersToNotify.add(comment.ticket.assignedToId);
       }
 
       // Se for comentário interno, notificar apenas admins e coordenadores
@@ -227,17 +246,19 @@ export class NotificationService {
           where: {
             role: { in: ['ADMIN', 'COORDINATOR'] },
             isActive: true,
-            id: { not: commentUserId }
-          }
-        })
+            id: { not: commentUserId },
+          },
+        });
 
-        coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id))
+        coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id));
       }
 
       // Criar notificações
       const notifications = Array.from(usersToNotify).map(userId => ({
         type: 'TICKET_COMMENTED' as NotificationType,
-        title: comment.isInternal ? 'Novo comentário interno' : 'Novo comentário',
+        title: comment.isInternal
+          ? 'Novo comentário interno'
+          : 'Novo comentário',
         message: `${comment.user.name} comentou no chamado "${comment.ticket.title}"`,
         userId,
         relatedId: ticketId,
@@ -248,23 +269,27 @@ export class NotificationService {
           commentUser: comment.user.name,
           isInternal: comment.isInternal,
           commentPreview: comment.content.substring(0, 100),
-        }
-      }))
+        },
+      }));
 
       if (notifications.length > 0) {
         await prisma.notification.createMany({
-          data: notifications
-        })
+          data: notifications,
+        });
       }
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao notificar novo comentário:', error)
+      console.error('Erro ao notificar novo comentário:', error);
     }
   }
 
   // Notificar novo anexo
-  static async notifyNewAttachment(attachmentId: string, ticketId: string, attachmentUserId: string) {
+  static async notifyNewAttachment(
+    attachmentId: string,
+    ticketId: string,
+    attachmentUserId: string
+  ) {
     try {
       const attachment = await prisma.attachment.findUnique({
         where: { id: attachmentId },
@@ -274,23 +299,26 @@ export class NotificationService {
             include: {
               createdBy: true,
               assignedTo: true,
-            }
-          }
-        }
-      })
+            },
+          },
+        },
+      });
 
-      if (!attachment) return
+      if (!attachment) return;
 
-      const usersToNotify = new Set<string>()
+      const usersToNotify = new Set<string>();
 
       // Adicionar criador do ticket
       if (attachment.ticket.createdById !== attachmentUserId) {
-        usersToNotify.add(attachment.ticket.createdById)
+        usersToNotify.add(attachment.ticket.createdById);
       }
 
       // Adicionar usuário atribuído
-      if (attachment.ticket.assignedToId && attachment.ticket.assignedToId !== attachmentUserId) {
-        usersToNotify.add(attachment.ticket.assignedToId)
+      if (
+        attachment.ticket.assignedToId &&
+        attachment.ticket.assignedToId !== attachmentUserId
+      ) {
+        usersToNotify.add(attachment.ticket.assignedToId);
       }
 
       // Notificar coordenadores e admins
@@ -298,11 +326,11 @@ export class NotificationService {
         where: {
           role: { in: ['ADMIN', 'COORDINATOR'] },
           isActive: true,
-          id: { not: attachmentUserId }
-        }
-      })
+          id: { not: attachmentUserId },
+        },
+      });
 
-      coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id))
+      coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id));
 
       // Criar notificações
       const notifications = Array.from(usersToNotify).map(userId => ({
@@ -318,18 +346,18 @@ export class NotificationService {
           attachmentUser: attachment.user.name,
           fileName: attachment.originalName,
           fileSize: attachment.filesize,
-        }
-      }))
+        },
+      }));
 
       if (notifications.length > 0) {
         await prisma.notification.createMany({
-          data: notifications
-        })
+          data: notifications,
+        });
       }
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao notificar novo anexo:', error)
+      console.error('Erro ao notificar novo anexo:', error);
     }
   }
 
@@ -341,10 +369,10 @@ export class NotificationService {
         include: {
           createdBy: true,
           assignedTo: true,
-        }
-      })
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
       // Notificar o criador do ticket
       if (ticket.createdById !== resolvedById) {
@@ -358,11 +386,11 @@ export class NotificationService {
             ticketId,
             ticketTitle: ticket.title,
             resolvedBy: resolvedById,
-          }
-        })
+          },
+        });
       }
     } catch (error) {
-      console.error('Erro ao notificar resolução de ticket:', error)
+      console.error('Erro ao notificar resolução de ticket:', error);
     }
   }
 
@@ -374,21 +402,21 @@ export class NotificationService {
         include: {
           createdBy: true,
           assignedTo: true,
-        }
-      })
+        },
+      });
 
-      if (!ticket) return
+      if (!ticket) return;
 
-      const usersToNotify = new Set<string>()
+      const usersToNotify = new Set<string>();
 
       // Adicionar criador do ticket
       if (ticket.createdById !== closedById) {
-        usersToNotify.add(ticket.createdById)
+        usersToNotify.add(ticket.createdById);
       }
 
       // Adicionar usuário atribuído
       if (ticket.assignedToId && ticket.assignedToId !== closedById) {
-        usersToNotify.add(ticket.assignedToId)
+        usersToNotify.add(ticket.assignedToId);
       }
 
       // Criar notificações
@@ -402,34 +430,38 @@ export class NotificationService {
           ticketId,
           ticketTitle: ticket.title,
           closedBy: closedById,
-        }
-      }))
+        },
+      }));
 
       if (notifications.length > 0) {
         await prisma.notification.createMany({
-          data: notifications
-        })
+          data: notifications,
+        });
       }
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao notificar fechamento de ticket:', error)
+      console.error('Erro ao notificar fechamento de ticket:', error);
     }
   }
 
   // Criar notificação de sistema
-  static async createSystemAnnouncement(title: string, message: string, targetRoles?: string[]) {
+  static async createSystemAnnouncement(
+    title: string,
+    message: string,
+    targetRoles?: string[]
+  ) {
     try {
-      const whereClause: any = { isActive: true }
-      
+      const whereClause: any = { isActive: true };
+
       if (targetRoles && targetRoles.length > 0) {
-        whereClause.role = { in: targetRoles }
+        whereClause.role = { in: targetRoles };
       }
 
       const users = await prisma.user.findMany({
         where: whereClause,
-        select: { id: true }
-      })
+        select: { id: true },
+      });
 
       const notifications = users.map(user => ({
         type: 'SYSTEM_ANNOUNCEMENT' as NotificationType,
@@ -439,18 +471,18 @@ export class NotificationService {
         data: {
           isSystemAnnouncement: true,
           targetRoles,
-        }
-      }))
+        },
+      }));
 
       if (notifications.length > 0) {
         await prisma.notification.createMany({
-          data: notifications
-        })
+          data: notifications,
+        });
       }
 
-      return notifications.length
+      return notifications.length;
     } catch (error) {
-      console.error('Erro ao criar anúncio do sistema:', error)
+      console.error('Erro ao criar anúncio do sistema:', error);
     }
   }
 
@@ -464,14 +496,14 @@ export class NotificationService {
         },
         data: {
           read: true,
-          readAt: new Date()
-        }
-      })
+          readAt: new Date(),
+        },
+      });
 
-      return notification.count > 0
+      return notification.count > 0;
     } catch (error) {
-      console.error('Erro ao marcar notificação como lida:', error)
-      return false
+      console.error('Erro ao marcar notificação como lida:', error);
+      return false;
     }
   }
 
@@ -481,18 +513,18 @@ export class NotificationService {
       const result = await prisma.notification.updateMany({
         where: {
           userId,
-          read: false
+          read: false,
         },
         data: {
           read: true,
-          readAt: new Date()
-        }
-      })
+          readAt: new Date(),
+        },
+      });
 
-      return result.count
+      return result.count;
     } catch (error) {
-      console.error('Erro ao marcar todas as notificações como lidas:', error)
-      return 0
+      console.error('Erro ao marcar todas as notificações como lidas:', error);
+      return 0;
     }
   }
 
@@ -502,13 +534,12 @@ export class NotificationService {
       return await prisma.notification.count({
         where: {
           userId,
-          read: false
-        }
-      })
+          read: false,
+        },
+      });
     } catch (error) {
-      console.error('Erro ao contar notificações não lidas:', error)
-      return 0
+      console.error('Erro ao contar notificações não lidas:', error);
+      return 0;
     }
   }
 }
-

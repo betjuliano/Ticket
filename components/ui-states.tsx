@@ -1,56 +1,70 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, AlertTriangle, Inbox, CheckCircle, RefreshCw } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Loader2,
+  AlertTriangle,
+  Inbox,
+  CheckCircle,
+  RefreshCw,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Loading State
 interface LoadingStateProps {
-  message?: string
-  size?: 'sm' | 'default' | 'lg'
-  className?: string
+  message?: string;
+  size?: 'sm' | 'default' | 'lg';
+  className?: string;
 }
 
-export function LoadingState({ 
-  message = 'Carregando...', 
+export function LoadingState({
+  message = 'Carregando...',
   size = 'default',
-  className 
+  className,
 }: LoadingStateProps) {
   const sizeClasses = {
     sm: 'p-4',
     default: 'p-8',
-    lg: 'p-12'
-  }
+    lg: 'p-12',
+  };
 
   const iconSizes = {
     sm: 'w-4 h-4',
     default: 'w-6 h-6',
-    lg: 'w-8 h-8'
-  }
+    lg: 'w-8 h-8',
+  };
 
   return (
-    <div className={cn('flex flex-col items-center justify-center text-center', sizeClasses[size], className)}>
-      <Loader2 className={cn('animate-spin text-blue-500 mb-3', iconSizes[size])} />
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center text-center',
+        sizeClasses[size],
+        className
+      )}
+    >
+      <Loader2
+        className={cn('animate-spin text-blue-500 mb-3', iconSizes[size])}
+      />
       <p className="text-neutral-400">{message}</p>
     </div>
-  )
+  );
 }
 
 // Error State
 interface ErrorStateProps {
-  title?: string
-  message: string
-  onRetry?: () => void
-  retryLabel?: string
-  className?: string
+  title?: string;
+  message: string;
+  onRetry?: () => void;
+  retryLabel?: string;
+  className?: string;
 }
 
-export function ErrorState({ 
+export function ErrorState({
   title = 'Ops! Algo deu errado',
   message,
   onRetry,
   retryLabel = 'Tentar novamente',
-  className 
+  className,
 }: ErrorStateProps) {
   return (
     <Card className={cn('bg-red-500/10 border-red-500/20', className)}>
@@ -59,7 +73,7 @@ export function ErrorState({
         <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
         <p className="text-red-200 mb-6">{message}</p>
         {onRetry && (
-          <Button 
+          <Button
             onClick={onRetry}
             variant="outline"
             className="border-red-500/30 text-red-400 hover:bg-red-500/10"
@@ -70,27 +84,27 @@ export function ErrorState({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Empty State
 interface EmptyStateProps {
-  title?: string
-  message: string
+  title?: string;
+  message: string;
   action?: {
-    label: string
-    onClick: () => void
-  }
-  icon?: React.ReactNode
-  className?: string
+    label: string;
+    onClick: () => void;
+  };
+  icon?: React.ReactNode;
+  className?: string;
 }
 
-export function EmptyState({ 
+export function EmptyState({
   title = 'Nenhum item encontrado',
   message,
   action,
   icon,
-  className 
+  className,
 }: EmptyStateProps) {
   return (
     <Card className={cn('bg-neutral-800 border-neutral-700', className)}>
@@ -99,40 +113,48 @@ export function EmptyState({
         <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
         <p className="text-neutral-400 mb-6 max-w-md mx-auto">{message}</p>
         {action && (
-          <Button onClick={action.onClick} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            onClick={action.onClick}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             {action.label}
           </Button>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Success State
 interface SuccessStateProps {
-  title?: string
-  message: string
+  title?: string;
+  message: string;
   action?: {
-    label: string
-    onClick: () => void
-  }
-  className?: string
+    label: string;
+    onClick: () => void;
+  };
+  className?: string;
 }
 
-export function SuccessState({ 
+export function SuccessState({
   title = 'Sucesso!',
   message,
   action,
-  className 
+  className,
 }: SuccessStateProps) {
   return (
-    <Alert className={cn('bg-green-500/10 border-green-500/20 text-green-200', className)}>
+    <Alert
+      className={cn(
+        'bg-green-500/10 border-green-500/20 text-green-200',
+        className
+      )}
+    >
       <CheckCircle className="h-4 w-4" />
       <AlertDescription className="ml-2">
         <div className="font-medium">{title}</div>
         <div className="text-sm mt-1">{message}</div>
         {action && (
-          <Button 
+          <Button
             onClick={action.onClick}
             size="sm"
             variant="outline"
@@ -143,18 +165,18 @@ export function SuccessState({
         )}
       </AlertDescription>
     </Alert>
-  )
+  );
 }
 
 // Skeleton Loader
 interface SkeletonProps {
-  className?: string
+  className?: string;
 }
 
 export function Skeleton({ className }: SkeletonProps) {
   return (
     <div className={cn('animate-pulse rounded-md bg-neutral-700', className)} />
-  )
+  );
 }
 
 // Skeleton para Ticket Card
@@ -181,5 +203,5 @@ export function TicketCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

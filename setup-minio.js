@@ -13,7 +13,10 @@ class MinIOSetup {
   constructor() {
     this.projectRoot = process.cwd();
     this.envFile = path.join(this.projectRoot, '.env.local');
-    this.dockerComposeFile = path.join(this.projectRoot, 'docker-compose.minio.yml');
+    this.dockerComposeFile = path.join(
+      this.projectRoot,
+      'docker-compose.minio.yml'
+    );
   }
 
   // Verificar se Docker está instalado
@@ -31,16 +34,22 @@ class MinIOSetup {
   // Verificar se Node.js tem as dependências necessárias
   checkDependencies() {
     const packageJsonPath = path.join(this.projectRoot, 'package.json');
-    
+
     if (!fs.existsSync(packageJsonPath)) {
       console.log('❌ package.json não encontrado');
       return false;
     }
 
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    const dependencies = {
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    };
 
-    const requiredDeps = ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner'];
+    const requiredDeps = [
+      '@aws-sdk/client-s3',
+      '@aws-sdk/s3-request-presigner',
+    ];
     const missingDeps = requiredDeps.filter(dep => !dependencies[dep]);
 
     if (missingDeps.length > 0) {
@@ -129,13 +138,13 @@ MINIO_PUBLIC_URL=http://localhost:9000
 
     if (fs.existsSync(this.envFile)) {
       const envContent = fs.readFileSync(this.envFile, 'utf8');
-      
+
       // Verificar se já tem configuração do MinIO
       if (envContent.includes('MINIO_ENDPOINT')) {
         console.log('⚠️  Configuração MinIO já existe no .env.local');
         return;
       }
-      
+
       // Adicionar configuração do MinIO
       fs.appendFileSync(this.envFile, minioEnvVars);
       console.log('✅ Configuração MinIO adicionada ao .env.local');
@@ -154,7 +163,7 @@ MINIO_PUBLIC_URL=http://localhost:9000
     }
 
     const clientPath = path.join(libDir, 'minio-client.ts');
-    
+
     if (fs.existsSync(clientPath)) {
       console.log('⚠️  Arquivo minio-client.ts já existe');
       return;
@@ -275,7 +284,7 @@ export class MinIOService {
   // Criar script de teste
   createTestScript() {
     const testPath = path.join(this.projectRoot, 'test-minio-connection.js');
-    
+
     if (fs.existsSync(testPath)) {
       console.log('⚠️  Script de teste já existe');
       return;
@@ -362,21 +371,25 @@ testMinIOConnection();
   // Iniciar MinIO com Docker
   startMinIO() {
     console.log('🚀 Iniciando MinIO com Docker...');
-    
+
     try {
       // Parar containers existentes
       try {
-        execSync('docker-compose -f docker-compose.minio.yml down', { stdio: 'ignore' });
+        execSync('docker-compose -f docker-compose.minio.yml down', {
+          stdio: 'ignore',
+        });
       } catch (error) {
         // Ignorar erro se não existir
       }
-      
+
       // Iniciar MinIO
-      execSync('docker-compose -f docker-compose.minio.yml up -d', { stdio: 'inherit' });
-      
+      execSync('docker-compose -f docker-compose.minio.yml up -d', {
+        stdio: 'inherit',
+      });
+
       console.log('✅ MinIO iniciado com sucesso!');
       console.log('⏳ Aguardando configuração inicial...');
-      
+
       // Aguardar um pouco para o MinIO inicializar
       setTimeout(() => {
         console.log('\n🎉 MinIO está pronto!');
@@ -386,7 +399,6 @@ testMinIOConnection();
         console.log('\n📝 Para testar a conexão, execute:');
         console.log('   node test-minio-connection.js');
       }, 10000);
-      
     } catch (error) {
       console.error('❌ Erro ao iniciar MinIO:', error.message);
     }
@@ -402,7 +414,7 @@ testMinIOConnection();
     if (!this.checkDependencies()) return;
 
     console.log('\n📁 Criando arquivos de configuração...');
-    
+
     // Criar arquivos
     this.createDockerCompose();
     this.updateEnvFile();

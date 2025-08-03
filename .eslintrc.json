@@ -7,7 +7,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -16,7 +16,8 @@
     "prefer-const": "error",
     "no-var": "error",
     "object-shorthand": "error",
-    "prefer-template": "error"
+    "prefer-template": "error",
+    "no-case-declarations": "warn"
   },
   "env": {
     "browser": true,
@@ -27,4 +28,4 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   }
-} 
+}

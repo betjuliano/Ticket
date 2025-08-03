@@ -1,19 +1,19 @@
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function createKnowledgeArticles() {
   try {
-    console.log('📚 Criando artigos na Knowledge Base...')
+    console.log('📚 Criando artigos na Knowledge Base...');
 
     // Buscar coordenador
     const coordenador = await prisma.user.findFirst({
-      where: { role: 'COORDINATOR' }
-    })
+      where: { role: 'COORDINATOR' },
+    });
 
     if (!coordenador) {
-      console.log('❌ Nenhum coordenador encontrado')
-      return
+      console.log('❌ Nenhum coordenador encontrado');
+      return;
     }
 
     // Criar categoria
@@ -24,24 +24,24 @@ async function createKnowledgeArticles() {
         name: 'Tutoriais',
         description: 'Guias e tutoriais para usuários',
         icon: '📚',
-        color: '#3B82F6'
-      }
-    })
+        color: '#3B82F6',
+      },
+    });
 
-    console.log('✅ Categoria criada:', category.name)
+    console.log('✅ Categoria criada:', category.name);
 
     // Verificar se artigos já existem
     const existingArticles = await prisma.knowledgeArticle.findMany({
       where: {
         slug: {
-          in: ['como-fazer-login-no-sistema', 'politica-uso-equipamentos']
-        }
-      }
-    })
+          in: ['como-fazer-login-no-sistema', 'politica-uso-equipamentos'],
+        },
+      },
+    });
 
     if (existingArticles.length > 0) {
-      console.log('✅ Artigos já existem na Knowledge Base')
-      return
+      console.log('✅ Artigos já existem na Knowledge Base');
+      return;
     }
 
     // Criar artigos
@@ -74,8 +74,8 @@ Se ainda tiver problemas, abra um chamado no sistema de tickets.`,
           isFeatured: true,
           tags: ['login', 'acesso', 'tutorial'],
           slug: 'como-fazer-login-no-sistema',
-          excerpt: 'Tutorial completo sobre como fazer login no sistema'
-        }
+          excerpt: 'Tutorial completo sobre como fazer login no sistema',
+        },
       }),
       prisma.knowledgeArticle.create({
         data: {
@@ -113,8 +113,8 @@ Para solicitar novos equipamentos:
           isFeatured: false,
           tags: ['equipamentos', 'política', 'diretrizes'],
           slug: 'politica-uso-equipamentos',
-          excerpt: 'Política institucional para uso de equipamentos'
-        }
+          excerpt: 'Política institucional para uso de equipamentos',
+        },
       }),
       prisma.knowledgeArticle.create({
         data: {
@@ -165,19 +165,17 @@ Para solicitar novos equipamentos:
           isFeatured: true,
           tags: ['faq', 'dúvidas', 'ajuda'],
           slug: 'faq-perguntas-frequentes',
-          excerpt: 'Respostas para as dúvidas mais comuns dos usuários'
-        }
-      })
-    ])
+          excerpt: 'Respostas para as dúvidas mais comuns dos usuários',
+        },
+      }),
+    ]);
 
-    console.log(`✅ ${articles.length} artigos criados na Knowledge Base`)
-
+    console.log(`✅ ${articles.length} artigos criados na Knowledge Base`);
   } catch (error) {
-    console.error('❌ Erro ao criar artigos:', error)
+    console.error('❌ Erro ao criar artigos:', error);
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-createKnowledgeArticles()
-
+createKnowledgeArticles();

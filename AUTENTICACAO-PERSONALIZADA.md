@@ -27,13 +27,16 @@ SELECT auth.set_current_user('user-uuid-here');
 
 ```typescript
 // middleware.ts ou auth middleware
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 export async function setCurrentUser(userId: string) {
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // Definir o usuário atual na sessão do banco
-  await supabase.rpc('set_current_user', { user_id: userId })
+  await supabase.rpc('set_current_user', { user_id: userId });
 }
 ```
 
@@ -41,21 +44,21 @@ export async function setCurrentUser(userId: string) {
 
 ```typescript
 // app/api/tickets/route.ts
-import { setCurrentUser } from '@/lib/auth'
+import { setCurrentUser } from '@/lib/auth';
 
 export async function GET(request: Request) {
   // Obter o usuário autenticado (do JWT, sessão, etc.)
-  const userId = await getCurrentUserId(request)
-  
+  const userId = await getCurrentUserId(request);
+
   if (userId) {
     // Definir o usuário atual no banco para as políticas RLS
-    await setCurrentUser(userId)
+    await setCurrentUser(userId);
   }
-  
+
   // Agora as consultas respeitarão as políticas RLS
-  const tickets = await supabase.from('tickets').select('*')
-  
-  return Response.json(tickets)
+  const tickets = await supabase.from('tickets').select('*');
+
+  return Response.json(tickets);
 }
 ```
 
@@ -63,22 +66,22 @@ export async function GET(request: Request) {
 
 ```typescript
 // lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // Middleware para definir o usuário atual
 prisma.$use(async (params, next) => {
   // Se houver um usuário na sessão/contexto
-  const userId = getCurrentUserFromContext()
-  
+  const userId = getCurrentUserFromContext();
+
   if (userId) {
     // Executar SQL raw para definir o usuário
-    await prisma.$executeRaw`SELECT auth.set_current_user(${userId}::uuid)`
+    await prisma.$executeRaw`SELECT auth.set_current_user(${userId}::uuid)`;
   }
-  
-  return next(params)
-})
+
+  return next(params);
+});
 ```
 
 ## 🔒 Políticas RLS

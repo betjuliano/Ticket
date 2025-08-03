@@ -39,14 +39,23 @@ export function extractKeyFromUrl(url: string): string {
 
   // Normalize hostnames and ports for comparison
   const expectedHostname = expectedUrl.hostname;
-  const expectedPort = expectedUrl.port || (expectedUrl.protocol === 'https:' ? '443' : expectedUrl.protocol === 'http:' ? '80' : '');
+  const expectedPort =
+    expectedUrl.port ||
+    (expectedUrl.protocol === 'https:'
+      ? '443'
+      : expectedUrl.protocol === 'http:'
+        ? '80'
+        : '');
   const actualHostname = actualUrl.hostname;
-  const actualPort = actualUrl.port || (actualUrl.protocol === 'https:' ? '443' : actualUrl.protocol === 'http:' ? '80' : '');
+  const actualPort =
+    actualUrl.port ||
+    (actualUrl.protocol === 'https:'
+      ? '443'
+      : actualUrl.protocol === 'http:'
+        ? '80'
+        : '');
 
-  if (
-    expectedHostname !== actualHostname ||
-    expectedPort !== actualPort
-  ) {
+  if (expectedHostname !== actualHostname || expectedPort !== actualPort) {
     throw new Error(
       `URL does not match expected MinIO host: ${expectedUrl.host}`
     );
@@ -82,4 +91,3 @@ export async function deleteFile(key: string): Promise<void> {
   });
   await minioClient.send(cmd);
 }
-

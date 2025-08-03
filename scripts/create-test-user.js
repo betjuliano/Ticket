@@ -1,26 +1,26 @@
-const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcryptjs')
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function createTestUser() {
   try {
-    console.log('🔄 Criando usuário de teste...')
+    console.log('🔄 Criando usuário de teste...');
 
     // Verificar se usuário já existe
     const existingUser = await prisma.user.findUnique({
-      where: { email: 'usuario.teste@ufsm.br' }
-    })
+      where: { email: 'usuario.teste@ufsm.br' },
+    });
 
     if (existingUser) {
-      console.log('✅ Usuário de teste já existe')
-      console.log('📧 Email: usuario.teste@ufsm.br')
-      console.log('🔑 Senha: teste123')
-      return
+      console.log('✅ Usuário de teste já existe');
+      console.log('📧 Email: usuario.teste@ufsm.br');
+      console.log('🔑 Senha: teste123');
+      return;
     }
 
     // Hash da senha
-    const hashedPassword = await bcrypt.hash('teste123', 12)
+    const hashedPassword = await bcrypt.hash('teste123', 12);
 
     // Criar usuário
     const user = await prisma.user.create({
@@ -30,53 +30,55 @@ async function createTestUser() {
         password: hashedPassword,
         role: 'USER',
         matricula: '202300001',
-        isActive: true
-      }
-    })
+        isActive: true,
+      },
+    });
 
-    console.log('✅ Usuário de teste criado com sucesso!')
-    console.log('📧 Email: usuario.teste@ufsm.br')
-    console.log('🔑 Senha: teste123')
-    console.log('👤 Role: USER')
-    console.log('🆔 ID:', user.id)
+    console.log('✅ Usuário de teste criado com sucesso!');
+    console.log('📧 Email: usuario.teste@ufsm.br');
+    console.log('🔑 Senha: teste123');
+    console.log('👤 Role: USER');
+    console.log('🆔 ID:', user.id);
 
     // Criar alguns tickets de exemplo para o usuário
-    console.log('🎫 Criando tickets de exemplo...')
+    console.log('🎫 Criando tickets de exemplo...');
 
     const tickets = await Promise.all([
       prisma.ticket.create({
         data: {
           id: 'TKT-USER-001',
           title: 'Problema com acesso ao sistema',
-          description: 'Não consigo fazer login no sistema acadêmico. Aparece erro de credenciais inválidas.',
+          description:
+            'Não consigo fazer login no sistema acadêmico. Aparece erro de credenciais inválidas.',
           status: 'OPEN',
           priority: 'MEDIUM',
           category: 'ACCOUNT_ACCESS',
-          createdById: user.id
-        }
+          createdById: user.id,
+        },
       }),
       prisma.ticket.create({
         data: {
           id: 'TKT-USER-002',
           title: 'Solicitação de equipamento',
-          description: 'Preciso de um novo mouse para minha estação de trabalho. O atual está com defeito.',
+          description:
+            'Preciso de um novo mouse para minha estação de trabalho. O atual está com defeito.',
           status: 'IN_PROGRESS',
           priority: 'LOW',
           category: 'OTHER',
-          createdById: user.id
-        }
-      })
-    ])
+          createdById: user.id,
+        },
+      }),
+    ]);
 
-    console.log(`✅ ${tickets.length} tickets de exemplo criados`)
+    console.log(`✅ ${tickets.length} tickets de exemplo criados`);
 
     // Criar alguns artigos na Knowledge Base (como coordenador)
     const coordenador = await prisma.user.findFirst({
-      where: { role: 'COORDINATOR' }
-    })
+      where: { role: 'COORDINATOR' },
+    });
 
     if (coordenador) {
-      console.log('📚 Criando artigos na Knowledge Base...')
+      console.log('📚 Criando artigos na Knowledge Base...');
 
       // Criar categoria
       const category = await prisma.knowledgeCategory.upsert({
@@ -86,9 +88,9 @@ async function createTestUser() {
           name: 'Tutoriais',
           description: 'Guias e tutoriais para usuários',
           icon: '📚',
-          color: '#3B82F6'
-        }
-      })
+          color: '#3B82F6',
+        },
+      });
 
       // Criar artigos
       const articles = await Promise.all([
@@ -120,8 +122,8 @@ Se ainda tiver problemas, abra um chamado no sistema de tickets.`,
             isFeatured: true,
             tags: ['login', 'acesso', 'tutorial'],
             slug: 'como-fazer-login-no-sistema',
-            excerpt: 'Tutorial completo sobre como fazer login no sistema'
-          }
+            excerpt: 'Tutorial completo sobre como fazer login no sistema',
+          },
         }),
         prisma.knowledgeArticle.create({
           data: {
@@ -159,20 +161,18 @@ Para solicitar novos equipamentos:
             isFeatured: false,
             tags: ['equipamentos', 'política', 'diretrizes'],
             slug: 'politica-uso-equipamentos',
-            excerpt: 'Política institucional para uso de equipamentos'
-          }
-        })
-      ])
+            excerpt: 'Política institucional para uso de equipamentos',
+          },
+        }),
+      ]);
 
-      console.log(`✅ ${articles.length} artigos criados na Knowledge Base`)
+      console.log(`✅ ${articles.length} artigos criados na Knowledge Base`);
     }
-
   } catch (error) {
-    console.error('❌ Erro ao criar usuário de teste:', error)
+    console.error('❌ Erro ao criar usuário de teste:', error);
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-createTestUser()
-
+createTestUser();

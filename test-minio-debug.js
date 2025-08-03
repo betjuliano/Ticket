@@ -15,7 +15,7 @@ const testConfigs = [
     accessKey: 'minioadmin',
     secretKey: 'minioadmin',
     useSSL: true,
-    port: 443
+    port: 443,
   },
   {
     name: 'Configuração 2: minio.iaprojetos.com.br com minioadmin',
@@ -23,7 +23,7 @@ const testConfigs = [
     accessKey: 'minioadmin',
     secretKey: 'minioadmin',
     useSSL: true,
-    port: 443
+    port: 443,
   },
   {
     name: 'Configuração 3: s3.iaprojetos.com.br com credenciais originais',
@@ -31,7 +31,7 @@ const testConfigs = [
     accessKey: 'iaprojetos',
     secretKey: 'Admjuliano1',
     useSSL: true,
-    port: 443
+    port: 443,
   },
   {
     name: 'Configuração 4: minio.iaprojetos.com.br com credenciais originais',
@@ -39,7 +39,7 @@ const testConfigs = [
     accessKey: 'iaprojetos',
     secretKey: 'Admjuliano1',
     useSSL: true,
-    port: 443
+    port: 443,
   },
   {
     name: 'Configuração 5: s3.iaprojetos.com.br porta 9000',
@@ -47,7 +47,7 @@ const testConfigs = [
     accessKey: 'minioadmin',
     secretKey: 'minioadmin',
     useSSL: false,
-    port: 9000
+    port: 9000,
   },
   {
     name: 'Configuração 6: IP direto 207.180.254.250:9000',
@@ -55,15 +55,17 @@ const testConfigs = [
     accessKey: 'minioadmin',
     secretKey: 'minioadmin',
     useSSL: false,
-    port: 9000
-  }
+    port: 9000,
+  },
 ];
 
 async function testConfig(config) {
   console.log(`\n🧪 Testando: ${config.name}`);
-  console.log(`📍 Endpoint: ${config.useSSL ? 'https' : 'http'}://${config.endpoint}:${config.port}`);
+  console.log(
+    `📍 Endpoint: ${config.useSSL ? 'https' : 'http'}://${config.endpoint}:${config.port}`
+  );
   console.log(`🔑 Access Key: ${config.accessKey}`);
-  
+
   const client = new S3Client({
     endpoint: `${config.useSSL ? 'https' : 'http'}://${config.endpoint}:${config.port}`,
     region: 'us-east-1',
@@ -79,13 +81,13 @@ async function testConfig(config) {
     const result = await client.send(listCommand);
     console.log('✅ SUCESSO! Conexão estabelecida');
     console.log(`📦 Buckets encontrados: ${result.Buckets?.length || 0}`);
-    
+
     if (result.Buckets && result.Buckets.length > 0) {
       result.Buckets.forEach(bucket => {
         console.log(`   - ${bucket.Name}`);
       });
     }
-    
+
     return true;
   } catch (error) {
     console.log(`❌ FALHOU: ${error.message}`);
@@ -95,15 +97,17 @@ async function testConfig(config) {
 
 async function runAllTests() {
   console.log('🚀 Iniciando testes de configuração do MinIO...');
-  console.log('=' .repeat(60));
-  
+  console.log('='.repeat(60));
+
   let successCount = 0;
-  
+
   for (const config of testConfigs) {
     const success = await testConfig(config);
     if (success) {
       successCount++;
-      console.log('\n🎉 CONFIGURAÇÃO FUNCIONANDO! Use esta configuração no .env.local:');
+      console.log(
+        '\n🎉 CONFIGURAÇÃO FUNCIONANDO! Use esta configuração no .env.local:'
+      );
       console.log(`MINIO_ENDPOINT=${config.endpoint}`);
       console.log(`MINIO_PORT=${config.port}`);
       console.log(`MINIO_USE_SSL=${config.useSSL}`);
@@ -111,13 +115,13 @@ async function runAllTests() {
       console.log(`MINIO_SECRET_KEY=${config.secretKey}`);
       break; // Para no primeiro sucesso
     }
-    
+
     // Pequena pausa entre testes
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  
-  console.log('\n' + '=' .repeat(60));
-  
+
+  console.log('\n' + '='.repeat(60));
+
   if (successCount === 0) {
     console.log('❌ Nenhuma configuração funcionou.');
     console.log('\n🔧 Próximos passos:');
@@ -126,7 +130,9 @@ async function runAllTests() {
     console.log('3. Verifique as credenciais: docker logs <container_id>');
     console.log('4. Consulte o arquivo: get-minio-credentials.md');
   } else {
-    console.log('✅ Configuração encontrada! Atualize o .env.local com os valores acima.');
+    console.log(
+      '✅ Configuração encontrada! Atualize o .env.local com os valores acima.'
+    );
   }
 }
 

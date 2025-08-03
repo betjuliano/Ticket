@@ -1,10 +1,10 @@
-import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
-    const token = req.nextauth.token
-    const { pathname } = req.nextUrl
+    const token = req.nextauth.token;
+    const { pathname } = req.nextUrl;
 
     // Definir permissões por rota
     const routePermissions = {
@@ -14,33 +14,34 @@ export default withAuth(
       '/users': ['ADMIN'],
       '/systems': ['ADMIN'],
       '/analytics': ['ADMIN', 'COORDINATOR'],
-    }
+    };
 
     // Verificar se a rota requer permissões específicas
-    const requiredRoles = routePermissions[pathname as keyof typeof routePermissions]
-    
+    const requiredRoles =
+      routePermissions[pathname as keyof typeof routePermissions];
+
     if (requiredRoles && !requiredRoles.includes(token?.role as string)) {
       // Redirecionar para a primeira rota permitida baseada no role
-      const userRole = token?.role as string
-      let redirectPath = '/tickets' // padrão para USER
-      
+      const userRole = token?.role as string;
+      let redirectPath = '/tickets'; // padrão para USER
+
       if (userRole === 'ADMIN') {
-        redirectPath = '/dashboard'
+        redirectPath = '/dashboard';
       } else if (userRole === 'COORDINATOR') {
-        redirectPath = '/dashboard'
+        redirectPath = '/dashboard';
       }
-      
-      return NextResponse.redirect(new URL(redirectPath, req.url))
+
+      return NextResponse.redirect(new URL(redirectPath, req.url));
     }
 
-    return NextResponse.next()
+    return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      authorized: ({ token }) => !!token,
     },
   }
-)
+);
 
 export const config = {
   matcher: [
@@ -49,7 +50,6 @@ export const config = {
     '/knowledge/:path*',
     '/users/:path*',
     '/systems/:path*',
-    '/analytics/:path*'
-  ]
-}
-
+    '/analytics/:path*',
+  ],
+};

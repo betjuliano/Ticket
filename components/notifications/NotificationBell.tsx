@@ -1,80 +1,80 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { 
-  Bell, 
-  BellRing, 
-  Check, 
-  CheckCheck, 
-  Ticket, 
-  MessageSquare, 
+} from '@/components/ui/popover';
+import {
+  Bell,
+  BellRing,
+  Check,
+  CheckCheck,
+  Ticket,
+  MessageSquare,
   Paperclip,
   AlertCircle,
   Info,
-  X
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { toast } from 'sonner'
+  X,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Notification {
-  id: string
-  type: string
-  title: string
-  message: string
-  read: boolean
-  readAt?: string
-  createdAt: string
-  relatedId?: string
-  data?: Record<string, any>
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  readAt?: string;
+  createdAt: string;
+  relatedId?: string;
+  data?: Record<string, any>;
 }
 
 export function NotificationBell() {
-  const { data: session } = useSession()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: session } = useSession();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Carregar notificações
   useEffect(() => {
     if (session?.user) {
-      loadNotifications()
+      loadNotifications();
       // Configurar polling para atualizações em tempo real
-      const interval = setInterval(loadNotifications, 30000) // 30 segundos
-      return () => clearInterval(interval)
+      const interval = setInterval(loadNotifications, 30000); // 30 segundos
+      return () => clearInterval(interval);
     }
-  }, [session])
+  }, [session]);
 
   const loadNotifications = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch('/api/notifications?limit=10')
-      
+      setIsLoading(true);
+      const response = await fetch('/api/notifications?limit=10');
+
       if (!response.ok) {
-        throw new Error('Erro ao carregar notificações')
+        throw new Error('Erro ao carregar notificações');
       }
 
-      const data = await response.json()
-      setNotifications(data.data || [])
-      setUnreadCount(data.meta?.unreadCount || 0)
+      const data = await response.json();
+      setNotifications(data.data || []);
+      setUnreadCount(data.meta?.unreadCount || 0);
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error)
+      console.error('Erro ao carregar notificações:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Marcar notificação como lida
   const markAsRead = async (notificationId: string) => {
@@ -85,28 +85,28 @@ export function NotificationBell() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          notificationIds: [notificationId]
+          notificationIds: [notificationId],
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Erro ao marcar notificação como lida')
+        throw new Error('Erro ao marcar notificação como lida');
       }
 
       // Atualizar estado local
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
             ? { ...notification, read: true, readAt: new Date().toISOString() }
             : notification
         )
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Erro ao marcar notificação como lida:', error)
-      toast.error('Erro ao marcar notificação como lida')
+      console.error('Erro ao marcar notificação como lida:', error);
+      toast.error('Erro ao marcar notificação como lida');
     }
-  }
+  };
 
   // Marcar todas como lidas
   const markAllAsRead = async () => {
@@ -117,39 +117,39 @@ export function NotificationBell() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}), // Sem IDs específicos = marcar todas
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Erro ao marcar todas as notificações como lidas')
+        throw new Error('Erro ao marcar todas as notificações como lidas');
       }
 
       // Atualizar estado local
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notification => ({
           ...notification,
           read: true,
-          readAt: new Date().toISOString()
+          readAt: new Date().toISOString(),
         }))
-      )
-      setUnreadCount(0)
-      toast.success('Todas as notificações foram marcadas como lidas')
+      );
+      setUnreadCount(0);
+      toast.success('Todas as notificações foram marcadas como lidas');
     } catch (error) {
-      console.error('Erro ao marcar todas as notificações como lidas:', error)
-      toast.error('Erro ao marcar todas as notificações como lidas')
+      console.error('Erro ao marcar todas as notificações como lidas:', error);
+      toast.error('Erro ao marcar todas as notificações como lidas');
     }
-  }
+  };
 
   // Navegar para item relacionado
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
-      markAsRead(notification.id)
+      markAsRead(notification.id);
     }
 
     // Navegar baseado no tipo de notificação
     if (notification.relatedId && notification.type.includes('TICKET')) {
-      window.location.href = `/tickets/${notification.relatedId}`
+      window.location.href = `/tickets/${notification.relatedId}`;
     }
-  }
+  };
 
   // Obter ícone baseado no tipo
   const getNotificationIcon = (type: string) => {
@@ -157,80 +157,76 @@ export function NotificationBell() {
       case 'TICKET_CREATED':
       case 'TICKET_UPDATED':
       case 'TICKET_ASSIGNED':
-        return <Ticket className="h-4 w-4 text-blue-500" />
+        return <Ticket className="h-4 w-4 text-blue-500" />;
       case 'TICKET_COMMENTED':
-        return <MessageSquare className="h-4 w-4 text-green-500" />
+        return <MessageSquare className="h-4 w-4 text-green-500" />;
       case 'TICKET_RESOLVED':
       case 'TICKET_CLOSED':
-        return <Check className="h-4 w-4 text-green-600" />
+        return <Check className="h-4 w-4 text-green-600" />;
       case 'SYSTEM_ANNOUNCEMENT':
-        return <AlertCircle className="h-4 w-4 text-orange-500" />
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default:
-        return <Info className="h-4 w-4 text-gray-500" />
+        return <Info className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
   // Obter cor do badge baseado no tipo
   const getNotificationBadgeColor = (type: string) => {
     switch (type) {
       case 'TICKET_CREATED':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       case 'TICKET_UPDATED':
       case 'TICKET_ASSIGNED':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-100 text-yellow-800';
       case 'TICKET_COMMENTED':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'TICKET_RESOLVED':
       case 'TICKET_CLOSED':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'SYSTEM_ANNOUNCEMENT':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'TICKET_CREATED':
-        return 'Novo Chamado'
+        return 'Novo Chamado';
       case 'TICKET_UPDATED':
-        return 'Atualização'
+        return 'Atualização';
       case 'TICKET_ASSIGNED':
-        return 'Atribuição'
+        return 'Atribuição';
       case 'TICKET_COMMENTED':
-        return 'Comentário'
+        return 'Comentário';
       case 'TICKET_RESOLVED':
-        return 'Resolvido'
+        return 'Resolvido';
       case 'TICKET_CLOSED':
-        return 'Fechado'
+        return 'Fechado';
       case 'SYSTEM_ANNOUNCEMENT':
-        return 'Anúncio'
+        return 'Anúncio';
       default:
-        return 'Notificação'
+        return 'Notificação';
     }
-  }
+  };
 
   if (!session?.user) {
-    return null
+    return null;
   }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="relative h-9 w-9 p-0"
-        >
+        <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0">
           {unreadCount > 0 ? (
             <BellRing className="h-5 w-5" />
           ) : (
             <Bell className="h-5 w-5" />
           )}
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
@@ -238,11 +234,7 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-80 p-0" 
-        align="end"
-        sideOffset={5}
-      >
+      <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -288,7 +280,9 @@ export function NotificationBell() {
                     <div key={notification.id}>
                       <div
                         className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                          !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                          !notification.read
+                            ? 'bg-blue-50 border-l-4 border-l-blue-500'
+                            : ''
                         }`}
                         onClick={() => handleNotificationClick(notification)}
                       >
@@ -300,7 +294,7 @@ export function NotificationBell() {
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Badge 
+                                  <Badge
                                     variant="secondary"
                                     className={`text-xs ${getNotificationBadgeColor(notification.type)}`}
                                   >
@@ -317,19 +311,22 @@ export function NotificationBell() {
                                   {notification.message}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">
-                                  {formatDistanceToNow(new Date(notification.createdAt), {
-                                    addSuffix: true,
-                                    locale: ptBR,
-                                  })}
+                                  {formatDistanceToNow(
+                                    new Date(notification.createdAt),
+                                    {
+                                      addSuffix: true,
+                                      locale: ptBR,
+                                    }
+                                  )}
                                 </p>
                               </div>
                               {!notification.read && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    markAsRead(notification.id)
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    markAsRead(notification.id);
                                   }}
                                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
                                 >
@@ -346,7 +343,7 @@ export function NotificationBell() {
                 </div>
               )}
             </ScrollArea>
-            
+
             {notifications.length > 0 && (
               <>
                 <Separator />
@@ -356,8 +353,8 @@ export function NotificationBell() {
                     size="sm"
                     className="w-full justify-center text-xs"
                     onClick={() => {
-                      setIsOpen(false)
-                      window.location.href = '/notifications'
+                      setIsOpen(false);
+                      window.location.href = '/notifications';
                     }}
                   >
                     Ver todas as notificações
@@ -369,6 +366,5 @@ export function NotificationBell() {
         </Card>
       </PopoverContent>
     </Popover>
-  )
+  );
 }
-

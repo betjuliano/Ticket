@@ -21,6 +21,7 @@ ps aux | grep minio
 ## 3. Localizar as credenciais do MinIO
 
 ### Opção A: Verificar variáveis de ambiente
+
 ```bash
 # Se rodando via Docker
 docker inspect <container_id_minio> | grep -A 10 -B 10 "MINIO_ROOT_USER\|MINIO_ACCESS_KEY"
@@ -30,6 +31,7 @@ docker logs <container_id_minio> | head -20
 ```
 
 ### Opção B: Verificar arquivos de configuração
+
 ```bash
 # Procurar por arquivos de configuração
 find /etc -name "*minio*" 2>/dev/null
@@ -41,6 +43,7 @@ find / -name "docker-compose*.yml" -exec grep -l "minio" {} \; 2>/dev/null
 ```
 
 ### Opção C: Verificar configuração padrão
+
 ```bash
 # Credenciais padrão do MinIO (se não foram alteradas)
 # MINIO_ROOT_USER=minioadmin

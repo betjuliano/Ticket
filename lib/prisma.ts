@@ -1,25 +1,27 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+  prisma: PrismaClient | undefined;
+};
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Middleware para logs
 prisma.$use(async (params: any, next: any) => {
-  const before = Date.now()
-  const result = await next(params)
-  const after = Date.now()
-  
+  const before = Date.now();
+  const result = await next(params);
+  const after = Date.now();
+
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Query ${params.model}.${params.action} took ${after - before}ms`)
+    console.log(
+      `Query ${params.model}.${params.action} took ${after - before}ms`
+    );
   }
-  
-  return result
-})
+
+  return result;
+});
 
 // Middleware para sanitização de dados
 prisma.$use(async (params: any, next: any) => {
@@ -31,13 +33,13 @@ prisma.$use(async (params: any, next: any) => {
         if (typeof params.args.data[key] === 'string') {
           params.args.data[key] = params.args.data[key]
             .replace(/[<>]/g, '') // Remover < e >
-            .trim()
+            .trim();
         }
-      })
+      });
     }
   }
-  
-  return next(params)
-})
 
-export default prisma
+  return next(params);
+});
+
+export default prisma;

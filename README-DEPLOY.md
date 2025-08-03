@@ -20,6 +20,7 @@ cd /root/ticket-system
 ## 🚀 Deploy Automático
 
 ### Opção 1: Script PowerShell (Windows)
+
 ```powershell
 # Configurar política de execução (uma vez)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -32,6 +33,7 @@ powershell -ExecutionPolicy Bypass -File deploy-rapido.ps1
 ```
 
 ### Opção 2: Script Bash (Linux/Mac)
+
 ```bash
 # Dar permissão
 chmod +x deploy-to-vps.sh
@@ -43,6 +45,7 @@ chmod +x deploy-to-vps.sh
 ## 📤 Deploy Manual
 
 ### 1. Upload dos Arquivos
+
 ```bash
 # Via rsync (recomendado)
 rsync -avz --delete \
@@ -56,6 +59,7 @@ scp -r . root@207.180.254.250:/root/ticket-system/
 ```
 
 ### 2. Conectar na VPS e Build
+
 ```bash
 # Conectar
 ssh root@207.180.254.250
@@ -71,6 +75,7 @@ docker images | grep ticket-system
 ```
 
 ### 3. Deploy no Portainer
+
 ```bash
 # Via PowerShell (se disponível na VPS)
 pwsh -File deploy-portainer.ps1 deploy -Force
@@ -85,6 +90,7 @@ curl -X POST "https://portainer.iaprojetos.com.br/api/stacks" \
 ## 🔍 Verificações
 
 ### Status dos Containers
+
 ```bash
 # Verificar containers rodando
 docker ps | grep ticket
@@ -97,6 +103,7 @@ docker service ls
 ```
 
 ### Testes de Conectividade
+
 ```bash
 # Testar aplicação
 curl -I https://iadm.iaprojetos.com.br
@@ -114,6 +121,7 @@ curl https://iadm.iaprojetos.com.br/api/health
 ## 🆘 Troubleshooting
 
 ### Problema: Erro de autenticação SSH
+
 ```bash
 # Verificar conectividade
 ssh root@207.180.254.250 "echo 'SSH OK'"
@@ -124,6 +132,7 @@ ssh-copy-id root@207.180.254.250
 ```
 
 ### Problema: Imagem Docker não encontrada
+
 ```bash
 # Verificar imagens
 docker images | grep ticket-system
@@ -133,6 +142,7 @@ docker build -t ticket-system:latest .
 ```
 
 ### Problema: Container não inicia
+
 ```bash
 # Verificar logs
 docker logs ticket-system_ticket-system-multidominio
@@ -163,6 +173,7 @@ docker restart ticket-system_ticket-system-multidominio
 4. **Verificar** → Testar aplicação e logs
 
 **🎯 Comando mais simples:**
+
 ```bash
 # Windows
 powershell -ExecutionPolicy Bypass -File deploy-rapido.ps1

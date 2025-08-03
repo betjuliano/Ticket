@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 
 // Mock do Next.js router
 jest.mock('next/router', () => ({
@@ -20,9 +20,9 @@ jest.mock('next/router', () => ({
         emit: jest.fn(),
       },
       isFallback: false,
-    }
+    };
   },
-}))
+}));
 
 // Mock do Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -34,15 +34,15 @@ jest.mock('next/navigation', () => ({
       back: jest.fn(),
       forward: jest.fn(),
       refresh: jest.fn(),
-    }
+    };
   },
   useSearchParams() {
-    return new URLSearchParams()
+    return new URLSearchParams();
   },
   usePathname() {
-    return '/'
+    return '/';
   },
-}))
+}));
 
 // Mock do Prisma
 jest.mock('@/lib/prisma', () => ({
@@ -68,21 +68,21 @@ jest.mock('@/lib/prisma', () => ({
       delete: jest.fn(),
     },
   },
-}))
+}));
 
 // Mock do NextAuth
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
   signIn: jest.fn(),
   signOut: jest.fn(),
-}))
+}));
 
 // Configuração global para testes
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
-}))
+}));
 
 // Mock do console para evitar logs durante testes
 global.console = {
@@ -92,4 +92,4 @@ global.console = {
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-} 
+};

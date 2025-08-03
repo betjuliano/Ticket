@@ -1,18 +1,18 @@
-import { ChevronRight, Home } from 'lucide-react'
-import { Button } from './button'
-import { useRouter } from 'next/navigation'
+import { ChevronRight, Home } from 'lucide-react';
+import { Button } from './button';
+import { useRouter } from 'next/navigation';
 
 interface BreadcrumbItem {
-  label: string
-  href?: string
+  label: string;
+  href?: string;
 }
 
 interface BreadcrumbNavProps {
-  items: BreadcrumbItem[]
+  items: BreadcrumbItem[];
 }
 
 export function BreadcrumbNav({ items }: BreadcrumbNavProps) {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div className="flex items-center gap-2 text-sm text-blue-200 mb-4">
@@ -42,5 +42,5 @@ export function BreadcrumbNav({ items }: BreadcrumbNavProps) {
         </div>
       ))}
     </div>
-  )
+  );
 }

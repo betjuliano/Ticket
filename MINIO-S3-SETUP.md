@@ -59,12 +59,12 @@ services:
     image: minio/minio:latest
     container_name: minio-storage
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console Web
+      - '9000:9000' # API
+      - '9001:9001' # Console Web
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
-      MINIO_CONSOLE_ADDRESS: ":9001"
+      MINIO_CONSOLE_ADDRESS: ':9001'
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -112,11 +112,13 @@ chmod +x minio
 ## 2. Configuração Inicial
 
 ### Acessar Console Web
+
 - URL: http://localhost:9001
 - Usuário: minioadmin
 - Senha: minioadmin123
 
 ### Criar Bucket via Console
+
 1. Acesse "Buckets" no menu lateral
 2. Clique em "Create Bucket"
 3. Nome: `ticket-attachments`
@@ -170,7 +172,12 @@ npm install aws-sdk @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
 ### lib/minio-client.ts
 
 ```typescript
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({
@@ -194,7 +201,7 @@ export class MinIOService {
     metadata?: Record<string, string>
   ): Promise<string> {
     const key = `attachments/${Date.now()}-${fileName}`;
-    
+
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
@@ -204,13 +211,16 @@ export class MinIOService {
     });
 
     await s3Client.send(command);
-    
+
     // Retorna URL pública
     return `${process.env.MINIO_PUBLIC_URL}/${BUCKET_NAME}/${key}`;
   }
 
   // Gerar URL assinada para download
-  static async getSignedDownloadUrl(key: string, expiresIn: number = 3600): Promise<string> {
+  static async getSignedDownloadUrl(
+    key: string,
+    expiresIn: number = 3600
+  ): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
@@ -226,7 +236,7 @@ export class MinIOService {
     expiresIn: number = 3600
   ): Promise<{ url: string; key: string }> {
     const key = `attachments/${Date.now()}-${fileName}`;
-    
+
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
@@ -234,7 +244,7 @@ export class MinIOService {
     });
 
     const url = await getSignedUrl(s3Client, command, { expiresIn });
-    
+
     return { url, key };
   }
 
@@ -289,10 +299,13 @@ export async function POST(request: NextRequest) {
     }
 
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif',
-      'application/pdf', 'text/plain',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/pdf',
+      'text/plain',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -496,7 +509,7 @@ BEGIN
     IF NOT validate_attachment_url(NEW.url) THEN
         RAISE EXCEPTION 'URL de anexo inválida: %', NEW.url;
     END IF;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -522,12 +535,12 @@ services:
     image: minio/minio:latest
     container_name: minio-prod
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_CONSOLE_ADDRESS: ":9001"
+      MINIO_CONSOLE_ADDRESS: ':9001'
     volumes:
       - /data/minio:/data
     command: server /data --console-address ":9001"
@@ -539,8 +552,8 @@ services:
     image: nginx:alpine
     container_name: nginx-minio
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
@@ -579,7 +592,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         client_max_body_size 50M;
     }
 }
@@ -655,7 +668,10 @@ async function testConnection() {
     const command = new ListBucketsCommand({});
     const response = await client.send(command);
     console.log('✅ Conexão com MinIO bem-sucedida!');
-    console.log('Buckets:', response.Buckets?.map(b => b.Name));
+    console.log(
+      'Buckets:',
+      response.Buckets?.map(b => b.Name)
+    );
   } catch (error) {
     console.error('❌ Erro na conexão:', error.message);
   }

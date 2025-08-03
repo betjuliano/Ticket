@@ -3,6 +3,7 @@
 ## 📋 Status da Configuração
 
 ✅ **Já Configurado:**
+
 - Instância personalizada do Supabase em `supabase.iaprojetos.com.br`
 - Variáveis de ambiente básicas no `.env.local`
 - Scripts SQL de migração criados
@@ -10,6 +11,7 @@
 - Configuração do Prisma
 
 ⚠️ **Pendente:**
+
 - Execução dos scripts SQL na sua instância
 - Configuração do bucket de Storage
 - Obtenção das credenciais de Service Role
@@ -26,21 +28,25 @@
 No painel do Supabase, vá para **SQL Editor** e execute os scripts na seguinte ordem:
 
 #### 2.1 Migração Principal
+
 ```sql
 -- Execute o conteúdo do arquivo: supabase-migration.sql
 ```
 
 #### 2.2 Políticas RLS
+
 ```sql
 -- Execute o conteúdo do arquivo: supabase-rls-policies.sql
 ```
 
 #### 2.3 Configuração do Storage
+
 ```sql
 -- Execute o conteúdo do arquivo: supabase-storage-setup.sql
 ```
 
 #### 2.4 Configuração do Real-time
+
 ```sql
 -- Execute o conteúdo do arquivo: supabase-realtime-setup.sql
 ```
@@ -58,25 +64,31 @@ No painel do Supabase, vá para **SQL Editor** e execute os scripts na seguinte 
 ### 4. Obtenha as Credenciais
 
 #### 4.1 Service Role Key
+
 1. Vá para **Settings** → **API**
 2. Copie a **service_role** key
 3. Atualize no `.env.local`:
+
 ```env
 SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key_aqui
 ```
 
 #### 4.2 JWT Secret
+
 1. Vá para **Settings** → **API**
 2. Copie o **JWT Secret**
 3. Atualize no `.env.local`:
+
 ```env
 SUPABASE_JWT_SECRET=seu_jwt_secret_aqui
 ```
 
 #### 4.3 Senha do Banco
+
 1. Vá para **Settings** → **Database**
 2. Use a senha do seu banco PostgreSQL
 3. Atualize no `.env.local`:
+
 ```env
 DATABASE_URL="postgresql://postgres:SUA_SENHA_AQUI@db.supabase.iaprojetos.com.br:5432/postgres"
 DIRECT_URL="postgresql://postgres:SUA_SENHA_AQUI@db.supabase.iaprojetos.com.br:5432/postgres"
@@ -100,17 +112,20 @@ npm run dev
 ## 🔧 Comandos Úteis
 
 ### Teste Rápido
+
 ```bash
 node test-supabase-complete.js
 ```
 
 ### Reset do Prisma
+
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
 ### Verificar Logs
+
 ```bash
 npm run dev
 ```
@@ -138,16 +153,19 @@ npm run dev
 ## 🆘 Troubleshooting
 
 ### Erro de Conexão
+
 - Verifique se a instância está online
 - Confirme a senha do banco
 - Teste a conectividade
 
 ### Erro de Permissão
+
 - Verifique a Service Role Key
 - Confirme as políticas RLS
 - Teste com usuário admin
 
 ### Erro de Storage
+
 - Verifique se o bucket foi criado
 - Confirme as permissões
 - Teste o upload
@@ -157,21 +175,25 @@ npm run dev
 Após a configuração completa:
 
 ✅ **Sistema de Tickets**
+
 - Criação e gerenciamento
 - Anexos de arquivos
 - Histórico de atividades
 
 ✅ **Autenticação**
+
 - Login/logout
 - Controle de acesso
 - Sessões seguras
 
 ✅ **Storage**
+
 - Upload de arquivos
 - Gerenciamento de anexos
 - Controle de tamanho
 
 ✅ **Real-time**
+
 - Atualizações em tempo real
 - Notificações
 - Sincronização

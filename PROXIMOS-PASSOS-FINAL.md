@@ -3,12 +3,14 @@
 ## ✅ Status Atual
 
 **Corrigido:**
+
 - ❌ Erro SQL de constraint NOT NULL no `updatedAt` → ✅ **RESOLVIDO**
 - ❌ Erro de função `auth.uid()` → ✅ **RESOLVIDO com implementação personalizada**
 - ❌ Erro de arrays de tags → ✅ **RESOLVIDO**
 - Scripts SQL atualizados e prontos para execução
 
 **Funcionando:**
+
 - ✅ Instância personalizada: `supabase.iaprojetos.com.br`
 - ✅ Conexão com banco estabelecida
 - ✅ Variáveis de ambiente configuradas
@@ -16,6 +18,7 @@
 - ✅ Prisma configurado
 
 **Pendente:**
+
 - ⚠️ Execução dos scripts SQL corrigidos
 - ⚠️ Configuração do bucket Storage
 - ⚠️ Credenciais de Service Role
@@ -25,6 +28,7 @@
 ### Opção 1: Usando Supabase Storage (Original)
 
 #### 1. Acesse sua Instância Supabase
+
 🔗 **https://supabase.iaprojetos.com.br**
 
 #### 2. Execute os Scripts SQL (ORDEM IMPORTANTE)
@@ -32,23 +36,27 @@
 Vá para **SQL Editor** e execute na seguinte ordem:
 
 ##### 2.1 Migração Principal (CORRIGIDA)
+
 ```sql
 -- Cole todo o conteúdo do arquivo: supabase-migration.sql
 -- (Já corrigido: updatedAt, arrays de tags)
 ```
 
 ##### 2.2 Políticas RLS (CORRIGIDA)
+
 ```sql
 -- Cole todo o conteúdo do arquivo: supabase-rls-policies.sql
 -- (Já corrigido: função auth.uid(), extensão uuid-ossp)
 ```
 
 ##### 2.3 Storage Setup
+
 ```sql
 -- Cole todo o conteúdo do arquivo: supabase-storage-setup.sql
 ```
 
 ##### 2.4 Real-time Setup
+
 ```sql
 -- Cole todo o conteúdo do arquivo: supabase-realtime-setup.sql
 ```
@@ -65,35 +73,43 @@ Vá para **SQL Editor** e execute na seguinte ordem:
 #### 4. Obtenha as Credenciais
 
 ##### 4.1 Service Role Key
+
 1. **Settings** → **API**
 2. Copie a **service_role** key
 3. Atualize no `.env.local`:
+
 ```env
 SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key_aqui
 ```
 
 ##### 4.2 JWT Secret
+
 1. **Settings** → **API**
 2. Copie o **JWT Secret**
 3. Atualize no `.env.local`:
+
 ```env
 SUPABASE_JWT_SECRET=seu_jwt_secret_aqui
 ```
 
 ##### 4.3 Senha do Banco
+
 1. **Settings** → **Database**
 2. Substitua `[YOUR_DB_PASSWORD]` pela senha real:
+
 ```env
 DATABASE_URL="postgresql://postgres:SUA_SENHA_REAL@db.supabase.iaprojetos.com.br:5432/postgres"
 DIRECT_URL="postgresql://postgres:SUA_SENHA_REAL@db.supabase.iaprojetos.com.br:5432/postgres"
 ```
 
 #### 5. Teste Final
+
 ```bash
 node test-supabase-complete.js
 ```
 
 #### 6. Inicie a Aplicação
+
 ```bash
 npm install
 npx prisma generate
@@ -104,12 +120,14 @@ npm run dev
 ### Opção 2: Usando MinIO S3 (Recomendado para Self-Hosted)
 
 #### 1. Configuração Automatizada
+
 ```bash
 # Executar script de configuração
 node setup-minio.js
 ```
 
 Este script irá:
+
 - ✅ Verificar dependências
 - ✅ Instalar pacotes AWS SDK
 - ✅ Criar docker-compose.minio.yml
@@ -119,6 +137,7 @@ Este script irá:
 - ✅ Configurar bucket automaticamente
 
 #### 2. Configuração Manual (alternativa)
+
 ```bash
 # Instalar dependências
 npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
@@ -132,17 +151,20 @@ docker-compose -f docker-compose.minio.yml ps
 ```
 
 #### 3. Verificar Configuração
+
 ```bash
 # Testar conexão
 node test-minio-connection.js
 ```
 
 #### 4. Acessar Console Web
+
 - URL: http://localhost:9001
 - Usuário: `minioadmin`
 - Senha: `minioadmin123`
 
 #### 5. Executar Scripts SQL (apenas estrutura)
+
 ```sql
 -- 1. Primeiro: Criar tabelas e estrutura
 supabase-migration.sql
@@ -155,16 +177,19 @@ supabase-realtime-setup.sql
 ```
 
 #### 6. Atualizar APIs (usar rotas MinIO)
+
 - Upload: `/api/attachments/upload-minio`
 - Download: `/api/attachments/download-minio/[id]`
 - Componente: `MinIOFileUpload`
 
 #### 7. Teste Final
+
 ```bash
 node test-supabase-complete.js
 ```
 
 #### 8. Inicie a Aplicação
+
 ```bash
 npm install
 npx prisma generate
@@ -174,16 +199,16 @@ npm run dev
 
 ## Comparação das Opções
 
-| Aspecto | Supabase Storage | MinIO S3 |
-|---------|------------------|----------|
-| **Controle** | Limitado | Total |
-| **Custos** | Baseado em uso | Apenas infraestrutura |
-| **Performance** | Boa | Excelente |
-| **Configuração** | Simples | Moderada |
-| **Backup** | Automático | Manual |
-| **Escalabilidade** | Automática | Manual |
-| **Compatibilidade** | Supabase only | S3 API padrão |
-| **Self-hosted** | ❌ | ✅ |
+| Aspecto             | Supabase Storage | MinIO S3              |
+| ------------------- | ---------------- | --------------------- |
+| **Controle**        | Limitado         | Total                 |
+| **Custos**          | Baseado em uso   | Apenas infraestrutura |
+| **Performance**     | Boa              | Excelente             |
+| **Configuração**    | Simples          | Moderada              |
+| **Backup**          | Automático       | Manual                |
+| **Escalabilidade**  | Automática       | Manual                |
+| **Compatibilidade** | Supabase only    | S3 API padrão         |
+| **Self-hosted**     | ❌               | ✅                    |
 
 ## Recomendações
 
@@ -201,6 +226,7 @@ npm run dev
 ## Arquivos Criados
 
 ### Para MinIO S3:
+
 - 📄 `MINIO-S3-SETUP.md` - Guia completo de configuração
 - 🔧 `setup-minio.js` - Script de configuração automatizada (Docker local)
 - 🌐 `setup-minio-custom-domain.js` - Script para domínio personalizado
@@ -213,6 +239,7 @@ npm run dev
 - 🎨 `components/forms/minio-file-upload.tsx` - Componente React
 
 ### Para Autenticação Personalizada:
+
 - 📄 `AUTENTICACAO-PERSONALIZADA.md` - Documentação da auth personalizada
 
 ## Próximos Passos
@@ -270,17 +297,20 @@ npm run dev
 ## 🔧 Comandos de Verificação
 
 ### Teste Rápido
+
 ```bash
 node test-supabase-complete.js
 ```
 
 ### Reset Prisma (se necessário)
+
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
 ### Verificar Logs
+
 ```bash
 npm run dev
 ```
@@ -289,15 +319,13 @@ npm run dev
 
 ### 📋 Scripts SQL Corrigidos:
 
-1. **`supabase-migration.sql`**: 
+1. **`supabase-migration.sql`**:
    - ✅ Corrigido `updatedAt` com `NOW()`
    - ✅ Corrigido arrays de tags (`TEXT[]`)
-   
-2. **`supabase-rls-policies.sql`**: 
+2. **`supabase-rls-policies.sql`**:
    - ✅ Adicionado schema `auth` personalizado
    - ✅ Implementada função `auth.uid()` para instâncias self-hosted
    - ✅ Adicionada função `auth.set_current_user()` para aplicação
-   
 3. **`supabase-storage-setup.sql`**: ✅ Pronto
 4. **`supabase-realtime-setup.sql`**: ✅ Pronto
 
@@ -328,6 +356,7 @@ npm run dev
 ## 🎉 Resultado Final
 
 Após completar estes passos:
+
 - ✅ Sistema de tickets completo
 - ✅ Upload de anexos funcionando
 - ✅ Autenticação segura

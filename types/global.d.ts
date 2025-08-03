@@ -56,7 +56,7 @@ export interface Operation {
 }
 
 // Extensão dos tipos do NextAuth
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
@@ -64,15 +64,14 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role?: string;
-    }
+    };
   }
-  
+
   interface User {
     id: string;
     role?: string;
   }
 }
-
 
 // Adicionar interfaces para Users
 export interface UserEmployee {

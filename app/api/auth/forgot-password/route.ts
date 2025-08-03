@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import crypto from 'crypto'
-import nodemailer from 'nodemailer'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 // Configure seu provedor de email
 const transporter = nodemailer.createTransport({
@@ -12,40 +12,40 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    const { email } = await request.json();
 
     // Verificar se o usuário existe
     const user = await prisma.user.findUnique({
-      where: { email }
-    })
+      where: { email },
+    });
 
     if (!user) {
       return NextResponse.json(
         { message: 'Email não encontrado' },
         { status: 404 }
-      )
+      );
     }
 
     // Gerar token de recuperação
-    const resetToken = crypto.randomBytes(32).toString('hex')
-    const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hora
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora
 
     // Salvar token no banco
     await prisma.user.update({
       where: { id: user.id },
       data: {
         resetToken,
-        resetTokenExpiry
-      }
-    })
+        resetTokenExpiry,
+      },
+    });
 
     // Enviar email
-    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
-    
+    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: email,
@@ -61,18 +61,18 @@ export async function POST(request: NextRequest) {
           <hr style="margin: 24px 0;">
           <p style="color: #666; font-size: 12px;">© 2024 Universidade Federal de Santa Maria</p>
         </div>
-      `
-    })
+      `,
+    });
 
     return NextResponse.json(
       { message: 'Email de recuperação enviado com sucesso' },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Erro ao enviar email de recuperação:', error)
+    console.error('Erro ao enviar email de recuperação:', error);
     return NextResponse.json(
       { message: 'Erro interno do servidor' },
       { status: 500 }
-    )
+    );
   }
 }

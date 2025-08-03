@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  extractKeyFromUrl,
-  getSignedDownloadUrl,
-} from '@/lib/minio-service';
+import { extractKeyFromUrl, getSignedDownloadUrl } from '@/lib/minio-service';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions, canUserAccessTicket, verifyJWT } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const attachmentId = params.id;
 
@@ -39,10 +37,7 @@ export async function GET(
     }
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Não autenticado' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     // Buscar anexo no banco de dados
@@ -55,14 +50,14 @@ export async function GET(
             title: true,
             createdById: true,
             assignedToId: true,
-          }
+          },
         },
         user: {
           select: {
             id: true,
             name: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -85,10 +80,7 @@ export async function GET(
     );
 
     if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Acesso negado' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
     try {
@@ -114,34 +106,35 @@ export async function GET(
         });
         console.log('✅ Log de download criado');
       } catch (logError) {
-        console.warn('⚠️ Erro ao criar log de download (não crítico):', logError);
+        console.warn(
+          '⚠️ Erro ao criar log de download (não crítico):',
+          logError
+        );
       }
 
       // Redirecionar para a URL assinada
       return NextResponse.redirect(signedUrl);
-
     } catch (minioError) {
       console.error('❌ Erro ao gerar URL de download do MinIO:', minioError);
-      
+
       return NextResponse.json(
-        { 
+        {
           error: 'Erro ao acessar arquivo',
           details: 'Não foi possível gerar link de download',
-          hint: 'Verifique se o MinIO está rodando e o arquivo existe'
+          hint: 'Verifique se o MinIO está rodando e o arquivo existe',
         },
         { status: 503 }
       );
     }
-
   } catch (error) {
     console.error('❌ Erro no download:', error);
-    
+
     // Erro de banco de dados
     if (error instanceof Error && error.message.includes('Prisma')) {
       return NextResponse.json(
-        { 
+        {
           error: 'Erro no banco de dados',
-          details: 'Não foi possível acessar informações do anexo'
+          details: 'Não foi possível acessar informações do anexo',
         },
         { status: 500 }
       );
@@ -149,9 +142,12 @@ export async function GET(
 
     // Erro genérico
     return NextResponse.json(
-      { 
+      {
         error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'Tente novamente mais tarde'
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error.message
+            : 'Tente novamente mais tarde',
       },
       { status: 500 }
     );
@@ -161,8 +157,9 @@ export async function GET(
 // Método para obter informações do anexo sem fazer download
 export async function HEAD(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     let user = null;
@@ -226,7 +223,6 @@ export async function HEAD(
         'Last-Modified': attachment.createdAt.toUTCString(),
       },
     });
-
   } catch (error) {
     console.error('❌ Erro ao obter informações do anexo:', error);
     return new NextResponse(null, { status: 500 });

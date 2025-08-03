@@ -17,8 +17,7 @@ async function testMinIOConnection() {
   
   try {
     // Testar listagem de buckets
-    console.log('
-1. Testando listagem de buckets...');
+    console.log('1. Testando listagem de buckets...');
     const listCommand = new ListBucketsCommand({});
     const listResponse = await client.send(listCommand);
     console.log('✅ Buckets encontrados:', listResponse.Buckets?.map(b => b.Name) || []);

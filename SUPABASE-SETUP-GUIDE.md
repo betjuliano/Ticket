@@ -23,11 +23,13 @@ Este guia irá te ajudar a migrar completamente seu sistema de tickets para o Su
 ## 🔧 Pré-requisitos
 
 ### 1. Conta no Supabase
+
 - Crie uma conta em [supabase.com](https://supabase.com)
 - Crie um novo projeto
 - Anote as credenciais do projeto
 
 ### 2. Informações Necessárias
+
 Você precisará das seguintes informações do seu projeto Supabase:
 
 ```
@@ -39,6 +41,7 @@ Você precisará das seguintes informações do seu projeto Supabase:
 ```
 
 **📍 Onde encontrar:**
+
 - Vá para o painel do Supabase
 - Settings → API
 - Copie as informações necessárias
@@ -55,6 +58,7 @@ node setup-supabase.js
 ```
 
 O script irá:
+
 - ✅ Coletar suas credenciais do Supabase
 - ✅ Atualizar o arquivo `.env.local`
 - ✅ Instalar dependências necessárias
@@ -131,6 +135,7 @@ npx prisma db push
 ### Tabelas Principais
 
 #### 👥 Users
+
 ```sql
 - id (TEXT, PK)
 - email (TEXT, UNIQUE)
@@ -148,6 +153,7 @@ npx prisma db push
 ```
 
 #### 🎫 Tickets
+
 ```sql
 - id (TEXT, PK)
 - title (TEXT)
@@ -164,6 +170,7 @@ npx prisma db push
 ```
 
 #### 💬 Comments
+
 ```sql
 - id (TEXT, PK)
 - content (TEXT)
@@ -174,6 +181,7 @@ npx prisma db push
 ```
 
 #### 📎 Attachments
+
 ```sql
 - id (TEXT, PK)
 - filename (TEXT)
@@ -205,18 +213,21 @@ npx prisma db push
 ### Regras de Acesso
 
 #### 👑 Administradores
+
 - ✅ Acesso total a todos os dados
 - ✅ Gerenciar usuários
 - ✅ Gerenciar todos os tickets
 - ✅ Acessar logs e relatórios
 
 #### 👨‍💼 Coordenadores
+
 - ✅ Ver todos os tickets
 - ✅ Gerenciar tickets
 - ✅ Ver usuários ativos
 - ❌ Gerenciar usuários
 
 #### 👤 Usuários
+
 - ✅ Ver próprios dados
 - ✅ Criar tickets
 - ✅ Ver tickets criados ou atribuídos
@@ -243,6 +254,7 @@ npx prisma db push
    ```
 
 ### Estrutura de Pastas
+
 ```
 ticket-attachments/
 ├── {ticketId}/
@@ -252,6 +264,7 @@ ticket-attachments/
 ```
 
 ### Políticas de Storage
+
 - **Upload**: Usuários com acesso ao ticket
 - **Download**: Usuários com acesso ao ticket
 - **Delete**: Proprietário do arquivo ou admin/coordinator
@@ -263,6 +276,7 @@ ticket-attachments/
 ### Recursos Habilitados
 
 #### 📡 Real-time Subscriptions
+
 - **Tickets**: Atualizações em tempo real
 - **Comments**: Novos comentários
 - **Notifications**: Notificações instantâneas
@@ -287,8 +301,9 @@ ticket-attachments/
    - Informações do arquivo
 
 ### Tipos de Notificação
+
 ```typescript
-type NotificationType = 
+type NotificationType =
   | 'TICKET_CREATED'
   | 'TICKET_UPDATED'
   | 'COMMENT_ADDED'
@@ -310,34 +325,34 @@ node test-supabase-complete.js
 ### 2. Verificações Manuais
 
 #### Conexão com Banco
+
 ```javascript
 const { supabase } = require('./lib/supabase-client');
 
 // Teste de conexão
-const { data, error } = await supabase
-  .from('users')
-  .select('count')
-  .limit(1);
+const { data, error } = await supabase.from('users').select('count').limit(1);
 
 console.log('Conexão:', error ? 'Falhou' : 'Sucesso');
 ```
 
 #### Teste de RLS
+
 ```javascript
 // Deve falhar sem autenticação
-const { data, error } = await supabase
-  .from('users')
-  .select('*');
+const { data, error } = await supabase.from('users').select('*');
 
 console.log('RLS ativo:', error ? 'Sim' : 'Não');
 ```
 
 #### Teste de Storage
-```javascript
-const { data, error } = await supabase.storage
-  .listBuckets();
 
-console.log('Buckets:', data?.map(b => b.name));
+```javascript
+const { data, error } = await supabase.storage.listBuckets();
+
+console.log(
+  'Buckets:',
+  data?.map(b => b.name)
+);
 ```
 
 ### 3. Checklist de Validação
@@ -358,41 +373,49 @@ console.log('Buckets:', data?.map(b => b.name));
 ### Problemas Comuns
 
 #### 1. Erro de Conexão
+
 ```
 ❌ connection to server at "db.xxx.supabase.co" failed
 ```
 
 **Soluções:**
+
 - Verificar DATABASE_URL
 - Confirmar senha do banco
 - Verificar firewall/proxy
 
 #### 2. RLS Bloqueando Acesso
+
 ```
 ❌ permission denied for table users
 ```
 
 **Soluções:**
+
 - Verificar se RLS policies foram aplicadas
 - Confirmar autenticação do usuário
 - Usar service role key para operações admin
 
 #### 3. Storage Não Funcionando
+
 ```
 ❌ The resource was not found
 ```
 
 **Soluções:**
+
 - Verificar se bucket foi criado
 - Confirmar políticas de storage
 - Verificar permissões de upload
 
 #### 4. Real-time Não Conectando
+
 ```
 ❌ WebSocket connection failed
 ```
 
 **Soluções:**
+
 - Verificar configurações de real-time
 - Confirmar subscription nas tabelas
 - Verificar firewall para WebSockets
@@ -418,16 +441,19 @@ npx prisma db push
 ## 📚 Recursos Adicionais
 
 ### Documentação
+
 - [Supabase Docs](https://supabase.com/docs)
 - [Prisma Docs](https://www.prisma.io/docs)
 - [Next.js + Supabase](https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs)
 
 ### Ferramentas Úteis
+
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
 - [Prisma Studio](https://www.prisma.io/studio)
 - [Supabase Dashboard](https://app.supabase.com)
 
 ### Comunidade
+
 - [Supabase Discord](https://discord.supabase.com)
 - [Prisma Discord](https://pris.ly/discord)
 - [GitHub Issues](https://github.com/supabase/supabase/issues)

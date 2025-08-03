@@ -21,7 +21,9 @@ try {
 } catch (error) {
   console.log('📥 Instalando dependências AWS SDK...');
   try {
-    execSync('npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner', { stdio: 'inherit' });
+    execSync('npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner', {
+      stdio: 'inherit',
+    });
     console.log('✅ Dependências instaladas com sucesso');
   } catch (installError) {
     console.error('❌ Erro ao instalar dependências:', installError.message);
@@ -39,7 +41,10 @@ if (fs.existsSync(envPath)) {
 }
 
 // Remover configurações MinIO existentes
-envContent = envContent.replace(/# MinIO S3 Configuration[\s\S]*?(?=\n\n|\n#|$)/g, '');
+envContent = envContent.replace(
+  /# MinIO S3 Configuration[\s\S]*?(?=\n\n|\n#|$)/g,
+  ''
+);
 
 // Adicionar novas configurações MinIO
 const minioConfig = `
@@ -198,4 +203,6 @@ console.log('\n4. 🚀 Use as rotas de API MinIO na sua aplicação:');
 console.log('   - Upload: /api/attachments/upload-minio');
 console.log('   - Download: /api/attachments/download-minio/[id]');
 console.log('\n5. 🎨 Use o componente MinIOFileUpload nos seus forms');
-console.log('\n⚠️  Lembre-se de configurar as credenciais corretas antes de testar!');
+console.log(
+  '\n⚠️  Lembre-se de configurar as credenciais corretas antes de testar!'
+);

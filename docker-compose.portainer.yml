@@ -40,7 +40,7 @@ services:
     labels:
       # Labels para Traefik
       - "traefik.enable=true"
-      - "traefik.http.routers.ticket.rule=Host(\`${DOMAIN}\`)"
+      - "traefik.http.routers.ticket.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.ticket.entrypoints=websecure"
       - "traefik.http.routers.ticket.tls.certresolver=letsencrypt"
       - "traefik.http.services.ticket.loadbalancer.server.port=3000"

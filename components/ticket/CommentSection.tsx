@@ -1,99 +1,102 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { 
-  MessageSquare, 
-  Send, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  MessageSquare,
+  Send,
+  Edit,
+  Trash2,
+  Eye,
   EyeOff,
   Clock,
-  User
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { toast } from 'sonner'
+  User,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Comment {
-  id: string
-  content: string
-  isInternal: boolean
-  createdAt: string
-  updatedAt: string
+  id: string;
+  content: string;
+  isInternal: boolean;
+  createdAt: string;
+  updatedAt: string;
   user: {
-    id: string
-    name: string
-    email: string
-    role: string
-    avatar?: string
-  }
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatar?: string;
+  };
 }
 
 interface CommentSectionProps {
-  ticketId: string
-  canComment?: boolean
+  ticketId: string;
+  canComment?: boolean;
 }
 
-export function CommentSection({ ticketId, canComment = true }: CommentSectionProps) {
-  const { data: session } = useSession()
-  const [comments, setComments] = useState<Comment[]>([])
-  const [newComment, setNewComment] = useState('')
-  const [isInternal, setIsInternal] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editContent, setEditContent] = useState('')
+export function CommentSection({
+  ticketId,
+  canComment = true,
+}: CommentSectionProps) {
+  const { data: session } = useSession();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isInternal, setIsInternal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
-  const userRole = session?.user?.role
-  const userId = session?.user?.id
-  const canCreateInternal = userRole === 'ADMIN' || userRole === 'COORDINATOR'
+  const userRole = session?.user?.role;
+  const userId = session?.user?.id;
+  const canCreateInternal = userRole === 'ADMIN' || userRole === 'COORDINATOR';
 
   // Carregar comentários
   useEffect(() => {
-    loadComments()
-  }, [ticketId])
+    loadComments();
+  }, [ticketId]);
 
   const loadComments = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch(`/api/tickets/${ticketId}/comments`)
-      
+      setIsLoading(true);
+      const response = await fetch(`/api/tickets/${ticketId}/comments`);
+
       if (!response.ok) {
-        throw new Error('Erro ao carregar comentários')
+        throw new Error('Erro ao carregar comentários');
       }
 
-      const data = await response.json()
-      setComments(data.data || [])
+      const data = await response.json();
+      setComments(data.data || []);
     } catch (error) {
-      console.error('Erro ao carregar comentários:', error)
-      toast.error('Erro ao carregar comentários')
+      console.error('Erro ao carregar comentários:', error);
+      toast.error('Erro ao carregar comentários');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Criar novo comentário
   const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!newComment.trim()) {
-      toast.error('Digite um comentário')
-      return
+      toast.error('Digite um comentário');
+      return;
     }
 
     try {
-      setIsSubmitting(true)
-      
+      setIsSubmitting(true);
+
       const response = await fetch(`/api/tickets/${ticketId}/comments`, {
         method: 'POST',
         headers: {
@@ -103,31 +106,33 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
           content: newComment.trim(),
           isInternal: canCreateInternal ? isInternal : false,
         }),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao criar comentário')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao criar comentário');
       }
 
-      const data = await response.json()
-      setComments(prev => [...prev, data.data])
-      setNewComment('')
-      setIsInternal(false)
-      toast.success('Comentário adicionado com sucesso')
+      const data = await response.json();
+      setComments(prev => [...prev, data.data]);
+      setNewComment('');
+      setIsInternal(false);
+      toast.success('Comentário adicionado com sucesso');
     } catch (error) {
-      console.error('Erro ao criar comentário:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao criar comentário')
+      console.error('Erro ao criar comentário:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao criar comentário'
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Editar comentário
   const handleEditComment = async (commentId: string) => {
     if (!editContent.trim()) {
-      toast.error('Digite um comentário')
-      return
+      toast.error('Digite um comentário');
+      return;
     }
 
     try {
@@ -139,61 +144,63 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
         body: JSON.stringify({
           content: editContent.trim(),
         }),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao editar comentário')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao editar comentário');
       }
 
-      const data = await response.json()
-      setComments(prev => 
-        prev.map(comment => 
-          comment.id === commentId ? data.data : comment
-        )
-      )
-      setEditingId(null)
-      setEditContent('')
-      toast.success('Comentário editado com sucesso')
+      const data = await response.json();
+      setComments(prev =>
+        prev.map(comment => (comment.id === commentId ? data.data : comment))
+      );
+      setEditingId(null);
+      setEditContent('');
+      toast.success('Comentário editado com sucesso');
     } catch (error) {
-      console.error('Erro ao editar comentário:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao editar comentário')
+      console.error('Erro ao editar comentário:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao editar comentário'
+      );
     }
-  }
+  };
 
   // Deletar comentário
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Tem certeza que deseja deletar este comentário?')) {
-      return
+      return;
     }
 
     try {
       const response = await fetch(`/api/comments/${commentId}`, {
         method: 'DELETE',
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Erro ao deletar comentário')
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao deletar comentário');
       }
 
-      setComments(prev => prev.filter(comment => comment.id !== commentId))
-      toast.success('Comentário deletado com sucesso')
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      toast.success('Comentário deletado com sucesso');
     } catch (error) {
-      console.error('Erro ao deletar comentário:', error)
-      toast.error(error instanceof Error ? error.message : 'Erro ao deletar comentário')
+      console.error('Erro ao deletar comentário:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Erro ao deletar comentário'
+      );
     }
-  }
+  };
 
   const startEdit = (comment: Comment) => {
-    setEditingId(comment.id)
-    setEditContent(comment.content)
-  }
+    setEditingId(comment.id);
+    setEditContent(comment.content);
+  };
 
   const cancelEdit = () => {
-    setEditingId(null)
-    setEditContent('')
-  }
+    setEditingId(null);
+    setEditContent('');
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -201,30 +208,30 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       case 'COORDINATOR':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'Admin'
+        return 'Admin';
       case 'COORDINATOR':
-        return 'Coordenador'
+        return 'Coordenador';
       default:
-        return 'Usuário'
+        return 'Usuário';
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -251,7 +258,7 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -276,7 +283,7 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
               <p className="text-sm">Seja o primeiro a comentar!</p>
             </div>
           ) : (
-            comments.map((comment) => (
+            comments.map(comment => (
               <div key={comment.id} className="space-y-3">
                 <div className="flex gap-3">
                   <Avatar className="h-10 w-10">
@@ -285,18 +292,21 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
                       {getInitials(comment.user.name)}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{comment.user.name}</span>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={getRoleBadgeColor(comment.user.role)}
                       >
                         {getRoleLabel(comment.user.role)}
                       </Badge>
                       {comment.isInternal && (
-                        <Badge variant="outline" className="text-orange-600 border-orange-600">
+                        <Badge
+                          variant="outline"
+                          className="text-orange-600 border-orange-600"
+                        >
                           <EyeOff className="h-3 w-3 mr-1" />
                           Interno
                         </Badge>
@@ -312,12 +322,12 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
                         )}
                       </div>
                     </div>
-                    
+
                     {editingId === comment.id ? (
                       <div className="space-y-2">
                         <Textarea
                           value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
+                          onChange={e => setEditContent(e.target.value)}
                           placeholder="Editar comentário..."
                           className="min-h-[80px]"
                         />
@@ -343,30 +353,31 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
                         <p className="whitespace-pre-wrap">{comment.content}</p>
                       </div>
                     )}
-                    
+
                     {/* Ações do comentário */}
-                    {(userId === comment.user.id || userRole === 'ADMIN') && editingId !== comment.id && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => startEdit(comment)}
-                          className="h-8 px-2"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="h-8 px-2 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Deletar
-                        </Button>
-                      </div>
-                    )}
+                    {(userId === comment.user.id || userRole === 'ADMIN') &&
+                      editingId !== comment.id && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => startEdit(comment)}
+                            className="h-8 px-2"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="h-8 px-2 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Deletar
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 </div>
                 <Separator />
@@ -383,13 +394,13 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
               <Textarea
                 id="comment"
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={e => setNewComment(e.target.value)}
                 placeholder="Digite seu comentário..."
                 className="min-h-[100px]"
                 disabled={isSubmitting}
               />
             </div>
-            
+
             {canCreateInternal && (
               <div className="flex items-center space-x-2">
                 <Switch
@@ -404,7 +415,7 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
                 </Label>
               </div>
             )}
-            
+
             <div className="flex justify-end">
               <Button
                 type="submit"
@@ -419,6 +430,5 @@ export function CommentSection({ ticketId, canComment = true }: CommentSectionPr
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-

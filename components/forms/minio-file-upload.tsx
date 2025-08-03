@@ -31,7 +31,7 @@ interface MinIOFileUploadProps {
 
 const DEFAULT_ALLOWED_TYPES = [
   'image/jpeg',
-  'image/png', 
+  'image/png',
   'image/gif',
   'image/webp',
   'application/pdf',
@@ -65,7 +65,7 @@ export function MinIOFileUpload({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
   // Obter ícone baseado no tipo de arquivo
@@ -150,14 +150,14 @@ export function MinIOFileUpload({
 
     try {
       const fileArray = Array.from(files);
-      
+
       if (!multiple && fileArray.length > 1) {
         throw new Error('Apenas um arquivo é permitido');
       }
 
       for (const file of fileArray) {
         await uploadFile(file);
-        
+
         // Reset progress entre arquivos
         if (fileArray.length > 1) {
           setUploadProgress(0);
@@ -165,14 +165,15 @@ export function MinIOFileUpload({
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro no upload';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro no upload';
       console.error('Erro no upload:', error);
       toast.error(errorMessage);
       onUploadError?.(errorMessage);
     } finally {
       setUploading(false);
       setUploadProgress(0);
-      
+
       // Limpar input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -227,12 +228,11 @@ export function MinIOFileUpload({
         <p className="text-sm text-muted-foreground mb-2">
           {dragOver
             ? 'Solte os arquivos aqui'
-            : 'Clique para selecionar ou arraste arquivos aqui'
-          }
+            : 'Clique para selecionar ou arraste arquivos aqui'}
         </p>
         <p className="text-xs text-muted-foreground">
-          Máximo: {formatFileSize(maxFileSize)} • 
-          Tipos: {allowedTypes.map(type => type.split('/')[1]).join(', ')}
+          Máximo: {formatFileSize(maxFileSize)} • Tipos:{' '}
+          {allowedTypes.map(type => type.split('/')[1]).join(', ')}
         </p>
       </div>
 
@@ -252,7 +252,9 @@ export function MinIOFileUpload({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Enviando arquivo...</span>
-            <span className="text-muted-foreground">{Math.round(uploadProgress)}%</span>
+            <span className="text-muted-foreground">
+              {Math.round(uploadProgress)}%
+            </span>
           </div>
           <Progress value={uploadProgress} className="h-2" />
         </div>
@@ -294,7 +296,7 @@ export function AttachmentList({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
   const getFileIcon = (mimeType: string) => {
@@ -317,7 +319,7 @@ export function AttachmentList({
 
   return (
     <div className={cn('space-y-2', className)}>
-      {attachments.map((attachment) => (
+      {attachments.map(attachment => (
         <div
           key={attachment.id}
           className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -329,12 +331,12 @@ export function AttachmentList({
                 {attachment.originalName}
               </p>
               <p className="text-xs text-muted-foreground">
-                {formatFileSize(attachment.size)} • 
+                {formatFileSize(attachment.size)} •
                 {new Date(attachment.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {onDownload && (
               <Button
