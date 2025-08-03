@@ -312,8 +312,6 @@ export default function TicketDetailsPage() {
         <TabsContent value="attachments">
           <AttachmentSection
             ticketId={ticket.id}
-            attachments={ticket.attachments}
-            onAttachmentAdded={loadTicket}
           />
         </TabsContent>
       </Tabs>
