@@ -5,7 +5,48 @@
   "printWidth": 80,
   "tabWidth": 2,
   "useTabs": false,
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": true,
   "bracketSpacing": true,
+  "bracketSameLine": false,
   "arrowParens": "avoid",
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "embeddedLanguageFormatting": "auto",
+  "htmlWhitespaceSensitivity": "css",
+  "insertPragma": false,
+  "proseWrap": "preserve",
+  "requirePragma": false,
+  "vueIndentScriptAndStyle": false,
+  "experimentalTernaries": false,
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "tailwindConfig": "./tailwind.config.ts",
+  "tailwindFunctions": ["clsx", "cn", "cva"],
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "printWidth": 120
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "printWidth": 100,
+        "proseWrap": "always"
+      }
+    },
+    {
+      "files": "*.yml",
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": "*.yaml",
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
 }
+

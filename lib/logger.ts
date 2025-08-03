@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import type { NextRequest, NextResponse } from 'next/server';
 
 // Níveis de log
 export enum LogLevel {
@@ -9,16 +10,44 @@ export enum LogLevel {
   ERROR = 3,
 }
 
+// Tipos para metadados de log
+type LogMeta = Record<string, unknown>;
+
 // Interface para entrada de log
 interface LogEntry {
   timestamp: string;
   level: string;
   message: string;
-  meta?: any;
+  meta?: LogMeta;
   userId?: string;
   requestId?: string;
   ip?: string;
   userAgent?: string;
+}
+
+// Interface para contexto de log
+interface LogContext {
+  userId?: string;
+  requestId?: string;
+  ip?: string;
+  userAgent?: string;
+}
+
+// Interface para requisição com usuário
+interface RequestWithUser {
+  method: string;
+  url: string;
+  ip?: string;
+  headers: Record<string, string | string[] | undefined>;
+  user?: {
+    id: string;
+  };
+}
+
+// Interface para resposta
+interface ResponseWithStatus {
+  statusCode: number;
+  end: (...args: unknown[]) => void;
 }
 
 class Logger {
@@ -85,8 +114,8 @@ class Logger {
   private log(
     level: LogLevel,
     message: string,
-    meta?: any,
-    context?: Partial<LogEntry>
+    meta?: LogMeta,
+    context?: LogContext
   ): void {
     if (!this.shouldLog(level)) return;
 
@@ -105,19 +134,19 @@ class Logger {
     this.writeToFile(entry);
   }
 
-  debug(message: string, meta?: any, context?: Partial<LogEntry>): void {
+  debug(message: string, meta?: LogMeta, context?: LogContext): void {
     this.log(LogLevel.DEBUG, message, meta, context);
   }
 
-  info(message: string, meta?: any, context?: Partial<LogEntry>): void {
+  info(message: string, meta?: LogMeta, context?: LogContext): void {
     this.log(LogLevel.INFO, message, meta, context);
   }
 
-  warn(message: string, meta?: any, context?: Partial<LogEntry>): void {
+  warn(message: string, meta?: LogMeta, context?: LogContext): void {
     this.log(LogLevel.WARN, message, meta, context);
   }
 
-  error(message: string, meta?: any, context?: Partial<LogEntry>): void {
+  error(message: string, meta?: LogMeta, context?: LogContext): void {
     this.log(LogLevel.ERROR, message, meta, context);
   }
 
@@ -154,7 +183,7 @@ class Logger {
     });
   }
 
-  userAction(action: string, userId: string, details?: any): void {
+  userAction(action: string, userId: string, details?: LogMeta): void {
     this.info('User Action', {
       action,
       userId,
@@ -166,7 +195,7 @@ class Logger {
     event: string,
     userId?: string,
     ip?: string,
-    details?: any
+    details?: LogMeta
   ): void {
     this.warn('Security Event', {
       event,
@@ -176,12 +205,13 @@ class Logger {
     });
   }
 
-  databaseQuery(query: string, duration: number, error?: any): void {
+  databaseQuery(query: string, duration: number, error?: Error): void {
     if (error) {
       this.error('Database Query Failed', {
         query,
         duration,
         error: error.message,
+        stack: error.stack,
       });
     } else {
       this.debug('Database Query', {
@@ -206,7 +236,7 @@ class Logger {
   }
 
   // Método para logs de auditoria
-  audit(action: string, resource: string, userId: string, changes?: any): void {
+  audit(action: string, resource: string, userId: string, changes?: LogMeta): void {
     this.info('Audit Log', {
       action,
       resource,
@@ -216,7 +246,7 @@ class Logger {
   }
 
   // Método para logs de performance
-  performance(operation: string, duration: number, details?: any): void {
+  performance(operation: string, duration: number, details?: LogMeta): void {
     const level = duration > 1000 ? LogLevel.WARN : LogLevel.DEBUG;
     this.log(level, 'Performance Log', {
       operation,
@@ -261,17 +291,23 @@ class Logger {
 export const logger = new Logger();
 
 // Middleware para logging de requisições Express/Next.js
-export function requestLogger(req: any, res: any, next: any) {
+export function requestLogger(
+  req: RequestWithUser,
+  res: ResponseWithStatus,
+  next?: () => void
+): void {
   const start = Date.now();
   const { method, url, ip, headers } = req;
-  const userAgent = headers['user-agent'];
+  const userAgent = Array.isArray(headers['user-agent']) 
+    ? headers['user-agent'][0] 
+    : headers['user-agent'];
   const userId = req.user?.id;
 
   logger.apiRequest(method, url, userId, ip, userAgent);
 
   // Override do método end para capturar a resposta
   const originalEnd = res.end;
-  res.end = function (...args: any[]) {
+  res.end = function (...args: unknown[]) {
     const duration = Date.now() - start;
     logger.apiResponse(method, url, res.statusCode, duration, userId);
     originalEnd.apply(this, args);
@@ -281,16 +317,16 @@ export function requestLogger(req: any, res: any, next: any) {
 }
 
 // Decorator para logging automático de métodos
-export function logged(
-  target: any,
+export function logged<T extends Record<string, unknown>>(
+  target: T,
   propertyName: string,
   descriptor: PropertyDescriptor
-) {
-  const method = descriptor.value;
+): void {
+  const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-  descriptor.value = async function (...args: any[]) {
+  descriptor.value = async function (...args: unknown[]) {
     const start = Date.now();
-    const className = target.constructor.name;
+    const className = (target as { constructor: { name: string } }).constructor.name;
 
     logger.debug(`${className}.${propertyName} started`, { args });
 
@@ -315,3 +351,4 @@ export function logged(
 }
 
 export default logger;
+

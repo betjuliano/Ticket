@@ -1,37 +1,137 @@
 {
   "compilerOptions": {
+    // Target e Module
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "target": "ES6",
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    
+    // Strict Type Checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    
+    // Additional Checks
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    
+    // Module Resolution
+    "allowJs": true,
+    "checkJs": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    // Emit
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": true,
+    
+    // Interop Constraints
+    "allowUmdGlobalAccess": false,
+    
+    // Language and Environment
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "jsx": "preserve",
+    "jsxImportSource": "react",
+    
+    // Compiler Diagnostics
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    
+    // Projects
     "incremental": true,
+    "composite": false,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    
+    // Output Formatting
+    "pretty": true,
+    
+    // Watch Options
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    
+    // Next.js specific
     "plugins": [
       {
         "name": "next"
       }
     ],
+    
+    // Path Mapping
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/types/*": ["./types/*"],
+      "@/app/*": ["./app/*"],
+      "@/prisma/*": ["./prisma/*"],
+      "@/public/*": ["./public/*"]
     },
-    "typeRoots": ["./node_modules/@types"]
+    
+    // Type Roots
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ],
+    
+    // Types
+    "types": [
+      "node",
+      "jest"
+    ]
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
-    "types/**/*.d.ts",
-    ".next/types/**/*.ts"
+    "**/*.js",
+    "**/*.jsx",
+    ".next/types/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "node_modules/googleapis/build/src/apis/migrationcenter/v1.d.ts"
-  ]
+    ".next",
+    "out",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "jest.config.js",
+    "jest.setup.js",
+    "tailwind.config.ts",
+    "postcss.config.mjs",
+    "next.config.js",
+    "next.config.mjs",
+    "test-*.js",
+    "tests/**/*.js",
+    "**/*test*.js",
+    "**/*debug*.js",
+    "**/*connection*.js"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
 }
+

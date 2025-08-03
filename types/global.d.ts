@@ -1,98 +1,178 @@
-// Tipos para os componentes
-export interface Agent {
-  id: string;
-  name: string;
-  status: string;
-  location: string;
-  lastSeen: string;
-  missions: number;
-  risk: string;
-}
+// Global type definitions for the Ticket System
 
-export interface IntelligenceReport {
-  id: string;
-  title: string;
-  classification: string;
-  source: string;
-  location: string;
-  date: string;
-  status: string;
-  threat: string;
-  summary: string;
-  tags: string[];
-}
-
-export interface KnowledgeDocument {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  uploadDate: string;
-  fileType: string;
-  size: string;
-  tags: string[];
-  content: string;
-}
-
-export interface AIMessage {
-  type: string;
-  content: string;
-  timestamp: string;
-  sources?: string[];
-}
-
-export interface Operation {
-  id: string;
-  name: string;
-  status: string;
-  priority: string;
-  location: string;
-  agents: number;
-  progress: number;
-  startDate: string;
-  estimatedCompletion: string;
-  description: string;
-  objectives: string[];
-}
-
-// Extensão dos tipos do NextAuth
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      role?: string;
-    };
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      // Database
+      DATABASE_URL: string;
+      POSTGRES_HOST: string;
+      POSTGRES_PORT: string;
+      POSTGRES_DB: string;
+      POSTGRES_USER: string;
+      POSTGRES_PASSWORD: string;
+      
+      // Next.js & Auth
+      NEXTAUTH_URL: string;
+      NEXTAUTH_SECRET: string;
+      JWT_SECRET: string;
+      JWT_REFRESH_SECRET: string;
+      
+      // Supabase
+      NEXT_PUBLIC_SUPABASE_URL: string;
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+      SUPABASE_SERVICE_ROLE_KEY: string;
+      
+      // Email
+      SMTP_HOST?: string;
+      SMTP_PORT?: string;
+      SMTP_USER?: string;
+      SMTP_PASSWORD?: string;
+      SMTP_FROM?: string;
+      
+      // AWS S3
+      AWS_ACCESS_KEY_ID?: string;
+      AWS_SECRET_ACCESS_KEY?: string;
+      AWS_REGION?: string;
+      AWS_S3_BUCKET?: string;
+      
+      // Redis
+      REDIS_URL?: string;
+      REDIS_PASSWORD?: string;
+      
+      // Environment
+      NODE_ENV: 'development' | 'production' | 'test';
+      PORT?: string;
+      
+      // Monitoring
+      SENTRY_DSN?: string;
+      NEW_RELIC_LICENSE_KEY?: string;
+      
+      // External APIs
+      EXTERNAL_API_URL?: string;
+      EXTERNAL_API_KEY?: string;
+      OPENAI_API_KEY?: string;
+    }
   }
-
-  interface User {
-    id: string;
-    role?: string;
+  
+  // Extend Window interface for client-side globals
+  interface Window {
+    gtag?: (...args: any[]) => void;
+    dataLayer?: any[];
   }
+  
+  // Custom utility types
+  type Prettify<T> = {
+    [K in keyof T]: T[K];
+  } & {};
+  
+  type NonEmptyArray<T> = [T, ...T[]];
+  
+  type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+  
+  type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+  
+  type DeepPartial<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+  };
+  
+  type DeepRequired<T> = {
+    [P in keyof T]-?: T[P] extends object ? DeepRequired<T[P]> : T[P];
+  };
+  
+  // API Response types
+  type ApiResponse<T = any> = {
+    success: boolean;
+    data?: T;
+    error?: string;
+    message?: string;
+  };
+  
+  type PaginatedResponse<T> = ApiResponse<{
+    items: T[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>;
+  
+  // Common ID types
+  type ID = string | number;
+  type UUID = string;
+  
+  // Date types
+  type DateString = string; // ISO date string
+  type Timestamp = number;
+  
+  // File types
+  type FileUpload = {
+    file: File;
+    preview?: string;
+    progress?: number;
+    error?: string;
+  };
+  
+  // Form types
+  type FormState = 'idle' | 'loading' | 'success' | 'error';
+  
+  // Theme types
+  type Theme = 'light' | 'dark' | 'system';
+  
+  // Status types
+  type Status = 'active' | 'inactive' | 'pending' | 'suspended';
+  
+  // Priority types
+  type Priority = 'low' | 'medium' | 'high' | 'urgent';
+  
+  // User role types
+  type UserRole = 'admin' | 'user' | 'moderator' | 'guest';
+  
+  // Ticket status types
+  type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
+  
+  // Notification types
+  type NotificationType = 'info' | 'success' | 'warning' | 'error';
 }
 
-// Adicionar interfaces para Users
-export interface UserEmployee {
-  id: string;
-  name: string;
-  matricula: string;
-  email: string;
-  phone: string;
-  sector: string;
-  admissionDate: string;
-  status: string;
-  ticketsCount: number;
-  lastTicket: string;
+// Module augmentations
+declare module '*.svg' {
+  const content: React.FunctionComponent<React.SVGAttributes<SVGElement>>;
+  export default content;
 }
 
-export interface UserSupport {
-  id: string;
-  name: string;
-  sector: string;
-  email: string;
-  phone: string;
-  specialties: string[];
-  status: string;
+declare module '*.png' {
+  const content: string;
+  export default content;
 }
+
+declare module '*.jpg' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.jpeg' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.gif' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.webp' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.ico' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.bmp' {
+  const content: string;
+  export default content;
+}
+
+export {};
+
