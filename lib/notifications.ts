@@ -1,306 +1,60 @@
-import nodemailer from 'nodemailer';
-import { prisma } from './prisma';
-import { logger } from './logger';
+import { PrismaClient } from '@prisma/client';
 
-// Tipos de notificação
-export enum NotificationType {
-  TICKET_CREATED = 'ticket_created',
-  TICKET_ASSIGNED = 'ticket_assigned',
-  TICKET_UPDATED = 'ticket_updated',
-  TICKET_RESOLVED = 'ticket_resolved',
-  TICKET_CLOSED = 'ticket_closed',
-  COMMENT_ADDED = 'comment_added',
-  KNOWLEDGE_PUBLISHED = 'knowledge_published',
-  USER_MENTIONED = 'user_mentioned',
-  SYSTEM_ALERT = 'system_alert',
-}
+const prisma = new PrismaClient();
 
-// Interface para notificação
-interface Notification {
-  id?: string;
-  type: NotificationType;
+export interface Notification {
+  id: string;
+  type: string;
   title: string;
   message: string;
   userId: string;
-  relatedId?: string; // ID do ticket, comentário, etc.
-  data?: any; // Dados adicionais
-  read?: boolean;
-  createdAt?: Date;
+  isRead: boolean;
+  metadata?: string;
+  createdAt: Date;
 }
 
-// Interface para configurações de email
-interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
+export interface NotificationCounts {
+  total: number;
+  unread: number;
+  read: number;
 }
 
-class NotificationService {
-  private emailTransporter: nodemailer.Transporter | null = null;
-
-  constructor() {
-    this.initializeEmailTransporter();
-  }
-
-  private initializeEmailTransporter(): void {
+export class NotificationManager {
+  static async getNotifications(userId: string, limit = 50, offset = 0) {
     try {
-      if (
-        process.env.SMTP_HOST &&
-        process.env.SMTP_USER &&
-        process.env.SMTP_PASS
-      ) {
-        const config: EmailConfig = {
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT || '587'),
-          secure: process.env.SMTP_PORT === '465',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        };
+      const notifications = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      });
 
-        // Use nodemailer's correct factory function to create a transporter
-        // See: https://nodemailer.com/transports/
-        this.emailTransporter = nodemailer.createTransport(config);
-        logger.info('Email transporter initialized');
-      }
+      return notifications;
     } catch (error) {
-      logger.error('Failed to initialize email transporter', { error });
+      console.error('Erro ao buscar notificações:', error);
+      return [];
     }
   }
 
-  // Criar notificação no banco de dados
-  async createNotification(notification: Notification): Promise<void> {
+  static async getNotificationCounts(userId: string): Promise<NotificationCounts> {
     try {
-      await prisma.notification.create({
-        data: {
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          userId: notification.userId,
-          relatedId: notification.relatedId,
-          data: notification.data ? JSON.stringify(notification.data) : null,
-          read: false,
-        },
-      });
+      const [total, unread] = await Promise.all([
+        prisma.notification.count({ where: { userId } }),
+        prisma.notification.count({ where: { userId, isRead: false } }),
+      ]);
 
-      logger.info('Notification created', {
-        type: notification.type,
-        userId: notification.userId,
-        title: notification.title,
-      });
+      return {
+        total,
+        unread,
+        read: total - unread,
+      };
     } catch (error) {
-      logger.error('Failed to create notification', { error, notification });
+      console.error('Erro ao contar notificações:', error);
+      return { total: 0, unread: 0, read: 0 };
     }
   }
 
-  // Enviar notificação por email
-  async sendEmailNotification(
-    to: string,
-    subject: string,
-    html: string,
-    text?: string
-  ): Promise<boolean> {
-    if (!this.emailTransporter) {
-      logger.warn('Email transporter not configured');
-      return false;
-    }
-
-    try {
-      await this.emailTransporter.sendMail({
-        from: process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-        text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
-      });
-
-      logger.info('Email sent successfully', { to, subject });
-      return true;
-    } catch (error) {
-      logger.error('Failed to send email', { error, to, subject });
-      return false;
-    }
-  }
-
-  // Notificar criação de ticket
-  async notifyTicketCreated(
-    ticketId: string,
-    createdById: string
-  ): Promise<void> {
-    try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-        include: {
-          createdBy: true,
-          assignedTo: true,
-        },
-      });
-
-      if (!ticket) return;
-
-      // Notificar coordenadores
-      const coordinators = await prisma.user.findMany({
-        where: { role: { in: ['COORDINATOR', 'ADMIN'] } },
-      });
-
-      for (const coordinator of coordinators) {
-        if (coordinator.id === createdById) continue;
-
-        await this.createNotification({
-          type: NotificationType.TICKET_CREATED,
-          title: 'Novo Ticket Criado',
-          message: `${ticket.createdBy.name} criou um novo ticket: ${ticket.title}`,
-          userId: coordinator.id,
-          relatedId: ticketId,
-          data: { ticketId, priority: ticket.priority },
-        });
-
-        // Enviar email se configurado
-        if (coordinator.email) {
-          const emailHtml = this.generateTicketCreatedEmail(
-            ticket,
-            coordinator.name
-          );
-          await this.sendEmailNotification(
-            coordinator.email,
-            `Novo Ticket: ${ticket.title}`,
-            emailHtml
-          );
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to notify ticket created', { error, ticketId });
-    }
-  }
-
-  // Notificar atribuição de ticket
-  async notifyTicketAssigned(
-    ticketId: string,
-    assignedToId: string
-  ): Promise<void> {
-    try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-        include: {
-          createdBy: true,
-          assignedTo: true,
-        },
-      });
-
-      if (!ticket || !ticket.assignedTo) return;
-
-      await this.createNotification({
-        type: NotificationType.TICKET_ASSIGNED,
-        title: 'Ticket Atribuído',
-        message: `Você foi atribuído ao ticket: ${ticket.title}`,
-        userId: assignedToId,
-        relatedId: ticketId,
-        data: { ticketId, priority: ticket.priority },
-      });
-
-      // Enviar email
-      if (ticket.assignedTo.email) {
-        const emailHtml = this.generateTicketAssignedEmail(
-          ticket,
-          ticket.assignedTo.name
-        );
-        await this.sendEmailNotification(
-          ticket.assignedTo.email,
-          `Ticket Atribuído: ${ticket.title}`,
-          emailHtml
-        );
-      }
-    } catch (error) {
-      logger.error('Failed to notify ticket assigned', { error, ticketId });
-    }
-  }
-
-  // Notificar atualização de ticket
-  async notifyTicketUpdated(
-    ticketId: string,
-    updatedById: string,
-    changes: any
-  ): Promise<void> {
-    try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-        include: {
-          createdBy: true,
-          assignedTo: true,
-        },
-      });
-
-      if (!ticket) return;
-
-      const usersToNotify = [ticket.createdById];
-      if (ticket.assignedToId && ticket.assignedToId !== updatedById) {
-        usersToNotify.push(ticket.assignedToId);
-      }
-
-      for (const userId of usersToNotify) {
-        if (userId === updatedById) continue;
-
-        await this.createNotification({
-          type: NotificationType.TICKET_UPDATED,
-          title: 'Ticket Atualizado',
-          message: `O ticket "${ticket.title}" foi atualizado`,
-          userId,
-          relatedId: ticketId,
-          data: { ticketId, changes },
-        });
-      }
-    } catch (error) {
-      logger.error('Failed to notify ticket updated', { error, ticketId });
-    }
-  }
-
-  // Notificar novo comentário
-  async notifyCommentAdded(commentId: string): Promise<void> {
-    try {
-      const comment = await prisma.comment.findUnique({
-        where: { id: commentId },
-        include: {
-          user: true,
-          ticket: {
-            include: {
-              createdBy: true,
-              assignedTo: true,
-            },
-          },
-        },
-      });
-
-      if (!comment) return;
-
-      const usersToNotify = [comment.ticket.createdById];
-      if (comment.ticket.assignedToId) {
-        usersToNotify.push(comment.ticket.assignedToId);
-      }
-
-      for (const userId of usersToNotify) {
-        if (userId === comment.userId) continue;
-
-        await this.createNotification({
-          type: NotificationType.COMMENT_ADDED,
-          title: 'Novo Comentário',
-          message: `${comment.user.name} comentou no ticket: ${comment.ticket.title}`,
-          userId,
-          relatedId: comment.ticketId,
-          data: { ticketId: comment.ticketId, commentId },
-        });
-      }
-    } catch (error) {
-      logger.error('Failed to notify comment added', { error, commentId });
-    }
-  }
-
-  // Marcar notificação como lida
-  async markAsRead(notificationId: string, userId: string): Promise<void> {
+  static async markAsRead(notificationId: string, userId: string) {
     try {
       await prisma.notification.updateMany({
         where: {
@@ -308,110 +62,62 @@ class NotificationService {
           userId,
         },
         data: {
-          read: true,
+          isRead: true,
         },
       });
+
+      return true;
     } catch (error) {
-      logger.error('Failed to mark notification as read', {
-        error,
-        notificationId,
-      });
+      console.error('Erro ao marcar notificação como lida:', error);
+      return false;
     }
   }
 
-  // Marcar todas as notificações como lidas
-  async markAllAsRead(userId: string): Promise<void> {
+  static async markAllAsRead(userId: string) {
     try {
       await prisma.notification.updateMany({
         where: {
           userId,
-          read: false,
+          isRead: false,
         },
         data: {
-          read: true,
+          isRead: true,
         },
       });
+
+      return true;
     } catch (error) {
-      logger.error('Failed to mark all notifications as read', {
-        error,
-        userId,
-      });
+      console.error('Erro ao marcar todas as notificações como lidas:', error);
+      return false;
     }
   }
 
-  // Obter notificações do usuário
-  async getUserNotifications(
-    userId: string,
-    limit: number = 20
-  ): Promise<any[]> {
+  static async deleteNotification(notificationId: string, userId: string) {
     try {
-      return await prisma.notification.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-      });
-    } catch (error) {
-      logger.error('Failed to get user notifications', { error, userId });
-      return [];
-    }
-  }
-
-  // Contar notificações não lidas
-  async getUnreadCount(userId: string): Promise<number> {
-    try {
-      return await prisma.notification.count({
+      await prisma.notification.deleteMany({
         where: {
+          id: notificationId,
           userId,
-          read: false,
         },
       });
+
+      return true;
     } catch (error) {
-      logger.error('Failed to get unread count', { error, userId });
-      return 0;
+      console.error('Erro ao deletar notificação:', error);
+      return false;
     }
   }
 
-  // Templates de email
-  private generateTicketCreatedEmail(
-    ticket: any,
-    recipientName: string
-  ): string {
-    return `
-      <h2>Novo Ticket Criado</h2>
-      <p>Olá ${recipientName},</p>
-      <p>Um novo ticket foi criado no sistema:</p>
-      <div style="border: 1px solid #ddd; padding: 15px; margin: 15px 0;">
-        <h3>${ticket.title}</h3>
-        <p><strong>Criado por:</strong> ${ticket.createdBy.name}</p>
-        <p><strong>Prioridade:</strong> ${ticket.priority}</p>
-        <p><strong>Categoria:</strong> ${ticket.category}</p>
-        <p><strong>Descrição:</strong> ${ticket.description}</p>
-      </div>
-      <p>Acesse o sistema para mais detalhes.</p>
-    `;
-  }
+  static async deleteAllNotifications(userId: string) {
+    try {
+      await prisma.notification.deleteMany({
+        where: { userId },
+      });
 
-  private generateTicketAssignedEmail(
-    ticket: any,
-    recipientName: string
-  ): string {
-    return `
-      <h2>Ticket Atribuído</h2>
-      <p>Olá ${recipientName},</p>
-      <p>Um ticket foi atribuído a você:</p>
-      <div style="border: 1px solid #ddd; padding: 15px; margin: 15px 0;">
-        <h3>${ticket.title}</h3>
-        <p><strong>Criado por:</strong> ${ticket.createdBy.name}</p>
-        <p><strong>Prioridade:</strong> ${ticket.priority}</p>
-        <p><strong>Categoria:</strong> ${ticket.category}</p>
-        <p><strong>Descrição:</strong> ${ticket.description}</p>
-      </div>
-      <p>Acesse o sistema para começar a trabalhar neste ticket.</p>
-    `;
+      return true;
+    } catch (error) {
+      console.error('Erro ao deletar todas as notificações:', error);
+      return false;
+    }
   }
 }
-
-// Instância singleton do serviço de notificações
-export const notificationService = new NotificationService();
-
-export default notificationService;

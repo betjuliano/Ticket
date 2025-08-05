@@ -42,16 +42,19 @@ export async function GET(request: NextRequest) {
 
     // Contar não lidas
     const unreadCount = await prisma.notification.count({
-      where: { userId, read: false },
+      where: { userId, isRead: false },
     });
 
-    return createSuccessResponse(notifications, undefined, {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-      unreadCount,
-    });
+    return createSuccessResponse(
+      { notifications, unreadCount }, 
+      undefined, 
+      {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      }
+    );
   } catch (error) {
     console.error('Erro ao buscar notificações:', error);
     return createErrorResponse('Erro interno do servidor', 500);
@@ -96,21 +99,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar notificação
-    const notification = await prisma.notification.create({
-      data: {
-        type,
-        title,
-        message,
-        userId,
-        relatedId,
-        data,
-      },
-    });
+          const notification = await prisma.notification.create({
+        data: {
+          type,
+          title,
+          message,
+          userId,
+          metadata: data ? JSON.stringify(data) : null,
+        },
+      });
 
     return createSuccessResponse(
       notification,
-      'Notificação criada com sucesso',
-      201
+      'Notificação criada com sucesso'
     );
   } catch (error) {
     console.error('Erro ao criar notificação:', error);
@@ -134,11 +135,10 @@ export async function PATCH(request: NextRequest) {
       await prisma.notification.updateMany({
         where: {
           userId,
-          read: false,
+          isRead: false,
         },
         data: {
-          read: true,
-          readAt: new Date(),
+          isRead: true,
         },
       });
 
@@ -167,8 +167,7 @@ export async function PATCH(request: NextRequest) {
         userId, // Garantir que o usuário só pode marcar suas próprias notificações
       },
       data: {
-        read: true,
-        readAt: new Date(),
+        isRead: true,
       },
     });
 

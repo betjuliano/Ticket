@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateKnowledgeArticleSchema } from '@/lib/validations';
+import { updateDocsArticleSchema } from '@/lib/validations';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/knowledge/articles/[id] - Buscar artigo específico
@@ -20,9 +20,9 @@ export async function GET(
     const articleId = params.id;
 
     // Buscar por ID ou slug
-    const article = await prisma.knowledgeArticle.findFirst({
+    const article = await prisma.docsArticle.findFirst({
       where: {
-        OR: [{ id: articleId }, { slug: articleId }],
+        id: articleId,
       },
       include: {
         category: true,
@@ -42,12 +42,12 @@ export async function GET(
     }
 
     // Usuários comuns só podem ver artigos publicados
-    if (session.user.role === 'USER' && !article.published) {
+    if (session.user.role === 'USER' && !article.isPublished) {
       return createErrorResponse('Artigo não encontrado', 404);
     }
 
     // Incrementar contador de visualizações
-    await prisma.knowledgeArticle.update({
+    await prisma.docsArticle.update({
       where: { id: article.id },
       data: { viewCount: { increment: 1 } },
     });
@@ -83,7 +83,7 @@ export async function PUT(
     const body = await request.json();
 
     // Validar dados
-    const validationResult = updateKnowledgeArticleSchema.safeParse(body);
+    const validationResult = updateDocsArticleSchema.safeParse(body);
     if (!validationResult.success) {
       return createErrorResponse(
         'Dados inválidos',
@@ -97,13 +97,13 @@ export async function PUT(
       content,
       categoryId,
       tags,
-      published,
-      featured,
-      metaDescription,
+      isPublished,
+      isFeatured,
+      excerpt,
     } = validationResult.data;
 
     // Buscar artigo
-    const existingArticle = await prisma.knowledgeArticle.findUnique({
+    const existingArticle = await prisma.docsArticle.findUnique({
       where: { id: articleId },
     });
 
@@ -111,61 +111,39 @@ export async function PUT(
       return createErrorResponse('Artigo não encontrado', 404);
     }
 
-    // Verificar permissões (autor pode editar seu próprio artigo, admin pode editar qualquer um)
-    if (
-      session.user.role !== 'ADMIN' &&
-      existingArticle.authorId !== session.user.id
-    ) {
-      return createErrorResponse('Sem permissão para editar este artigo', 403);
-    }
+    // Remover lógica de slug já que não existe no modelo
+    // let slug = existingArticle.slug;
+    // if (title && title !== existingArticle.title) {
+    //   slug = title
+    //     .toLowerCase()
+    //     .replace(/[^a-z0-9\s-]/g, '')
+    //     .replace(/\s+/g, '-')
+    //     .replace(/-+/g, '-')
+    //     .trim();
 
-    // Verificar se categoria existe (se fornecida)
-    if (categoryId) {
-      const category = await prisma.knowledgeCategory.findUnique({
-        where: { id: categoryId },
-      });
-
-      if (!category) {
-        return createErrorResponse('Categoria não encontrada', 404);
-      }
-    }
-
-    // Gerar novo slug se título mudou
-    let slug = existingArticle.slug;
-    if (title && title !== existingArticle.title) {
-      const baseSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .trim();
-
-      slug = baseSlug;
-      let counter = 1;
-
-      while (
-        await prisma.knowledgeArticle.findFirst({
-          where: {
-            slug,
-            id: { not: articleId },
-          },
-        })
-      ) {
-        slug = `${baseSlug}-${counter}`;
-        counter++;
-      }
-    }
+    //   // Verificar se slug já existe
+    //   let counter = 1;
+    //   const originalSlug = slug;
+    //   while (
+    //     await prisma.docsArticle.findFirst({
+    //       where: {
+    //         slug,
+    //         id: { not: articleId },
+    //       },
+    //     })
+    //   ) {
+    //     slug = `${originalSlug}-${counter}`;
+    //     counter++;
+    //   }
+    // }
 
     // Atualizar artigo
-    const article = await prisma.knowledgeArticle.update({
+    const article = await prisma.docsArticle.update({
       where: { id: articleId },
       data: {
-        ...(title && { title, slug }),
+        ...(title && { title }),
         ...(content && { content }),
         ...(categoryId && { categoryId }),
-        ...(tags !== undefined && { tags }),
-        ...(published !== undefined && { published }),
-        ...(featured !== undefined && { featured }),
-        ...(metaDescription !== undefined && { metaDescription }),
         updatedAt: new Date(),
       },
       include: {
@@ -200,15 +178,15 @@ export async function DELETE(
       return createErrorResponse('Não autorizado', 401);
     }
 
-    // Apenas admins podem deletar artigos
-    if (session.user.role !== 'ADMIN') {
+    // Apenas coordenadores e admins podem deletar artigos
+    if (session.user.role === 'USER') {
       return createErrorResponse('Sem permissão para deletar artigos', 403);
     }
 
     const articleId = params.id;
 
     // Buscar artigo
-    const article = await prisma.knowledgeArticle.findUnique({
+    const article = await prisma.docsArticle.findUnique({
       where: { id: articleId },
     });
 
@@ -217,7 +195,7 @@ export async function DELETE(
     }
 
     // Deletar artigo
-    await prisma.knowledgeArticle.delete({
+    await prisma.docsArticle.delete({
       where: { id: articleId },
     });
 

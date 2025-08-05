@@ -169,10 +169,10 @@ export default function OperationsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wider">
-            OPERATIONS CENTER
+            IA da Administração
           </h1>
           <p className="text-sm text-neutral-400">
-            Mission planning and execution oversight
+            Sistema de inteligência artificial para administração
           </p>
         </div>
         <div className="flex gap-2">

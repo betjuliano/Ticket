@@ -84,8 +84,8 @@ export async function GET(
     }
 
     try {
-      // Extrair key da URL do MinIO
-      const key = extractKeyFromUrl(attachment.url);
+      // Extrair key do path do arquivo
+      const key = attachment.path;
       console.log(`🔑 Key extraída: ${key}`);
 
       // Gerar URL assinada para download (válida por 1 hora)
@@ -146,7 +146,7 @@ export async function GET(
         error: 'Erro interno do servidor',
         details:
           process.env.NODE_ENV === 'development'
-            ? error.message
+            ? (error instanceof Error ? error.message : 'Erro desconhecido')
             : 'Tente novamente mais tarde',
       },
       { status: 500 }

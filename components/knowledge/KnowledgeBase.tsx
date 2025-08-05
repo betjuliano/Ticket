@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { KnowledgeChat } from './KnowledgeChat';
 
 interface Article {
   id: string;
@@ -40,8 +41,8 @@ interface Article {
   slug: string;
   content: string;
   metaDescription?: string;
-  published: boolean;
-  featured: boolean;
+  isPublished: boolean;
+  isFeatured: boolean;
   viewCount: number;
   tags: string[];
   createdAt: string;
@@ -70,26 +71,59 @@ interface Category {
   articleCount?: number;
 }
 
+interface KnowledgeArticle {
+  id: string;
+  title: string;
+  content: string;
+  author?: {
+    name: string;
+  };
+  createdAt: string;
+  updatedAt?: string;
+  viewCount?: number;
+  metaDescription?: string;
+  isFeatured?: boolean;
+  isPublished?: boolean;
+  category?: {
+    name: string;
+    color: string;
+    icon: string;
+  };
+  tags?: string[];
+}
+
 export function KnowledgeBase() {
   const { data: session } = useSession();
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [publishedFilter, setPublishedFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
+
+  // Log estratégico para verificar tipos
+  console.log('🔍 DEBUG KnowledgeBase:', {
+    selectedArticle,
+    selectedArticleType: typeof selectedArticle,
+    selectedArticleKeys: selectedArticle ? Object.keys(selectedArticle) : null,
+    selectedArticleTitle: selectedArticle?.title,
+    selectedArticleAuthor: selectedArticle?.author,
+  });
+
+  // Log para verificar dados mock
+  console.log('🔍 DEBUG Mock Articles:', {
+    articlesCount: articles?.length,
+    firstArticle: articles?.[0],
+    firstArticleType: typeof articles?.[0],
+    firstArticleKeys: articles?.[0] ? Object.keys(articles[0]) : null,
+  });
 
   const userRole = session?.user?.role;
   const canManage = userRole === 'ADMIN' || userRole === 'COORDINATOR';
 
-  // Carregar dados
-  useEffect(() => {
-    loadData();
-  }, [selectedCategory, publishedFilter, searchTerm]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -101,7 +135,7 @@ export function KnowledgeBase() {
         fetch('/api/knowledge/categories?includeArticleCount=true'),
         fetch(
           `/api/knowledge/articles?${new URLSearchParams({
-            ...(selectedCategory && { categoryId: selectedCategory }),
+            ...(selectedCategory !== 'all' && { categoryId: selectedCategory }),
             ...(effectivePublishedFilter !== 'all' && {
               published: effectivePublishedFilter,
             }),
@@ -124,11 +158,16 @@ export function KnowledgeBase() {
       setArticles(articlesData.data || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados da Knowledge Base');
+      toast.error('Erro ao carregar dados da Docs e IA da Adm');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedCategory, publishedFilter, searchTerm, canManage]);
+
+  // Carregar dados
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Visualizar artigo
   const viewArticle = async (article: Article) => {
@@ -139,7 +178,13 @@ export function KnowledgeBase() {
       }
 
       const data = await response.json();
-      setSelectedArticle(data.data);
+      setSelectedArticle(data.data as Article);
+      console.log('🔍 DEBUG setSelectedArticle from API:', {
+        data: data.data,
+        dataType: typeof data.data,
+        dataKeys: data.data ? Object.keys(data.data) : null,
+        castedType: typeof (data.data as Article),
+      });
     } catch (error) {
       console.error('Erro ao carregar artigo:', error);
       toast.error('Erro ao carregar artigo');
@@ -174,10 +219,10 @@ export function KnowledgeBase() {
 
   // Filtrar artigos
   const filteredArticles = articles.filter(article => {
-    if (selectedCategory && article.category.id !== selectedCategory)
+    if (selectedCategory !== 'all' && article.category.id !== selectedCategory)
       return false;
-    if (publishedFilter === 'true' && !article.published) return false;
-    if (publishedFilter === 'false' && article.published) return false;
+    if (publishedFilter === 'true' && !article.isPublished) return false;
+    if (publishedFilter === 'false' && article.isPublished) return false;
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -190,14 +235,17 @@ export function KnowledgeBase() {
   });
 
   // Artigos em destaque
-  const featuredArticles = filteredArticles.filter(article => article.featured);
+  const featuredArticles = filteredArticles.filter(article => article.isFeatured);
 
   // Renderizar visualização de artigo
   if (selectedArticle) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => setSelectedArticle(null)}>
+          <Button variant="outline" onClick={() => {
+            console.log('🔍 DEBUG Clearing selectedArticle');
+            setSelectedArticle(null);
+          }}>
             ← Voltar
           </Button>
           {canManage && (
@@ -243,7 +291,7 @@ export function KnowledgeBase() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {selectedArticle.featured && (
+                  {selectedArticle.isFeatured && (
                     <Badge
                       variant="secondary"
                       className="bg-yellow-100 text-yellow-800"
@@ -255,26 +303,26 @@ export function KnowledgeBase() {
                   <Badge
                     variant="secondary"
                     className={
-                      selectedArticle.published
+                      selectedArticle.isPublished
                         ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-800'
                     }
                   >
-                    {selectedArticle.published ? 'Publicado' : 'Rascunho'}
+                    {selectedArticle.isPublished ? 'Publicado' : 'Rascunho'}
                   </Badge>
                 </div>
               </div>
 
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
-                  <span style={{ color: selectedArticle.category.color }}>
-                    {selectedArticle.category.icon}
+                  <span style={{ color: selectedArticle.category?.color }}>
+                    {selectedArticle.category?.icon}
                   </span>
-                  <span>{selectedArticle.category.name}</span>
+                  <span>{selectedArticle.category?.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <User className="h-4 w-4" />
-                  <span>{selectedArticle.author.name}</span>
+                  <span>{selectedArticle.author?.name}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
@@ -283,7 +331,7 @@ export function KnowledgeBase() {
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    {formatDistanceToNow(new Date(selectedArticle.updatedAt), {
+                    {formatDistanceToNow(new Date(selectedArticle.updatedAt || selectedArticle.createdAt), {
                       addSuffix: true,
                       locale: ptBR,
                     })}
@@ -291,7 +339,7 @@ export function KnowledgeBase() {
                 </div>
               </div>
 
-              {selectedArticle.tags.length > 0 && (
+              {selectedArticle.tags && selectedArticle.tags.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tag className="h-4 w-4 text-gray-500" />
                   {selectedArticle.tags.map((tag, index) => (
@@ -321,336 +369,246 @@ export function KnowledgeBase() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2 text-foreground">
             <BookOpen className="h-8 w-8 text-primary" />
-            Knowledge Base
+            Docs e IA da Adm
           </h1>
           <p className="text-muted-foreground">
-            Base de conhecimento e documentação
+            Base de conhecimento e chat inteligente para procedimentos administrativos
           </p>
         </div>
-
-        {canManage && (
-          <Button
-            onClick={() =>
-              toast.info('Funcionalidade de criação será implementada')
-            }
-            className="tactical-button"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Artigo
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {canManage && (
+            <Button className="tactical-button">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Artigo
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Filtros */}
-      <Card className="tactical-card">
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar artigos..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="tactical-input pl-10"
-                />
-              </div>
-            </div>
+      {/* Tabs */}
+      <Tabs defaultValue="articles" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="articles">Documentação</TabsTrigger>
+          <TabsTrigger value="chat">Chat IA</TabsTrigger>
+        </TabsList>
 
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Todas as categorias" />
+        <TabsContent value="articles" className="space-y-6">
+          {/* Filtros e Busca */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Buscar artigos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 tactical-input"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-40 tactical-input">
+                <SelectValue placeholder="Categoria" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todas as categorias</SelectItem>
-                {categories.map(category => (
+              <SelectContent className="tactical-card">
+                <SelectItem value="all">Todas as Categorias</SelectItem>
+                {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: category.color }}>
-                        {category.icon}
-                      </span>
-                      <span>{category.name}</span>
-                      {category.articleCount !== undefined && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {category.articleCount}
-                        </Badge>
-                      )}
-                    </div>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
             {canManage && (
-              <Select
-                value={publishedFilter}
-                onValueChange={setPublishedFilter}
-              >
-                <SelectTrigger className="w-40">
+              <Select value={publishedFilter} onValueChange={setPublishedFilter}>
+                <SelectTrigger className="w-40 tactical-input">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="tactical-card">
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="true">Publicados</SelectItem>
                   <SelectItem value="false">Rascunhos</SelectItem>
                 </SelectContent>
               </Select>
             )}
-
             <div className="flex gap-2">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
+                size="icon"
                 onClick={() => setViewMode('grid')}
+                className="tactical-button bg-blue-600 hover:bg-blue-700"
               >
-                <Grid className="h-4 w-4" />
+                <Grid className="w-4 h-4" />
               </Button>
               <Button
                 variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
+                size="icon"
                 onClick={() => setViewMode('list')}
+                className="tactical-button bg-green-600 hover:bg-green-700"
               >
-                <List className="h-4 w-4" />
+                <List className="w-4 h-4" />
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Artigos em destaque */}
-      {featuredArticles.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500" />
-            Artigos em Destaque
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredArticles.slice(0, 3).map(article => (
-              <Card
-                key={article.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold line-clamp-2">
-                        {article.title}
-                      </h3>
-                      {article.metaDescription && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {article.metaDescription}
-                        </p>
-                      )}
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      style={{
-                        backgroundColor: `${article.category.color}20`,
-                        color: article.category.color,
-                      }}
-                    >
-                      {article.category.icon}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      <span>{article.viewCount}</span>
-                    </div>
-                    <span>
-                      {formatDistanceToNow(new Date(article.updatedAt), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
-                    </span>
-                  </div>
-                  <Button
-                    className="w-full mt-4"
-                    variant="outline"
-                    onClick={() => viewArticle(article)}
-                  >
-                    Ler artigo
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Lista de artigos */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">
-            Todos os Artigos ({filteredArticles.length})
-          </h2>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredArticles.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Nenhum artigo encontrado</p>
-              {canManage && (
-                <Button
-                  className="mt-4"
-                  onClick={() =>
-                    toast.info('Funcionalidade de criação será implementada')
-                  }
+          {/* Lista de Artigos */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="tactical-card animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
+                    <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <Card className="tactical-card">
+              <CardContent className="p-8 text-center">
+                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum artigo encontrado</h3>
+                <p className="text-muted-foreground">
+                  {searchTerm || selectedCategory !== 'all'
+                    ? 'Tente ajustar os filtros de busca'
+                    : 'Ainda não há artigos na base de conhecimento'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }
+            >
+              {filteredArticles.map((article) => (
+                <Card
+                  key={article.id}
+                  className="tactical-card-hover cursor-pointer"
+                  onClick={() => viewArticle(article)}
                 >
-                  Criar primeiro artigo
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'space-y-4'
-            }
-          >
-            {filteredArticles.map(article => (
-              <Card
-                key={article.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold line-clamp-2">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
                           {article.title}
                         </h3>
-                        {!article.published && (
-                          <Badge variant="outline" className="text-xs">
-                            Rascunho
-                          </Badge>
-                        )}
-                      </div>
-                      {article.metaDescription && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {article.metaDescription}
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {article.metaDescription || article.content}
                         </p>
+                      </div>
+                      {article.isFeatured && (
+                        <Star className="w-4 h-4 text-yellow-500 flex-shrink-0 ml-2" />
                       )}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        style={{
-                          backgroundColor: `${article.category.color}20`,
-                          color: article.category.color,
-                        }}
-                      >
-                        <span className="mr-1">{article.category.icon}</span>
-                        {article.category.name}
-                      </Badge>
-                    </div>
 
-                    {article.tags.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {article.tags.slice(0, 3).map((tag, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                        {article.tags.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{article.tags.length - 3}
-                          </Badge>
-                        )}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3 h-3" />
+                        {article.author?.name}
                       </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          <span>{article.viewCount}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span>{article.author.name}</span>
-                        </div>
-                      </div>
-                      <span>
-                        {formatDistanceToNow(new Date(article.updatedAt), {
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(article.createdAt), {
                           addSuffix: true,
                           locale: ptBR,
                         })}
-                      </span>
+                      </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        variant="outline"
-                        onClick={() => viewArticle(article)}
+                    <div className="flex items-center gap-2 mt-4">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs"
+                        style={{
+                          backgroundColor: article.category?.color + '20',
+                          color: article.category?.color,
+                        }}
                       >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ver
-                      </Button>
-                      {canManage && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              toast.info(
-                                'Funcionalidade de edição será implementada'
-                              )
-                            }
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {userRole === 'ADMIN' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deleteArticle(article.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </>
+                        {article.category?.name}
+                      </Badge>
+                      {article.tags?.slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {article.tags?.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{article.tags?.length - 2}
+                        </Badge>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    {canManage && (
+                      <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // handleEdit(article);
+                          }}
+                          className="flex-1"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteArticle(article.id);
+                          }}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="chat" className="space-y-6">
+          <Card className="tactical-card">
+            <KnowledgeChat />
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de Visualização */}
+      {selectedArticle && selectedArticle.title && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {selectedArticle.title}
+              </h3>
+              <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                <span>Por {selectedArticle.author?.name || 'Usuário'}</span>
+                <span>
+                  {formatDistanceToNow(new Date(selectedArticle.createdAt || new Date()), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
+                </span>
+                <span>{selectedArticle.viewCount || 0} visualizações</span>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+          
+          <div 
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: selectedArticle.content || '' }}
+          />
+        </div>
+      )}
     </div>
   );
 }

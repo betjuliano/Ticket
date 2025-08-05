@@ -57,6 +57,7 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (
       !session ||
+      !session.user?.role ||
       (!['COORDINATOR', 'ADMIN'].includes(session.user.role) &&
         session.user.id !== id)
     ) {
@@ -71,18 +72,18 @@ export async function PUT(
       validatedData.password = await hashPassword(validatedData.password);
     }
 
+    // Atualizar usuário
     const updatedUser = await prisma.user.update({
-      where: { id },
-      data: validatedData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        matricula: true,
-        telefone: true,
-        isActive: true,
-        updatedAt: true,
+      where: { id: params.id },
+      data: {
+        ...(validatedData.name && { name: validatedData.name }),
+        ...(validatedData.email && { email: validatedData.email }),
+        ...(validatedData.password && { password: await hashPassword(validatedData.password) }),
+        ...(validatedData.role && { role: validatedData.role }),
+        ...(validatedData.matricula && { matricula: validatedData.matricula }),
+        ...(validatedData.telefone && { telefone: validatedData.telefone }),
+        ...(typeof validatedData.isActive === 'boolean' && { isActive: validatedData.isActive }),
+        ...(validatedData.preferences && { preferences: JSON.stringify(validatedData.preferences) }),
       },
     });
 
@@ -101,7 +102,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
+    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role || '')) {
       return createErrorResponse('Acesso negado', 403);
     }
 

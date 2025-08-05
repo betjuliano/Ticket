@@ -53,7 +53,7 @@ export const createUser = async ({
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
-    user_metadata: metadata,
+    user_metadata: metadata || {},
     email_confirm: true,
   });
 

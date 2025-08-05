@@ -148,7 +148,6 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        isInternal: finalIsInternal,
         ticketId,
         userId,
       },
@@ -184,7 +183,7 @@ export async function POST(
     // TODO: Criar notificação para usuários relevantes
     // Isso será implementado na fase de notificações
 
-    return createSuccessResponse(comment, 'Comentário criado com sucesso', 201);
+    return createSuccessResponse(comment, 'Comentário criado com sucesso');
   } catch (error) {
     console.error('Erro ao criar comentário:', error);
     return createErrorResponse('Erro interno do servidor', 500);

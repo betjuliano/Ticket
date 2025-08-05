@@ -29,7 +29,17 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/auth/signin' });
+    try {
+      // Fazer logout via NextAuth com redirecionamento correto
+      await signOut({ 
+        callbackUrl: '/auth/signin',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      // Fallback: redirecionar manualmente
+      window.location.href = '/auth/signin';
+    }
   };
 
   const handleNavigation = (section: string) => {
@@ -63,7 +73,7 @@ export default function DashboardLayout({
     {
       id: 'knowledge',
       icon: Shield,
-      label: 'KNOWLEDGE BASE',
+      label: 'DOCS E IA DA ADM',
       roles: ['ADMIN', 'COORDINATOR', 'USER'],
     },
     { id: 'users', icon: Users, label: 'USUÁRIOS & APOIO', roles: ['ADMIN'] },

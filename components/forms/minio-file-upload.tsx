@@ -69,11 +69,12 @@ export function MinIOFileUpload({
   };
 
   // Obter ícone baseado no tipo de arquivo
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) {
+  const getFileIcon = (filename: string) => {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) {
       return <Image className="h-4 w-4" />;
-    }
-    if (mimeType === 'application/pdf' || mimeType.startsWith('text/')) {
+    } else if (['pdf'].includes(extension || '')) {
       return <FileText className="h-4 w-4" />;
     }
     return <File className="h-4 w-4" />;
@@ -299,11 +300,12 @@ export function AttachmentList({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) {
+  const getFileIcon = (filename: string) => {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) {
       return <Image className="h-4 w-4" />;
-    }
-    if (mimeType === 'application/pdf' || mimeType.startsWith('text/')) {
+    } else if (['pdf'].includes(extension || '')) {
       return <FileText className="h-4 w-4" />;
     }
     return <File className="h-4 w-4" />;
@@ -325,7 +327,7 @@ export function AttachmentList({
           className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center space-x-3 flex-1 min-w-0">
-            {getFileIcon(attachment.mimeType)}
+            {getFileIcon(attachment.filename)}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {attachment.originalName}

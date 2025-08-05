@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     logRequest('GET', '/api/analytics');
 
     const session = await getServerSession(authOptions);
-    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
+    if (!session || !session.user?.role || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
       return createErrorResponse('Acesso negado', 403);
     }
 

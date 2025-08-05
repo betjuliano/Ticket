@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         originalName: file.name,
         mimeType: file.type,
         size: file.size,
-        url: fileUrl,
+        path: fileUrl,
         ticketId,
         userId,
         createdAt: new Date(),
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         originalName: attachment.originalName,
         mimeType: attachment.mimeType,
         size: attachment.size,
-        url: attachment.url,
+        path: attachment.path,
         createdAt: attachment.createdAt,
       },
       ticket: {
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
         error: 'Erro interno do servidor',
         details:
           process.env.NODE_ENV === 'development'
-            ? error.message
+            ? (error instanceof Error ? error.message : 'Erro desconhecido')
             : 'Tente novamente mais tarde',
       },
       { status: 500 }

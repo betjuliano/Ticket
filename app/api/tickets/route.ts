@@ -1,70 +1,56 @@
-import { NextRequest } from 'next/server';
-import { createTicketSchema, ticketFiltersSchema } from '@/lib/validations';
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  handleApiError,
-  logRequest,
-  sanitizeInput,
-  paginate,
-  generateId,
-  formatDate,
-} from '@/lib/api-utils';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-// GET - Listar tickets
+const prisma = new PrismaClient();
+
 export async function GET(request: NextRequest) {
   try {
-    logRequest('GET', '/api/tickets');
-
+    // Verificar autenticação
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return createErrorResponse('Não autenticado', 401);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Não autorizado',
+        },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+    const status = searchParams.get('status');
+    const priority = searchParams.get('priority');
+    const userId = searchParams.get('userId');
 
-    // Validar parâmetros de consulta
-    const filters = ticketFiltersSchema.parse({
-      status: searchParams.get('status'),
-      priority: searchParams.get('priority'),
-      assignedTo: searchParams.get('assignedTo'),
-      category: searchParams.get('category'),
-      createdBy: searchParams.get('createdBy'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-    });
-
-    // Construir filtros para Prisma
     const where: any = {};
 
-    if (filters.status) {
-      where.status = filters.status;
-    }
-    if (filters.priority) {
-      where.priority = filters.priority;
-    }
-    if (filters.assignedTo) {
-      where.assignedToId = filters.assignedTo;
-    }
-    if (filters.category) {
-      where.category = filters.category;
-    }
-    if (filters.createdBy) {
-      where.createdById = filters.createdBy;
-    }
-
-    // Se não for admin ou coordenador, mostrar apenas tickets próprios ou atribuídos
-    if (!['ADMIN', 'COORDINATOR'].includes(session.user.role)) {
+    if (search) {
       where.OR = [
-        { createdById: session.user.id },
-        { assignedToId: session.user.id },
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    // Buscar tickets com relacionamentos
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    if (priority && priority !== 'all') {
+      where.priority = priority;
+    }
+
+    // Se não for admin ou coordenador, só pode ver seus próprios tickets
+    if (session.user.role !== 'ADMIN' && session.user.role !== 'COORDINATOR') {
+      where.createdById = session.user.id;
+    } else if (userId) {
+      // Admin/coordenador pode filtrar por usuário específico
+      where.createdById = userId;
+    }
+
     const tickets = await prisma.ticket.findMany({
       where,
       include: {
@@ -73,82 +59,93 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             email: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            attachments: true,
+            role: true,
+            matricula: true,
+            telefone: true,
           },
         },
       },
       orderBy: {
         createdAt: 'desc',
       },
-      skip: (filters.page - 1) * filters.limit,
-      take: filters.limit,
     });
 
-    // Contar total para paginação
-    const total = await prisma.ticket.count({ where });
-
-    const paginatedResult = {
-      data: tickets,
-      meta: {
-        page: filters.page,
-        limit: filters.limit,
-        total,
-        totalPages: Math.ceil(total / filters.limit),
+    // Transformar os dados para o formato esperado pelo frontend
+    const transformedTickets = tickets.map(ticket => ({
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      priority: ticket.priority,
+      category: ticket.category || 'Outros',
+      tags: ticket.tags || '',
+      createdById: ticket.createdById,
+      createdAt: ticket.createdAt,
+      updatedAt: ticket.updatedAt,
+      createdBy: {
+        id: ticket.createdBy.id,
+        name: ticket.createdBy.name,
+        email: ticket.createdBy.email,
+        role: ticket.createdBy.role,
+        matricula: ticket.createdBy.matricula,
+        phone: ticket.createdBy.telefone,
       },
-    };
+    }));
 
-    return createSuccessResponse(
-      paginatedResult.data,
-      undefined,
-      paginatedResult.meta
-    );
+    return NextResponse.json({
+      success: true,
+      tickets: transformedTickets,
+      total: transformedTickets.length,
+    });
   } catch (error) {
-    return handleApiError(error);
+    console.error('Erro ao buscar tickets:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Erro interno do servidor',
+      },
+      { status: 500 }
+    );
   }
 }
 
-// POST - Criar novo ticket
 export async function POST(request: NextRequest) {
   try {
-    logRequest('POST', '/api/tickets');
-
+    // Verificar autenticação
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return createErrorResponse('Não autenticado', 401);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Não autorizado',
+        },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
-    const sanitizedBody = sanitizeInput(body);
+    const { title, description, priority, category } = body;
 
-    // Validar dados de entrada
-    const validatedData = createTicketSchema.parse({
-      ...sanitizedBody,
-      createdBy: session.user.id, // Usar ID do usuário da sessão
-    });
+    if (!title || !description || !priority) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dados obrigatórios não fornecidos',
+        },
+        { status: 400 }
+      );
+    }
 
-    // Criar ticket no banco de dados
     const newTicket = await prisma.ticket.create({
       data: {
-        title: validatedData.title,
-        description: validatedData.description,
-        priority: validatedData.priority,
-        category: validatedData.category,
-        tags: '', // Inicializar vazio, pode ser atualizado depois
-        createdById: session.user.id,
-        assignedToId: validatedData.assignedTo || null,
+        title,
+        description,
         status: 'OPEN',
+        priority,
+        category: category || 'Outros',
+        tags: 'chamado,sistema',
+        createdById: session.user.id, // Usar ID do usuário logado
       },
       include: {
         createdBy: {
@@ -156,20 +153,48 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             email: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+            role: true,
+            matricula: true,
+            telefone: true,
           },
         },
       },
     });
 
-    return createSuccessResponse(newTicket, 'Ticket criado com sucesso');
+    const transformedTicket = {
+      id: newTicket.id,
+      title: newTicket.title,
+      description: newTicket.description,
+      status: newTicket.status,
+      priority: newTicket.priority,
+      category: newTicket.category || 'Outros',
+      tags: newTicket.tags || '',
+      createdById: newTicket.createdById,
+      createdAt: newTicket.createdAt,
+      updatedAt: newTicket.updatedAt,
+      createdBy: {
+        id: newTicket.createdBy.id,
+        name: newTicket.createdBy.name,
+        email: newTicket.createdBy.email,
+        role: newTicket.createdBy.role,
+        matricula: newTicket.createdBy.matricula,
+        phone: newTicket.createdBy.telefone,
+      },
+    };
+
+    return NextResponse.json({
+      success: true,
+      ticket: transformedTicket,
+      message: 'Ticket criado com sucesso',
+    });
   } catch (error) {
-    return handleApiError(error);
+    console.error('Erro ao criar ticket:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Erro interno do servidor',
+      },
+      { status: 500 }
+    );
   }
 }

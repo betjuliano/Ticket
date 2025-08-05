@@ -4,6 +4,15 @@ import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+// Verificar se as variáveis de ambiente estão definidas
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET não está definida');
+}
+
+if (!process.env.NEXTAUTH_URL) {
+  throw new Error('NEXTAUTH_URL não está definida');
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -17,29 +26,34 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email e senha são obrigatórios');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user || !user.isActive) {
-          throw new Error('Usuário não encontrado ou inativo');
+          if (!user || !user.isActive) {
+            throw new Error('Usuário não encontrado ou inativo');
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            throw new Error('Senha incorreta');
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('Erro na autenticação:', error);
+          return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Senha incorreta');
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
       },
     }),
   ],
@@ -50,6 +64,7 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,
   },
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -68,8 +83,19 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    signOut: '/auth/signin',
     error: '/auth/error',
   },
+  events: {
+    async signOut() {
+      // Limpar dados locais ao fazer logout
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('next-auth.session-token');
+        sessionStorage.clear();
+      }
+    },
+  },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 // Funções auxiliares para autenticação

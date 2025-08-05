@@ -24,6 +24,12 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
+    "db:sqlite": "node scripts/switch-db.js sqlite",
+    "db:postgres": "node scripts/switch-db.js postgres",
+    "db:status": "node scripts/switch-db.js status",
+    "users:list": "node scripts/manage-users.js list",
+    "users:add": "node scripts/manage-users.js add",
+    "users:remove": "node scripts/manage-users.js remove",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -69,6 +75,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^0.2.1",
+    "critters": "^0.0.23",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.3.0",
@@ -142,4 +149,3 @@
     ]
   }
 }
-

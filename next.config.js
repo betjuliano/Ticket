@@ -26,9 +26,6 @@ const nextConfig = {
       'googleapis'
     ],
     
-    // Configurações de bundling
-    bundlePagesRouterDependencies: true,
-    
     // Configurações de TypeScript
     typedRoutes: true
   },
@@ -133,7 +130,7 @@ const nextConfig = {
   compress: true,
   
   // Configurações de pacotes externos para servidor
-  serverExternalPackages: [
+  serverComponentsExternalPackages: [
     '@prisma/client',
     'bcryptjs',
     'nodemailer',

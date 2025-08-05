@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,12 +104,7 @@ export function AnalyticsDashboard() {
 
   const userRole = session?.user?.role;
 
-  // Carregar dados do dashboard
-  useEffect(() => {
-    loadDashboardData();
-  }, [period]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/reports/dashboard?period=${period}`);
@@ -126,7 +121,12 @@ export function AnalyticsDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [period]);
+
+  // Carregar dados do dashboard
+  useEffect(() => {
+    loadDashboardData();
+  }, [period, loadDashboardData]);
 
   // Cores para gráficos com tons de azul escuro
   const statusColors = {

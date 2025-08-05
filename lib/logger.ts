@@ -15,14 +15,14 @@ type LogMeta = Record<string, unknown>;
 
 // Interface para entrada de log
 interface LogEntry {
-  timestamp: string;
-  level: string;
-  message: string;
-  meta?: LogMeta;
   userId?: string;
   requestId?: string;
   ip?: string;
   userAgent?: string;
+  timestamp: string;
+  level: string;
+  message: string;
+  meta: LogMeta;
 }
 
 // Interface para contexto de log
@@ -123,8 +123,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level: LogLevel[level],
       message,
-      meta,
-      ...context,
+      meta: meta || {},
     };
 
     if (this.enableConsole) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -59,12 +59,7 @@ export function AttachmentSection({
   const userId = session?.user?.id;
   const userRole = session?.user?.role;
 
-  // Carregar anexos
-  useEffect(() => {
-    loadAttachments();
-  }, [ticketId]);
-
-  const loadAttachments = async () => {
+  const loadAttachments = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/tickets/${ticketId}/attachments`);
@@ -81,84 +76,75 @@ export function AttachmentSection({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ticketId]);
 
-  // Upload de arquivo
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  // Carregar anexos
+  useEffect(() => {
+    loadAttachments();
+  }, [loadAttachments]);
 
-    const file = files[0];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const allowedTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
+  ];
 
-    // Validações básicas
-    const maxSize = 10 * 1024 * 1024; // 10MB
+  const validateFile = (file: File | undefined): boolean => {
+    if (!file) return false;
+    
     if (file.size > maxSize) {
-      toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
-      return;
+      toast.error(`Arquivo muito grande. Tamanho máximo: ${formatFileSize(maxSize)}`);
+      return false;
     }
-
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'text/csv',
-    ];
 
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Tipo de arquivo não permitido');
-      return;
+      toast.error(`Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(', ')}`);
+      return false;
     }
 
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
+    return true;
+  };
 
+  const handleFileUpload = async (file: File | undefined) => {
+    if (!file || !validateFile(file)) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('ticketId', ticketId);
 
-      // Simular progresso (em produção, usar XMLHttpRequest para progresso real)
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
+      const response = await fetch('/api/attachments', {
         method: 'POST',
         body: formData,
       });
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao fazer upload');
+        throw new Error('Erro ao fazer upload do arquivo');
       }
 
-      const data = await response.json();
-      setAttachments(prev => [data.data, ...prev]);
-      toast.success('Arquivo enviado com sucesso');
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Arquivo enviado com sucesso!');
+        setUploadProgress(100);
+      } else {
+        throw new Error(result.message || 'Erro ao fazer upload');
       }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Erro ao fazer upload'
-      );
+      console.error('Erro no upload:', error);
+      toast.error('Erro ao fazer upload do arquivo');
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -236,7 +222,7 @@ export function AttachmentSection({
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files);
+      handleFileUpload(e.dataTransfer.files[0]);
     }
   };
 
@@ -249,14 +235,21 @@ export function AttachmentSection({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
-  const getFileIcon = (mimetype: string, isImage: boolean) => {
-    if (isImage) return <Image className="h-5 w-5 text-blue-500" />;
-    if (mimetype.includes('pdf'))
+  const getFileIcon = (filename: string) => {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) {
+      return <Image className="h-5 w-5 text-blue-500" />;
+    }
+    if (['pdf'].includes(extension || '')) {
       return <FileText className="h-5 w-5 text-red-500" />;
-    if (mimetype.includes('word'))
+    }
+    if (['doc', 'docx'].includes(extension || '')) {
       return <FileText className="h-5 w-5 text-blue-600" />;
-    if (mimetype.includes('excel') || mimetype.includes('sheet'))
+    }
+    if (['xls', 'xlsx'].includes(extension || '')) {
       return <FileText className="h-5 w-5 text-green-600" />;
+    }
     return <File className="h-5 w-5 text-gray-500" />;
   };
 
@@ -356,8 +349,9 @@ export function AttachmentSection({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                onChange={e => handleFileUpload(e.target.files)}
+                onChange={e => handleFileUpload(e.target.files?.[0])}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
+                aria-label="Selecionar arquivo para upload"
               />
             </div>
 
@@ -391,7 +385,7 @@ export function AttachmentSection({
               <div key={attachment.id} className="space-y-3">
                 <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex-shrink-0">
-                    {getFileIcon(attachment.mimetype, attachment.isImage)}
+                    {getFileIcon(attachment.filename)}
                   </div>
 
                   <div className="flex-1 min-w-0">

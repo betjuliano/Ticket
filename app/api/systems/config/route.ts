@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
+    if (!session || !session.user?.role || !['COORDINATOR', 'ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 

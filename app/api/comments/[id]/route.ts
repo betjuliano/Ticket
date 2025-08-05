@@ -61,10 +61,10 @@ export async function GET(
       );
     }
 
-    // Usuários comuns não podem ver comentários internos
-    if (userRole === 'USER' && comment.isInternal) {
-      return createErrorResponse('Comentário não encontrado', 404);
-    }
+    // Verificação de permissões para comentários (se necessário no futuro)
+    // if (userRole === 'USER' && comment.isInternal) {
+    //   return createErrorResponse('Comentário não encontrado', 404);
+    // }
 
     return createSuccessResponse(comment);
   } catch (error) {

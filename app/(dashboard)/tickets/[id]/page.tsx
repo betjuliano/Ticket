@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft,
@@ -25,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { CommentSection } from '@/components/ticket/CommentSection';
 import { AttachmentSection } from '@/components/ticket/AttachmentSection';
+import { TicketResponseModal } from '@/components/ticket-response-modal';
 
 interface Ticket {
   id: string;
@@ -80,17 +82,15 @@ export default function TicketDetailsPage() {
   const { data: session } = useSession();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
+  const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
+  const [supportUsers, setSupportUsers] = useState<any[]>([]);
 
   const ticketId = params.id as string;
 
-  // Carregar dados do ticket
-  useEffect(() => {
-    if (ticketId) {
-      loadTicket();
-    }
-  }, [ticketId]);
-
-  const loadTicket = async () => {
+  const loadTicket = useCallback(async () => {
+    if (!ticketId) return;
+    
     try {
       setIsLoading(true);
       const response = await fetch(`/api/tickets/${ticketId}`);
@@ -112,7 +112,14 @@ export default function TicketDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ticketId, router]);
+
+  // Carregar dados do ticket
+  useEffect(() => {
+    if (ticketId) {
+      loadTicket();
+    }
+  }, [ticketId, loadTicket]);
 
   // Funções auxiliares
   const getStatusBadgeColor = (status: string) => {

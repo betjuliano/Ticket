@@ -72,7 +72,9 @@ async function createTestUser() {
 
     console.log(`✅ ${tickets.length} tickets de exemplo criados`);
 
-    // Criar alguns artigos na Knowledge Base (como coordenador)
+    // Criar alguns artigos na Docs e IA da Adm (como coordenador)
+    console.log('📚 Criando artigos na Docs e IA da Adm...');
+
     const coordenador = await prisma.user.findFirst({
       where: { role: 'COORDINATOR' },
     });
@@ -92,81 +94,36 @@ async function createTestUser() {
         },
       });
 
-      // Criar artigos
-      const articles = await Promise.all([
-        prisma.knowledgeArticle.create({
-          data: {
-            title: 'Como fazer login no sistema',
-            content: `# Como fazer login no sistema
+      const existingArticles = await prisma.docsArticle.findMany({
+        take: 1,
+      });
 
-## Passo a passo
+      if (existingArticles.length > 0) {
+        console.log('✅ Artigos já existem na Docs e IA da Adm');
+        return;
+      }
 
-1. Acesse o site do sistema
-2. Clique em "Entrar"
-3. Digite seu email institucional
-4. Digite sua senha
-5. Clique em "Entrar no Sistema"
-
-## Problemas comuns
-
-- **Esqueci minha senha**: Use a opção "Esqueci minha senha"
-- **Email não reconhecido**: Verifique se está usando o email institucional
-- **Conta bloqueada**: Entre em contato com o suporte
-
-## Precisa de ajuda?
-
-Se ainda tiver problemas, abra um chamado no sistema de tickets.`,
+      // Criar artigos de exemplo
+      const articles = await prisma.docsArticle.createMany({
+        data: [
+          {
+            title: 'Como acessar o sistema de tickets',
+            content: 'Guia completo sobre como acessar e usar o sistema de tickets da UFSM...',
             categoryId: category.id,
             authorId: coordenador.id,
             isPublished: true,
-            isFeatured: true,
-            tags: ['login', 'acesso', 'tutorial'],
-            slug: 'como-fazer-login-no-sistema',
-            excerpt: 'Tutorial completo sobre como fazer login no sistema',
           },
-        }),
-        prisma.knowledgeArticle.create({
-          data: {
-            title: 'Política de uso de equipamentos',
-            content: `# Política de uso de equipamentos
-
-## Diretrizes gerais
-
-Os equipamentos fornecidos pela instituição devem ser utilizados exclusivamente para atividades acadêmicas e administrativas.
-
-## Responsabilidades do usuário
-
-- Manter o equipamento em bom estado
-- Reportar problemas imediatamente
-- Não instalar software não autorizado
-- Fazer backup regular dos dados
-
-## Solicitação de equipamentos
-
-Para solicitar novos equipamentos:
-
-1. Abra um chamado no sistema
-2. Justifique a necessidade
-3. Aguarde aprovação
-4. Retire o equipamento no local indicado
-
-## Manutenção
-
-- Manutenção preventiva: trimestral
-- Manutenção corretiva: sob demanda
-- Garantia: conforme fabricante`,
+          {
+            title: 'Procedimentos administrativos',
+            content: 'Documentação sobre os principais procedimentos administrativos...',
             categoryId: category.id,
             authorId: coordenador.id,
             isPublished: true,
-            isFeatured: false,
-            tags: ['equipamentos', 'política', 'diretrizes'],
-            slug: 'politica-uso-equipamentos',
-            excerpt: 'Política institucional para uso de equipamentos',
           },
-        }),
-      ]);
+        ],
+      });
 
-      console.log(`✅ ${articles.length} artigos criados na Knowledge Base`);
+      console.log(`✅ ${articles.length} artigos criados na Docs e IA da Adm`);
     }
   } catch (error) {
     console.error('❌ Erro ao criar usuário de teste:', error);

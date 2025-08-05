@@ -38,7 +38,7 @@ export const translations = {
       },
     },
     dashboard: {
-      title: 'Dashboard',
+      title: 'IA da Administração',
       totalTickets: 'Total de Tickets',
       openTickets: 'Tickets Abertos',
       resolvedTickets: 'Tickets Resolvidos',
@@ -84,7 +84,7 @@ export const translations = {
       },
     },
     dashboard: {
-      title: 'Dashboard',
+      title: 'AI Administration',
       totalTickets: 'Total Tickets',
       openTickets: 'Open Tickets',
       resolvedTickets: 'Resolved Tickets',

@@ -30,7 +30,7 @@ Sistema completo de gerenciamento de tickets/chamados desenvolvido com Next.js 1
 - Upload de anexos
 - Notificações em tempo real
 - Relatórios avançados
-- Knowledge Base
+- Docs e IA da Adm
 
 ## 🛠️ Tecnologias Utilizadas
 

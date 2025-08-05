@@ -12,7 +12,16 @@ import {
   Clock,
   Shield,
 } from 'lucide-react';
-import { Agent } from '@/types/global';
+
+interface Agent {
+  id: string;
+  name: string;
+  status: string;
+  location: string;
+  lastSeen: string;
+  missions: number;
+  risk: string;
+}
 
 export default function AgentNetworkPage() {
   const [searchTerm, setSearchTerm] = useState('');

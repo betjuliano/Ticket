@@ -1,146 +1,58 @@
-import { prisma } from '@/lib/prisma';
-import { NotificationType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-interface NotificationData {
-  type: NotificationType;
-  title: string;
-  message: string;
-  userId: string;
-  relatedId?: string;
-  data?: Record<string, any>;
-}
+const prisma = new PrismaClient();
 
 export class NotificationService {
-  // Criar notificação
-  static async create(notificationData: NotificationData) {
-    try {
-      const notification = await prisma.notification.create({
-        data: notificationData,
-      });
-
-      // TODO: Enviar via WebSocket quando implementado
-      // this.sendRealTime(notification)
-
-      return notification;
-    } catch (error) {
-      console.error('Erro ao criar notificação:', error);
-      throw error;
-    }
-  }
-
-  // Notificar criação de ticket
   static async notifyTicketCreated(ticketId: string, createdById: string) {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         include: {
           createdBy: true,
-          assignedTo: true,
         },
       });
 
-      if (!ticket) return;
+      if (!ticket) {
+        console.error('Ticket não encontrado:', ticketId);
+        return false;
+      }
 
       // Notificar coordenadores e admins
-      const coordinatorsAndAdmins = await prisma.user.findMany({
+      const admins = await prisma.user.findMany({
         where: {
           role: { in: ['ADMIN', 'COORDINATOR'] },
           isActive: true,
-          id: { not: createdById }, // Não notificar o criador
         },
       });
 
-      const notifications = coordinatorsAndAdmins.map(user => ({
-        type: 'TICKET_CREATED' as NotificationType,
-        title: 'Novo chamado criado',
-        message: `${ticket.createdBy.name} criou o chamado "${ticket.title}"`,
-        userId: user.id,
-        relatedId: ticketId,
-        data: {
-          ticketId,
+      const notifications = admins.map(admin => ({
+        userId: admin.id,
+        type: 'TICKET_CREATED',
+        title: 'Novo ticket criado',
+        message: `Ticket #${ticket.id} - ${ticket.title} foi criado por ${ticket.createdBy.name}`,
+        metadata: JSON.stringify({
+          ticketId: ticket.id,
+          createdById: ticket.createdById,
           ticketTitle: ticket.title,
-          createdBy: ticket.createdBy.name,
-          priority: ticket.priority,
-          category: ticket.category,
-        },
+        }),
       }));
 
-      // Criar todas as notificações
       await prisma.notification.createMany({
         data: notifications,
       });
 
-      return notifications.length;
+      return true;
     } catch (error) {
       console.error('Erro ao notificar criação de ticket:', error);
+      return false;
     }
   }
 
-  // Notificar atribuição de ticket
-  static async notifyTicketAssigned(
-    ticketId: string,
-    assignedToId: string,
-    assignedById: string
-  ) {
-    try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-        include: {
-          createdBy: true,
-          assignedTo: true,
-        },
-      });
-
-      if (!ticket || !ticket.assignedTo) return;
-
-      // Notificar o usuário atribuído (se não foi ele mesmo que se atribuiu)
-      if (assignedToId !== assignedById) {
-        await this.create({
-          type: 'TICKET_ASSIGNED',
-          title: 'Chamado atribuído a você',
-          message: `O chamado "${ticket.title}" foi atribuído a você`,
-          userId: assignedToId,
-          relatedId: ticketId,
-          data: {
-            ticketId,
-            ticketTitle: ticket.title,
-            assignedBy: assignedById,
-            priority: ticket.priority,
-            category: ticket.category,
-          },
-        });
-      }
-
-      // Notificar o criador do ticket (se não foi ele que atribuiu)
-      if (
-        ticket.createdById !== assignedById &&
-        ticket.createdById !== assignedToId
-      ) {
-        await this.create({
-          type: 'TICKET_ASSIGNED',
-          title: 'Seu chamado foi atribuído',
-          message: `Seu chamado "${ticket.title}" foi atribuído para ${ticket.assignedTo.name}`,
-          userId: ticket.createdById,
-          relatedId: ticketId,
-          data: {
-            ticketId,
-            ticketTitle: ticket.title,
-            assignedTo: ticket.assignedTo.name,
-            assignedBy: assignedById,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao notificar atribuição de ticket:', error);
-    }
-  }
-
-  // Notificar atualização de status
   static async notifyTicketStatusChanged(
     ticketId: string,
     oldStatus: string,
     newStatus: string,
-    updatedById: string
+    changedById: string
   ) {
     try {
       const ticket = await prisma.ticket.findUnique({
@@ -151,63 +63,67 @@ export class NotificationService {
         },
       });
 
-      if (!ticket) return;
-
-      const statusLabels: Record<string, string> = {
-        OPEN: 'Aberto',
-        IN_PROGRESS: 'Em Andamento',
-        WAITING_FOR_USER: 'Aguardando Usuário',
-        WAITING_FOR_THIRD_PARTY: 'Aguardando Terceiros',
-        RESOLVED: 'Resolvido',
-        CLOSED: 'Fechado',
-        CANCELLED: 'Cancelado',
-      };
-
-      const usersToNotify = new Set<string>();
-
-      // Adicionar criador do ticket
-      if (ticket.createdById !== updatedById) {
-        usersToNotify.add(ticket.createdById);
+      if (!ticket) {
+        console.error('Ticket não encontrado:', ticketId);
+        return false;
       }
 
-      // Adicionar usuário atribuído
-      if (ticket.assignedToId && ticket.assignedToId !== updatedById) {
-        usersToNotify.add(ticket.assignedToId);
+      const changedBy = await prisma.user.findUnique({
+        where: { id: changedById },
+      });
+
+      if (!changedBy) {
+        console.error('Usuário não encontrado:', changedById);
+        return false;
       }
 
-      // Criar notificações
-      const notifications = Array.from(usersToNotify).map(userId => ({
-        type: 'TICKET_UPDATED' as NotificationType,
-        title: 'Status do chamado alterado',
-        message: `O chamado "${ticket.title}" mudou de ${statusLabels[oldStatus]} para ${statusLabels[newStatus]}`,
-        userId,
-        relatedId: ticketId,
-        data: {
-          ticketId,
-          ticketTitle: ticket.title,
-          oldStatus,
-          newStatus,
-          updatedBy: updatedById,
-        },
-      }));
-
-      if (notifications.length > 0) {
-        await prisma.notification.createMany({
-          data: notifications,
+      // Notificar criador do ticket
+      if (ticket.createdById !== changedById) {
+        await prisma.notification.create({
+          data: {
+            userId: ticket.createdById,
+            type: 'TICKET_STATUS_CHANGED',
+            title: 'Status do ticket alterado',
+            message: `O status do ticket #${ticket.id} foi alterado de ${oldStatus} para ${newStatus} por ${changedBy.name}`,
+            metadata: JSON.stringify({
+              ticketId: ticket.id,
+              oldStatus,
+              newStatus,
+              changedById: changedBy.id,
+            }),
+          },
         });
       }
 
-      return notifications.length;
+      // Notificar técnico responsável se diferente do que alterou
+      if (ticket.assignedToId && ticket.assignedToId !== changedById) {
+        await prisma.notification.create({
+          data: {
+            userId: ticket.assignedToId,
+            type: 'TICKET_STATUS_CHANGED',
+            title: 'Status do ticket alterado',
+            message: `O status do ticket #${ticket.id} foi alterado de ${oldStatus} para ${newStatus} por ${changedBy.name}`,
+            metadata: JSON.stringify({
+              ticketId: ticket.id,
+              oldStatus,
+              newStatus,
+              changedById: changedBy.id,
+            }),
+          },
+        });
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao notificar mudança de status:', error);
+      return false;
     }
   }
 
-  // Notificar novo comentário
   static async notifyNewComment(
     commentId: string,
     ticketId: string,
-    commentUserId: string
+    userId: string
   ) {
     try {
       const comment = await prisma.comment.findUnique({
@@ -223,53 +139,39 @@ export class NotificationService {
         },
       });
 
-      if (!comment) return;
-
-      const usersToNotify = new Set<string>();
-
-      // Adicionar criador do ticket
-      if (comment.ticket.createdById !== commentUserId) {
-        usersToNotify.add(comment.ticket.createdById);
+      if (!comment) {
+        console.error('Comentário não encontrado:', commentId);
+        return false;
       }
 
-      // Adicionar usuário atribuído
-      if (
-        comment.ticket.assignedToId &&
-        comment.ticket.assignedToId !== commentUserId
-      ) {
-        usersToNotify.add(comment.ticket.assignedToId);
+      const ticket = comment.ticket;
+      const commentAuthor = comment.user;
+
+      // Lista de usuários para notificar
+      const usersToNotify = [];
+
+      // Adicionar criador do ticket se não for o autor do comentário
+      if (ticket.createdById !== userId) {
+        usersToNotify.push(ticket.createdById);
       }
 
-      // Se for comentário interno, notificar apenas admins e coordenadores
-      if (comment.isInternal) {
-        const coordinatorsAndAdmins = await prisma.user.findMany({
-          where: {
-            role: { in: ['ADMIN', 'COORDINATOR'] },
-            isActive: true,
-            id: { not: commentUserId },
-          },
-        });
-
-        coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id));
+      // Adicionar técnico responsável se existir e não for o autor do comentário
+      if (ticket.assignedToId && ticket.assignedToId !== userId) {
+        usersToNotify.push(ticket.assignedToId);
       }
 
       // Criar notificações
-      const notifications = Array.from(usersToNotify).map(userId => ({
-        type: 'TICKET_COMMENTED' as NotificationType,
-        title: comment.isInternal
-          ? 'Novo comentário interno'
-          : 'Novo comentário',
-        message: `${comment.user.name} comentou no chamado "${comment.ticket.title}"`,
+      const notifications = usersToNotify.map(userId => ({
         userId,
-        relatedId: ticketId,
-        data: {
-          ticketId,
-          commentId,
-          ticketTitle: comment.ticket.title,
-          commentUser: comment.user.name,
-          isInternal: comment.isInternal,
-          commentPreview: comment.content.substring(0, 100),
-        },
+        type: 'NEW_COMMENT',
+        title: 'Novo comentário no ticket',
+        message: `${commentAuthor.name} comentou no ticket #${ticket.id} - ${ticket.title}`,
+        metadata: JSON.stringify({
+          ticketId: ticket.id,
+          commentId: comment.id,
+          commentAuthorId: commentAuthor.id,
+          ticketTitle: ticket.title,
+        }),
       }));
 
       if (notifications.length > 0) {
@@ -278,17 +180,17 @@ export class NotificationService {
         });
       }
 
-      return notifications.length;
+      return true;
     } catch (error) {
       console.error('Erro ao notificar novo comentário:', error);
+      return false;
     }
   }
 
-  // Notificar novo anexo
   static async notifyNewAttachment(
     attachmentId: string,
     ticketId: string,
-    attachmentUserId: string
+    userId: string
   ) {
     try {
       const attachment = await prisma.attachment.findUnique({
@@ -304,49 +206,41 @@ export class NotificationService {
         },
       });
 
-      if (!attachment) return;
-
-      const usersToNotify = new Set<string>();
-
-      // Adicionar criador do ticket
-      if (attachment.ticket.createdById !== attachmentUserId) {
-        usersToNotify.add(attachment.ticket.createdById);
+      if (!attachment) {
+        console.error('Anexo não encontrado:', attachmentId);
+        return false;
       }
 
-      // Adicionar usuário atribuído
-      if (
-        attachment.ticket.assignedToId &&
-        attachment.ticket.assignedToId !== attachmentUserId
-      ) {
-        usersToNotify.add(attachment.ticket.assignedToId);
+      const ticket = attachment.ticket;
+      const attachmentAuthor = attachment.user;
+
+      // Lista de usuários para notificar
+      const usersToNotify = [];
+
+      // Adicionar criador do ticket se não for o autor do anexo
+      if (ticket.createdById !== userId) {
+        usersToNotify.push(ticket.createdById);
       }
 
-      // Notificar coordenadores e admins
-      const coordinatorsAndAdmins = await prisma.user.findMany({
-        where: {
-          role: { in: ['ADMIN', 'COORDINATOR'] },
-          isActive: true,
-          id: { not: attachmentUserId },
-        },
-      });
-
-      coordinatorsAndAdmins.forEach(user => usersToNotify.add(user.id));
+      // Adicionar técnico responsável se existir e não for o autor do anexo
+      if (ticket.assignedToId && ticket.assignedToId !== userId) {
+        usersToNotify.push(ticket.assignedToId);
+      }
 
       // Criar notificações
-      const notifications = Array.from(usersToNotify).map(userId => ({
-        type: 'TICKET_UPDATED' as NotificationType,
-        title: 'Novo anexo adicionado',
-        message: `${attachment.user.name} adicionou o arquivo "${attachment.originalName}" ao chamado "${attachment.ticket.title}"`,
+      const notifications = usersToNotify.map(userId => ({
         userId,
-        relatedId: ticketId,
-        data: {
-          ticketId,
-          attachmentId,
-          ticketTitle: attachment.ticket.title,
-          attachmentUser: attachment.user.name,
-          fileName: attachment.originalName,
-          fileSize: attachment.filesize,
-        },
+        type: 'NEW_ATTACHMENT',
+        title: 'Novo anexo no ticket',
+        message: `${attachmentAuthor.name} adicionou um anexo no ticket #${ticket.id} - ${ticket.title}`,
+        metadata: JSON.stringify({
+          ticketId: ticket.id,
+          attachmentId: attachment.id,
+          attachmentAuthorId: attachmentAuthor.id,
+          ticketTitle: ticket.title,
+          fileName: attachment.filename,
+          fileSize: attachment.size,
+        }),
       }));
 
       if (notifications.length > 0) {
@@ -355,46 +249,13 @@ export class NotificationService {
         });
       }
 
-      return notifications.length;
+      return true;
     } catch (error) {
       console.error('Erro ao notificar novo anexo:', error);
+      return false;
     }
   }
 
-  // Notificar resolução de ticket
-  static async notifyTicketResolved(ticketId: string, resolvedById: string) {
-    try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-        include: {
-          createdBy: true,
-          assignedTo: true,
-        },
-      });
-
-      if (!ticket) return;
-
-      // Notificar o criador do ticket
-      if (ticket.createdById !== resolvedById) {
-        await this.create({
-          type: 'TICKET_RESOLVED',
-          title: 'Seu chamado foi resolvido',
-          message: `Seu chamado "${ticket.title}" foi marcado como resolvido`,
-          userId: ticket.createdById,
-          relatedId: ticketId,
-          data: {
-            ticketId,
-            ticketTitle: ticket.title,
-            resolvedBy: resolvedById,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao notificar resolução de ticket:', error);
-    }
-  }
-
-  // Notificar fechamento de ticket
   static async notifyTicketClosed(ticketId: string, closedById: string) {
     try {
       const ticket = await prisma.ticket.findUnique({
@@ -405,140 +266,139 @@ export class NotificationService {
         },
       });
 
-      if (!ticket) return;
+      if (!ticket) {
+        console.error('Ticket não encontrado:', ticketId);
+        return false;
+      }
 
-      const usersToNotify = new Set<string>();
+      const closedBy = await prisma.user.findUnique({
+        where: { id: closedById },
+      });
 
-      // Adicionar criador do ticket
+      if (!closedBy) {
+        console.error('Usuário não encontrado:', closedById);
+        return false;
+      }
+
+      // Notificar criador do ticket
       if (ticket.createdById !== closedById) {
-        usersToNotify.add(ticket.createdById);
-      }
-
-      // Adicionar usuário atribuído
-      if (ticket.assignedToId && ticket.assignedToId !== closedById) {
-        usersToNotify.add(ticket.assignedToId);
-      }
-
-      // Criar notificações
-      const notifications = Array.from(usersToNotify).map(userId => ({
-        type: 'TICKET_CLOSED' as NotificationType,
-        title: 'Chamado fechado',
-        message: `O chamado "${ticket.title}" foi fechado`,
-        userId,
-        relatedId: ticketId,
-        data: {
-          ticketId,
-          ticketTitle: ticket.title,
-          closedBy: closedById,
-        },
-      }));
-
-      if (notifications.length > 0) {
-        await prisma.notification.createMany({
-          data: notifications,
+        await prisma.notification.create({
+          data: {
+            userId: ticket.createdById,
+            type: 'TICKET_CLOSED',
+            title: 'Ticket fechado',
+            message: `O ticket #${ticket.id} - ${ticket.title} foi fechado por ${closedBy.name}`,
+            metadata: JSON.stringify({
+              ticketId: ticket.id,
+              closedById: closedBy.id,
+              ticketTitle: ticket.title,
+            }),
+          },
         });
       }
 
-      return notifications.length;
+      // Notificar técnico responsável se diferente do que fechou
+      if (ticket.assignedToId && ticket.assignedToId !== closedById) {
+        await prisma.notification.create({
+          data: {
+            userId: ticket.assignedToId,
+            type: 'TICKET_CLOSED',
+            title: 'Ticket fechado',
+            message: `O ticket #${ticket.id} - ${ticket.title} foi fechado por ${closedBy.name}`,
+            metadata: JSON.stringify({
+              ticketId: ticket.id,
+              closedById: closedBy.id,
+              ticketTitle: ticket.title,
+            }),
+          },
+        });
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao notificar fechamento de ticket:', error);
-    }
-  }
-
-  // Criar notificação de sistema
-  static async createSystemAnnouncement(
-    title: string,
-    message: string,
-    targetRoles?: string[]
-  ) {
-    try {
-      const whereClause: any = { isActive: true };
-
-      if (targetRoles && targetRoles.length > 0) {
-        whereClause.role = { in: targetRoles };
-      }
-
-      const users = await prisma.user.findMany({
-        where: whereClause,
-        select: { id: true },
-      });
-
-      const notifications = users.map(user => ({
-        type: 'SYSTEM_ANNOUNCEMENT' as NotificationType,
-        title,
-        message,
-        userId: user.id,
-        data: {
-          isSystemAnnouncement: true,
-          targetRoles,
-        },
-      }));
-
-      if (notifications.length > 0) {
-        await prisma.notification.createMany({
-          data: notifications,
-        });
-      }
-
-      return notifications.length;
-    } catch (error) {
-      console.error('Erro ao criar anúncio do sistema:', error);
-    }
-  }
-
-  // Marcar notificação como lida
-  static async markAsRead(notificationId: string, userId: string) {
-    try {
-      const notification = await prisma.notification.updateMany({
-        where: {
-          id: notificationId,
-          userId, // Garantir que o usuário só pode marcar suas próprias notificações
-        },
-        data: {
-          read: true,
-          readAt: new Date(),
-        },
-      });
-
-      return notification.count > 0;
-    } catch (error) {
-      console.error('Erro ao marcar notificação como lida:', error);
       return false;
     }
   }
 
-  // Marcar todas as notificações como lidas
-  static async markAllAsRead(userId: string) {
+  static async createSystemAnnouncement(
+    title: string,
+    message: string,
+    targetUsers?: string[]
+  ) {
     try {
-      const result = await prisma.notification.updateMany({
-        where: {
-          userId,
-          read: false,
-        },
-        data: {
-          read: true,
-          readAt: new Date(),
-        },
-      });
+      let users: { id: string }[] = [];
 
-      return result.count;
+      if (targetUsers && targetUsers.length > 0) {
+        users = await prisma.user.findMany({
+          where: {
+            id: { in: targetUsers },
+            isActive: true,
+          },
+          select: { id: true },
+        });
+      } else {
+        // Notificar todos os usuários ativos
+        users = await prisma.user.findMany({
+          where: { isActive: true },
+          select: { id: true },
+        });
+      }
+
+      const notifications = users.map(user => ({
+        userId: user.id,
+        type: 'SYSTEM_ANNOUNCEMENT',
+        title,
+        message,
+        metadata: JSON.stringify({
+          announcementTitle: title,
+          announcementMessage: message,
+        }),
+      }));
+
+      if (notifications.length > 0) {
+        await prisma.notification.createMany({
+          data: notifications,
+        });
+      }
+
+      return true;
     } catch (error) {
-      console.error('Erro ao marcar todas as notificações como lidas:', error);
-      return 0;
+      console.error('Erro ao criar anúncio do sistema:', error);
+      return false;
     }
   }
 
-  // Contar notificações não lidas
+  static async markNotificationsAsRead(userId: string, notificationIds?: string[]) {
+    try {
+      const whereClause = notificationIds 
+        ? { id: { in: notificationIds }, userId }
+        : { userId, isRead: false };
+
+      await prisma.notification.updateMany({
+        where: whereClause,
+        data: { isRead: true },
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao marcar notificações como lidas:', error);
+      return false;
+    }
+  }
+
   static async getUnreadCount(userId: string) {
     try {
-      return await prisma.notification.count({
+      const count = await prisma.notification.count({
         where: {
           userId,
-          read: false,
+          isRead: false,
         },
       });
+
+      return count;
     } catch (error) {
-      console.error('Erro ao contar notificações não lidas:', error);
+      console.error('Erro ao obter contagem de não lidas:', error);
       return 0;
     }
   }

@@ -3,8 +3,8 @@ import { Providers } from '@/components/providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Tactical Operations Dashboard',
-  description: 'Tactical command and control system',
+  title: 'IA da Administração',
+  description: 'Sistema de inteligência artificial para administração',
   generator: 'v0.dev',
 };
 

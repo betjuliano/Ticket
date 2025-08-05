@@ -49,13 +49,26 @@ export function NotificationBell() {
 
   // Carregar notificações
   useEffect(() => {
-    if (session?.user) {
-      loadNotifications();
-      // Configurar polling para atualizações em tempo real
-      const interval = setInterval(loadNotifications, 30000); // 30 segundos
-      return () => clearInterval(interval);
-    }
-  }, [session]);
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/notifications');
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data.notifications || []);
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar notificações:', error);
+      }
+    };
+
+    fetchNotifications();
+    
+    // Retornar função de cleanup se necessário
+    return () => {
+      // Cleanup se necessário
+    };
+  }, []);
 
   const loadNotifications = async () => {
     try {

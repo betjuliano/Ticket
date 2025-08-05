@@ -154,7 +154,7 @@ export default function HomePage() {
             {[
               { id: 'dashboard', icon: Monitor, label: 'DASHBOARD' },
               { id: 'tickets', icon: Target, label: 'CHAMADOS' },
-              { id: 'knowledge', icon: Shield, label: 'KNOWLEDGE BASE' },
+              { id: 'knowledge', icon: Shield, label: 'DOCS E IA DA ADM' },
               { id: 'users', icon: Users, label: 'USUÁRIOS & APOIO' },
               { id: 'systems', icon: Settings, label: 'CONFIGURAÇÕES' },
             ].map(item => (

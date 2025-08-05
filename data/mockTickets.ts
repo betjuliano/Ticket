@@ -1,78 +1,84 @@
-import { Ticket, TicketUser } from '@/types/ticket';
-
-export const mockUsers: TicketUser[] = [
-  {
-    id: 'user1',
-    name: 'João Silva',
-    matricula: '12345',
-    email: 'joao.silva@empresa.com',
-    phone: '(11) 99999-9999',
-    sector: 'TI',
-    admissionDate: '2023-01-15',
-    avatar: '/placeholder-user.jpg',
-  },
-  {
-    id: 'user2',
-    name: 'Maria Santos',
-    matricula: '12346',
-    email: 'maria.santos@empresa.com',
-    phone: '(11) 88888-8888',
-    sector: 'Financeiro',
-    admissionDate: '2022-08-20',
-  },
-  {
-    id: 'user3',
-    name: 'Pedro Costa',
-    matricula: '12347',
-    email: 'pedro.costa@empresa.com',
-    phone: '(11) 77777-7777',
-    sector: 'RH',
-    admissionDate: '2023-03-10',
-  },
-];
+import { Ticket } from '@/types/ticket';
 
 export const mockTickets: Ticket[] = [
   {
     id: '1',
-    title: 'Sistema de login não funciona',
-    description:
-      'Usuários não conseguem fazer login no sistema desde esta manhã. O erro aparece após inserir as credenciais.',
-    status: 'open',
-    priority: 'high',
-    category: 'Sistema',
-    createdBy: 'user1',
-    createdAt: '2025-01-20T10:00:00Z',
-    updatedAt: '2025-01-20T10:00:00Z',
-    user: mockUsers[0],
+    title: 'Problema com impressora',
+    description: 'A impressora da sala 101 não está funcionando corretamente. Preciso de assistência técnica.',
+    status: 'OPEN',
+    priority: 'HIGH',
+    category: 'Hardware',
+    tags: 'impressora,hardware,urgente',
+    createdById: 'user1',
+    createdAt: new Date('2025-01-20T10:00:00Z'),
+    updatedAt: new Date('2025-01-20T10:00:00Z'),
+    createdBy: {
+      id: 'user1',
+      name: 'João Silva',
+      email: 'joao.silva@ufsm.edu.br',
+      role: 'USER',
+      matricula: '2021001',
+      phone: '(55) 99999-9999',
+      sector: 'Administração',
+      admissionDate: '2021-03-15'
+    }
   },
   {
     id: '2',
-    title: 'Lentidão na rede',
-    description:
-      'Rede corporativa está muito lenta, afetando o trabalho de toda a equipe.',
-    status: 'in_progress',
-    priority: 'medium',
-    category: 'Rede',
-    assignedTo: 'tech1',
-    createdBy: 'user2',
-    createdAt: '2025-01-19T14:30:00Z',
-    updatedAt: '2025-01-20T09:15:00Z',
-    user: mockUsers[1],
+    title: 'Solicitação de software',
+    description: 'Preciso instalar o software MATLAB na minha máquina para pesquisa.',
+    status: 'IN_PROGRESS',
+    priority: 'MEDIUM',
+    category: 'Software',
+    tags: 'software,instalação,matlab',
+    createdById: 'user2',
+    assignedToId: 'tech1',
+    createdAt: new Date('2025-01-19T14:30:00Z'),
+    updatedAt: new Date('2025-01-20T09:15:00Z'),
+    createdBy: {
+      id: 'user2',
+      name: 'Maria Santos',
+      email: 'maria.santos@ufsm.edu.br',
+      role: 'USER',
+      matricula: '2021002',
+      phone: '(55) 88888-8888',
+      sector: 'Pesquisa',
+      admissionDate: '2021-08-20'
+    },
+    assignedTo: {
+      id: 'tech1',
+      name: 'Carlos Tech',
+      email: 'carlos.tech@ufsm.edu.br'
+    }
   },
   {
     id: '3',
-    title: 'Impressora não funciona',
-    description:
-      'Impressora do setor financeiro não está imprimindo documentos.',
-    status: 'resolved',
-    priority: 'low',
-    category: 'Hardware',
-    assignedTo: 'tech2',
-    createdBy: 'user3',
-    createdAt: '2025-01-18T09:00:00Z',
-    updatedAt: '2025-01-19T16:30:00Z',
-    user: mockUsers[2],
-  },
+    title: 'Problema de rede',
+    description: 'Não consigo acessar a internet no laboratório 3. Parece ser um problema de configuração de rede.',
+    status: 'RESOLVED',
+    priority: 'LOW',
+    category: 'Rede',
+    tags: 'rede,internet,laboratório',
+    createdById: 'user3',
+    assignedToId: 'tech2',
+    createdAt: new Date('2025-01-18T09:00:00Z'),
+    updatedAt: new Date('2025-01-19T16:30:00Z'),
+    createdBy: {
+      id: 'user3',
+      name: 'Pedro Oliveira',
+      email: 'pedro.oliveira@ufsm.edu.br',
+      role: 'USER',
+      matricula: '2021003',
+      phone: '(55) 77777-7777',
+      sector: 'Laboratórios',
+      admissionDate: '2021-11-10'
+    },
+    assignedTo: {
+      id: 'tech2',
+      name: 'Ana Suporte',
+      email: 'ana.suporte@ufsm.edu.br'
+    }
+  }
 ];
 
 export const mockStats = {

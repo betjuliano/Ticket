@@ -137,10 +137,10 @@ export const userUpdateSchema = z.object({
 });
 
 // ========================================
-// VALIDAÇÕES DE KNOWLEDGE BASE
+// VALIDAÇÕES DE DOCS E IA DA ADM
 // ========================================
 
-export const createKnowledgeCategorySchema = z.object({
+export const createDocsCategorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
   description: z.string().max(500).optional(),
   icon: z.string().optional(),
@@ -151,7 +151,7 @@ export const createKnowledgeCategorySchema = z.object({
   order: z.number().int().min(0).default(0),
 });
 
-export const updateKnowledgeCategorySchema = z.object({
+export const updateDocsCategorySchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
   icon: z.string().optional(),
@@ -163,7 +163,7 @@ export const updateKnowledgeCategorySchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const createKnowledgeArticleSchema = z.object({
+export const createDocsArticleSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório').max(200),
   content: z.string().min(10, 'Conteúdo deve ter pelo menos 10 caracteres'),
   excerpt: z.string().max(300).optional(),
@@ -174,7 +174,7 @@ export const createKnowledgeArticleSchema = z.object({
   isFeatured: z.boolean().default(false),
 });
 
-export const updateKnowledgeArticleSchema = z.object({
+export const updateDocsArticleSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   content: z.string().min(10).optional(),
   excerpt: z.string().max(300).optional(),
@@ -203,7 +203,7 @@ export const createNotificationSchema = z.object({
     'TICKET_RESOLVED',
     'TICKET_CLOSED',
     'SYSTEM_ANNOUNCEMENT',
-    'KNOWLEDGE_ARTICLE_PUBLISHED',
+    'DOCS_ARTICLE_PUBLISHED',
   ]),
   title: z.string().min(1, 'Título é obrigatório').max(100),
   message: z.string().min(1, 'Mensagem é obrigatória').max(500),
@@ -299,17 +299,17 @@ export type UpdateCommentInput = z.infer<typeof updateCommentSchema>;
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 
-export type CreateKnowledgeCategoryInput = z.infer<
-  typeof createKnowledgeCategorySchema
+export type CreateDocsCategoryInput = z.infer<
+  typeof createDocsCategorySchema
 >;
-export type UpdateKnowledgeCategoryInput = z.infer<
-  typeof updateKnowledgeCategorySchema
+export type UpdateDocsCategoryInput = z.infer<
+  typeof updateDocsCategorySchema
 >;
-export type CreateKnowledgeArticleInput = z.infer<
-  typeof createKnowledgeArticleSchema
+export type CreateDocsArticleInput = z.infer<
+  typeof createDocsArticleSchema
 >;
-export type UpdateKnowledgeArticleInput = z.infer<
-  typeof updateKnowledgeArticleSchema
+export type UpdateDocsArticleInput = z.infer<
+  typeof updateDocsArticleSchema
 >;
 export type RateArticleInput = z.infer<typeof rateArticleSchema>;
 
