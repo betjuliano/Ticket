@@ -307,7 +307,7 @@ export function useFormValidation<T extends z.ZodSchema<any>>(
     getValues,
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: defaultValues || {},
     mode: 'onChange',
   });
 

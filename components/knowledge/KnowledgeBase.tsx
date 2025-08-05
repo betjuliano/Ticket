@@ -101,7 +101,7 @@ export function KnowledgeBase() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [publishedFilter, setPublishedFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Article | KnowledgeArticle | null>(null);
 
   // Log estratégico para verificar tipos
   console.log('🔍 DEBUG KnowledgeBase:', {
@@ -583,29 +583,28 @@ export function KnowledgeBase() {
       </Tabs>
 
       {/* Modal de Visualização */}
-      {selectedArticle && selectedArticle.title && (
+      {selectedArticle && (selectedArticle as Article | KnowledgeArticle).title && (
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {selectedArticle.title}
+                {(selectedArticle as Article | KnowledgeArticle).title}
               </h3>
               <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                <span>Por {selectedArticle.author?.name || 'Usuário'}</span>
+                <span>Por {(selectedArticle as Article | KnowledgeArticle).author?.name || 'Usuário'}</span>
                 <span>
-                  {formatDistanceToNow(new Date(selectedArticle.createdAt || new Date()), {
+                  {formatDistanceToNow(new Date((selectedArticle as Article | KnowledgeArticle).createdAt || new Date()), {
                     addSuffix: true,
                     locale: ptBR,
                   })}
                 </span>
-                <span>{selectedArticle.viewCount || 0} visualizações</span>
               </div>
             </div>
           </div>
           
           <div 
             className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: selectedArticle.content || '' }}
+            dangerouslySetInnerHTML={{ __html: (selectedArticle as Article | KnowledgeArticle).content || '' }}
           />
         </div>
       )}

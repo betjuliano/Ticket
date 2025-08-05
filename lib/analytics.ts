@@ -181,7 +181,7 @@ class AnalyticsService {
             satisfactionRate,
           };
         } catch (error) {
-          logger.error('Failed to get ticket stats', { error, period });
+          logger.error('Failed to get ticket stats', error as Error, { period });
           throw error;
         }
       }
@@ -295,7 +295,7 @@ class AnalyticsService {
             topResolvers: topResolversFormatted,
           };
         } catch (error) {
-          logger.error('Failed to get user stats', { error, period });
+          logger.error('Failed to get user stats', error as Error, { period });
           throw error;
         }
       }
@@ -359,7 +359,7 @@ class AnalyticsService {
 
           return data;
         } catch (error) {
-          logger.error('Failed to get time series data', { error, period });
+          logger.error('Failed to get time series data', error as Error, { period });
           throw error;
         }
       }

@@ -198,7 +198,7 @@ export class ErrorBoundary extends Component<Props, State> {
     );
   }
 
-  render() {
+  override render() {
     // Se há erro, renderizar UI de fallback
     if (this.state.hasError) {
       // Se um fallback customizado foi fornecido, usá-lo
