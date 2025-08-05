@@ -197,9 +197,9 @@ export function Modal({
         {(title || showCloseButton) && (
           <CardHeader className="flex items-center justify-between space-y-0 pb-4">
             <div className="flex items-center space-x-3">
-              {variantIcons[variant] && (
-                <variantIcons[variant] className="w-5 h-5 text-neutral-400" />
-              )}
+              {variantIcons[variant] && React.createElement(variantIcons[variant], {
+                className: "w-5 h-5 text-neutral-400"
+              })}
               <div>
                 {title && (
                   <CardTitle

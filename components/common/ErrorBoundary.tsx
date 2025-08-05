@@ -61,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
    * Método chamado após um erro ser capturado
    * Ideal para logging e side effects
    */
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log detalhado do erro para debugging
     console.error('Error Boundary capturou um erro:', {
       error: {

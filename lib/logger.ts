@@ -28,7 +28,7 @@ export enum LogLevel {
 
 // Configurações do logger
 const LOG_CONFIG = {
-  level: (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO,
+  level: (process.env.LOG_LEVEL ? (process.env.LOG_LEVEL as unknown as LogLevel) : LogLevel.INFO),
   enableConsole: process.env.NODE_ENV !== 'production',
   enableFile: process.env.NODE_ENV === 'production',
   maxFileSize: 10 * 1024 * 1024, // 10MB
@@ -345,4 +345,7 @@ export function usePerformanceLogger(componentName: string) {
 }
 
 export default loggers.app;
+
+// Export logger for backward compatibility
+export const logger = loggers.app;
 

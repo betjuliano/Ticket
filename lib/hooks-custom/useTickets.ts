@@ -307,7 +307,7 @@ export function useTickets() {
    */
   useEffect(() => {
     fetchTickets();
-  }, []); // Executar apenas na montagem do componente
+  }, [fetchTickets]); // Executar apenas na montagem do componente
 
   return {
     // Estado
