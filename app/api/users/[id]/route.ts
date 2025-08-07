@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { userUpdateSchema } from '@/lib/validations';
+import { userUpdateSchema } from '@/lib/validations/forms';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -83,7 +83,6 @@ export async function PUT(
         ...(validatedData.matricula && { matricula: validatedData.matricula }),
         ...(validatedData.telefone && { telefone: validatedData.telefone }),
         ...(typeof validatedData.isActive === 'boolean' && { isActive: validatedData.isActive }),
-        ...(validatedData.preferences && { preferences: JSON.stringify(validatedData.preferences) }),
       },
     });
 

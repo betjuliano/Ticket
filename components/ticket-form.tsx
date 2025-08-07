@@ -23,7 +23,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Upload, X } from 'lucide-react';
-import { createTicketSchema } from '@/lib/validations';
+import { createTicketSchema } from '@/lib/validations/forms';
 
 interface TicketFormProps {
   onSubmit: (data: any) => Promise<void>;

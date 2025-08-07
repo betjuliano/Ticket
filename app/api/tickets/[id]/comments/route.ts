@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createCommentSchema } from '@/lib/validations';
+import { createCommentSchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/tickets/[id]/comments - Listar comentários do ticket

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import {
   createNotificationSchema,
   markNotificationReadSchema,
-} from '@/lib/validations';
+} from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/notifications - Listar notificações do usuário
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { type, title, message, userId, relatedId, data } =
+    const { type, title, message, userId, metadata } =
       validationResult.data;
 
     // Verificar se usuário de destino existe
@@ -99,15 +99,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar notificação
-          const notification = await prisma.notification.create({
-        data: {
-          type,
-          title,
-          message,
-          userId,
-          metadata: data ? JSON.stringify(data) : null,
-        },
-      });
+    const notification = await prisma.notification.create({
+      data: {
+        type,
+        title,
+        message,
+        userId,
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      },
+    });
 
     return createSuccessResponse(
       notification,

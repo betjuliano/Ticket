@@ -447,7 +447,7 @@ class AnalyticsService {
             },
           };
         } catch (error) {
-          logger.error('Failed to get performance metrics', { error, period });
+          logger.error('Failed to get performance metrics');
           throw error;
         }
       }
@@ -524,7 +524,7 @@ class AnalyticsService {
             ],
           };
         } catch (error) {
-          logger.error('Failed to get insights', { error, period });
+          logger.error('Failed to get insights');
           throw error;
         }
       }

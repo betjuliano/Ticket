@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateDocsArticleSchema } from '@/lib/validations';
+import { updateDocsArticleSchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/knowledge/articles/[id] - Buscar artigo específico
@@ -96,10 +96,7 @@ export async function PUT(
       title,
       content,
       categoryId,
-      tags,
       isPublished,
-      isFeatured,
-      excerpt,
     } = validationResult.data;
 
     // Buscar artigo
@@ -144,6 +141,7 @@ export async function PUT(
         ...(title && { title }),
         ...(content && { content }),
         ...(categoryId && { categoryId }),
+        ...(typeof isPublished === 'boolean' && { isPublished }),
         updatedAt: new Date(),
       },
       include: {

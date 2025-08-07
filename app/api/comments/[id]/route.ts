@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateCommentSchema } from '@/lib/validations';
+import { updateCommentSchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/comments/[id] - Buscar comentário específico

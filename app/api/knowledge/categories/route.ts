@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createDocsCategorySchema } from '@/lib/validations';
+import { createDocsCategorySchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/knowledge/categories - Listar categorias

@@ -16,7 +16,7 @@
  * - Filtros por contexto
  */
 
-import { cache } from './cache/redis';
+import { cacheService } from './cache/redis';
 
 // Níveis de log
 export enum LogLevel {
@@ -114,7 +114,7 @@ export class Logger {
     try {
       // Aqui você pode implementar escrita em arquivo
       // Por enquanto, vamos usar cache para armazenar logs
-      const logs = await cache.get<string[]>('CONFIG', 'logs') || [];
+      const logs = await cacheService.get<string[]>('CONFIG', 'logs') || [];
       logs.push(formattedMessage);
       
       // Manter apenas os últimos 1000 logs
@@ -122,7 +122,7 @@ export class Logger {
         logs.splice(0, logs.length - 1000);
       }
       
-      await cache.set('CONFIG', 'logs', logs);
+      await cacheService.set('CONFIG', 'logs', logs);
     } catch (error) {
       console.error('Erro ao escrever log em arquivo:', error);
     }

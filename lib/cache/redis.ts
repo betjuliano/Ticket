@@ -69,7 +69,24 @@ export class CacheService {
    */
   private async initializeRedis() {
     try {
-      this.redis = new Redis(REDIS_CONFIG);
+      const redisConfig: any = {
+        host: REDIS_CONFIG.host,
+        port: REDIS_CONFIG.port,
+        db: REDIS_CONFIG.db,
+        retryDelayOnFailover: REDIS_CONFIG.retryDelayOnFailover,
+        maxRetriesPerRequest: REDIS_CONFIG.maxRetriesPerRequest,
+        lazyConnect: REDIS_CONFIG.lazyConnect,
+        keepAlive: REDIS_CONFIG.keepAlive,
+        connectTimeout: REDIS_CONFIG.connectTimeout,
+        commandTimeout: REDIS_CONFIG.commandTimeout,
+      };
+      
+      // Adicionar password apenas se existir
+      if (REDIS_CONFIG.password) {
+        redisConfig.password = REDIS_CONFIG.password;
+      }
+      
+      this.redis = new Redis(redisConfig);
       
       this.redis.on('connect', () => {
         console.log('✅ Redis conectado com sucesso');
@@ -302,11 +319,11 @@ export class CacheService {
    * Cache de tickets com invalidação inteligente
    */
   async cacheTicket(ticketId: string, ticketData: any): Promise<void> {
-    await this.set('TICKETS', ticketId, ticketData);
+    await this.set('TICKETS', ticketId, ticketData, 3600); // 1 hora
   }
 
   async getTicket<T = any>(ticketId: string): Promise<T | null> {
-    return this.get<T>('TICKETS', ticketId);
+    return await this.get<T>('TICKETS', ticketId);
   }
 
   async invalidateTicket(ticketId: string): Promise<void> {
@@ -317,22 +334,22 @@ export class CacheService {
    * Cache de listas de tickets
    */
   async cacheTicketList(filters: string, tickets: any[]): Promise<void> {
-    await this.set('TICKETS', `list:${filters}`, tickets);
+    await this.set('TICKETS', `list:${filters}`, tickets, 1800); // 30 minutos
   }
 
   async getTicketList<T = any>(filters: string): Promise<T | null> {
-    return this.get<T>('TICKETS', `list:${filters}`);
+    return await this.get<T>('TICKETS', `list:${filters}`);
   }
 
   /**
    * Cache de usuários
    */
   async cacheUser(userId: string, userData: any): Promise<void> {
-    await this.set('USERS', userId, userData);
+    await this.set('USERS', userId, userData, 7200); // 2 horas
   }
 
   async getUser<T = any>(userId: string): Promise<T | null> {
-    return this.get<T>('USERS', userId);
+    return await this.get<T>('USERS', userId);
   }
 
   async invalidateUser(userId: string): Promise<void> {
@@ -343,11 +360,11 @@ export class CacheService {
    * Cache de sessões
    */
   async cacheSession(sessionId: string, sessionData: any): Promise<void> {
-    await this.set('SESSIONS', sessionId, sessionData);
+    await this.set('SESSIONS', sessionId, sessionData, 3600); // 1 hora
   }
 
   async getSession<T = any>(sessionId: string): Promise<T | null> {
-    return this.get<T>('SESSIONS', sessionId);
+    return await this.get<T>('SESSIONS', sessionId);
   }
 
   async invalidateSession(sessionId: string): Promise<void> {
@@ -358,22 +375,22 @@ export class CacheService {
    * Cache de configurações
    */
   async cacheConfig(configKey: string, configData: any): Promise<void> {
-    await this.set('CONFIG', configKey, configData);
+    await this.set('CONFIG', configKey, configData, 86400); // 24 horas
   }
 
   async getConfig<T = any>(configKey: string): Promise<T | null> {
-    return this.get<T>('CONFIG', configKey);
+    return await this.get<T>('CONFIG', configKey);
   }
 
   /**
    * Cache de estatísticas
    */
   async cacheStats(statsKey: string, statsData: any): Promise<void> {
-    await this.set('STATS', statsKey, statsData);
+    await this.set('STATS', statsKey, statsData, 1800); // 30 minutos
   }
 
-  async getStats<T = any>(statsKey: string): Promise<T | null> {
-    return this.get<T>('STATS', statsKey);
+  async getStatsData<T = any>(statsKey: string): Promise<T | null> {
+    return await this.get<T>('STATS', statsKey);
   }
 
   /**
@@ -389,19 +406,5 @@ export class CacheService {
 // Instância singleton do serviço de cache
 export const cacheService = new CacheService();
 
-// Exportar funções utilitárias para uso direto
-export const cache = {
-  set: (prefix: keyof typeof CACHE_PREFIXES, key: string, data: any, ttl?: number) =>
-    cacheService.set(prefix, key, data, ttl),
-  get: <T = any>(prefix: keyof typeof CACHE_PREFIXES, key: string) =>
-    cacheService.get<T>(prefix, key),
-  delete: (prefix: keyof typeof CACHE_PREFIXES, key: string) =>
-    cacheService.delete(prefix, key),
-  exists: (prefix: keyof typeof CACHE_PREFIXES, key: string) =>
-    cacheService.exists(prefix, key),
-  clearPrefix: (prefix: keyof typeof CACHE_PREFIXES) =>
-    cacheService.clearPrefix(prefix),
-  clearAll: () => cacheService.clearAll(),
-  getStats: () => cacheService.getStats(),
-  disconnect: () => cacheService.disconnect(),
-};
+// Exportar a instância diretamente para uso
+export default cacheService;

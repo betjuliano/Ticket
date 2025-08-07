@@ -158,209 +158,110 @@ export const updateTicketSchema = z.object({
 });
 
 // ========================================
+// VALIDAÇÕES DE NOTIFICAÇÕES
+// ========================================
+
+export const createNotificationSchema = z.object({
+  type: z.string().min(1, 'Tipo é obrigatório'),
+  title: z.string().min(1, 'Título é obrigatório').max(200, 'Título muito longo'),
+  message: z.string().min(1, 'Mensagem é obrigatória').max(1000, 'Mensagem muito longa'),
+  userId: z.string().min(1, 'ID do usuário é obrigatório'),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const markNotificationReadSchema = z.object({
+  notificationIds: z.array(z.string()).min(1, 'Pelo menos uma notificação deve ser marcada'),
+});
+
+// ========================================
+// VALIDAÇÕES DE DOCUMENTAÇÃO
+// ========================================
+
+export const createDocsCategorySchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
+  description: z.string().max(500, 'Descrição muito longa').optional(),
+});
+
+export const updateDocsCategorySchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').optional(),
+  description: z.string().max(500, 'Descrição muito longa').optional(),
+});
+
+export const createDocsArticleSchema = z.object({
+  title: z.string().min(1, 'Título é obrigatório').max(200, 'Título muito longo'),
+  content: z.string().min(1, 'Conteúdo é obrigatório'),
+  categoryId: z.string().min(1, 'Categoria é obrigatória'),
+  isPublished: z.boolean().default(false),
+});
+
+export const updateDocsArticleSchema = z.object({
+  title: z.string().min(1, 'Título é obrigatório').max(200, 'Título muito longo').optional(),
+  content: z.string().min(1, 'Conteúdo é obrigatório').optional(),
+  categoryId: z.string().min(1, 'Categoria é obrigatória').optional(),
+  isPublished: z.boolean().optional(),
+});
+
+export const rateArticleSchema = z.object({
+  rating: z.number().min(1, 'Avaliação deve ser entre 1 e 5').max(5, 'Avaliação deve ser entre 1 e 5'),
+  comment: z.string().max(500, 'Comentário muito longo').optional(),
+});
+
+// ========================================
 // VALIDAÇÕES DE USUÁRIOS
 // ========================================
 
-/**
- * Schema para criação de usuários
- * 
- * Inclui validações para:
- * - Nome: obrigatório, máximo 100 caracteres
- * - Email: formato válido, único
- * - Senha: mínimo 6 caracteres, com validações de segurança
- * - Matrícula: opcional, formato específico
- * - Telefone: opcional, formato brasileiro
- */
-export const createUserSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Nome é obrigatório')
-    .max(100, 'Nome muito longo (máximo 100 caracteres)')
-    .trim()
-    .refine((val) => /^[a-zA-ZÀ-ÿ\s]+$/.test(val), 'Nome deve conter apenas letras'),
-  
-  email: z
-    .string()
-    .email('Email inválido')
-    .toLowerCase()
-    .trim(),
-  
-  password: z
-    .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(100, 'Senha muito longa')
-    .refine((val) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val), 
-      'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número'),
-  
-  confirmPassword: z
-    .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
-  
-  role: z
-    .enum(['ADMIN', 'COORDINATOR', 'USER'], {
-      errorMap: () => ({ message: 'Perfil deve ser: Admin, Coordenador ou Usuário' })
-    })
-    .default('USER'),
-  
-  matricula: z
-    .string()
-    .regex(/^\d{6,10}$/, 'Matrícula deve ter entre 6 e 10 dígitos')
-    .optional(),
-  
-  telefone: z
-    .string()
-    .regex(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, 'Telefone deve estar no formato (11) 99999-9999')
-    .optional(),
-  
-  isActive: z
-    .boolean()
-    .default(true),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não coincidem',
-  path: ['confirmPassword'],
+export const userCreateSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').trim(),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  role: z.enum(['ADMIN', 'COORDINATOR', 'USER']).default('USER'),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
 });
 
-/**
- * Schema para atualização de usuários
- */
-export const updateUserSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Nome é obrigatório')
-    .max(100, 'Nome muito longo')
-    .trim()
-    .optional(),
-  
-  email: z
-    .string()
-    .email('Email inválido')
-    .toLowerCase()
-    .trim()
-    .optional(),
-  
-  password: z
-    .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(100, 'Senha muito longa')
-    .refine((val) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val), 
-      'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número')
-    .optional(),
-  
-  role: z
-    .enum(['ADMIN', 'COORDINATOR', 'USER'])
-    .optional(),
-  
-  matricula: z
-    .string()
-    .regex(/^\d{6,10}$/, 'Matrícula deve ter entre 6 e 10 dígitos')
-    .optional(),
-  
-  telefone: z
-    .string()
-    .regex(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, 'Telefone deve estar no formato (11) 99999-9999')
-    .optional(),
-  
-  isActive: z
-    .boolean()
-    .optional(),
+export const userUpdateSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').optional(),
+  email: z.string().email('Email inválido').optional(),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
+  role: z.enum(['ADMIN', 'COORDINATOR', 'USER']).optional(),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+  isActive: z.boolean().optional(),
 });
 
 // ========================================
-// VALIDAÇÕES DE AUTENTICAÇÃO
+// VALIDAÇÕES DE SENHAS
 // ========================================
 
-/**
- * Schema para login
- */
-export const loginSchema = z.object({
-  email: z
-    .string()
-    .email('Email inválido')
-    .toLowerCase()
-    .trim(),
-  
-  password: z
-    .string()
-    .min(1, 'Senha é obrigatória'),
-  
-  rememberMe: z
-    .boolean()
-    .default(false),
-});
-
-/**
- * Schema para registro
- */
-export const registerSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Nome é obrigatório')
-    .max(100, 'Nome muito longo')
-    .trim(),
-  
-  email: z
-    .string()
-    .email('Email inválido')
-    .toLowerCase()
-    .trim(),
-  
-  password: z
-    .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(100, 'Senha muito longa')
-    .refine((val) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val), 
-      'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número'),
-  
-  confirmPassword: z
-    .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
-  
-  matricula: z
-    .string()
-    .regex(/^\d{6,10}$/, 'Matrícula deve ter entre 6 e 10 dígitos')
-    .optional(),
-  
-  telefone: z
-    .string()
-    .regex(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, 'Telefone deve estar no formato (11) 99999-9999')
-    .optional(),
-}).refine((data) => data.password === data.confirmPassword, {
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
+  newPassword: z.string().min(6, 'Nova senha deve ter pelo menos 6 caracteres'),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'Senhas não coincidem',
   path: ['confirmPassword'],
 });
 
-/**
- * Schema para recuperação de senha
- */
-export const forgotPasswordSchema = z.object({
-  email: z
-    .string()
-    .email('Email inválido')
-    .toLowerCase()
-    .trim(),
+// ========================================
+// VALIDAÇÕES DE RELATÓRIOS
+// ========================================
+
+export const reportFiltersSchema = z.object({
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  category: z.string().optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
+  assignedTo: z.string().optional(),
 });
 
-/**
- * Schema para redefinição de senha
- */
-export const resetPasswordSchema = z.object({
-  token: z
-    .string()
-    .min(1, 'Token é obrigatório'),
-  
-  password: z
-    .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(100, 'Senha muito longa')
-    .refine((val) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(val), 
-      'Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número'),
-  
-  confirmPassword: z
-    .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não coincidem',
-  path: ['confirmPassword'],
+// ========================================
+// VALIDAÇÕES DE UPLOAD
+// ========================================
+
+export const uploadSchema = z.object({
+  ticketId: z.string().min(1, 'ID do ticket é obrigatório'),
+  userId: z.string().min(1, 'ID do usuário é obrigatório'),
 });
 
 // ========================================
@@ -458,6 +359,65 @@ export const ticketFiltersSchema = z.object({
     .min(1, 'Limite deve ser maior que 0')
     .max(100, 'Limite máximo é 100')
     .default(10),
+});
+
+// ========================================
+// VALIDAÇÕES DE AUTENTICAÇÃO
+// ========================================
+
+export const loginSchema = z.object({
+  email: z.string().email('Email inválido').toLowerCase().trim(),
+  password: z.string().min(1, 'Senha é obrigatória'),
+  rememberMe: z.boolean().default(false),
+});
+
+export const registerSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').trim(),
+  email: z.string().email('Email inválido').toLowerCase().trim(),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').max(100, 'Senha muito longa'),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email inválido').toLowerCase().trim(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token é obrigatório'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').max(100, 'Senha muito longa'),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+export const createUserSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').trim(),
+  email: z.string().email('Email inválido').toLowerCase().trim(),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').max(100, 'Senha muito longa'),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  role: z.enum(['ADMIN', 'COORDINATOR', 'USER']).default('USER'),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+  isActive: z.boolean().default(true),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+export const updateUserSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo').trim().optional(),
+  email: z.string().email('Email inválido').toLowerCase().trim().optional(),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').max(100, 'Senha muito longa').optional(),
+  role: z.enum(['ADMIN', 'COORDINATOR', 'USER']).optional(),
+  matricula: z.string().optional(),
+  telefone: z.string().optional(),
+  isActive: z.boolean().optional(),
 });
 
 // ========================================

@@ -113,21 +113,24 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
   }, [baseUrl, retryCount, retryDelay]);
 
   /**
-   * Função GET com cache automático
+   * Função GET
    */
-  const get = useCallback(async <TData = T>(
+  const get = useCallback(async <TData extends T | null = T>(
     url: string,
     params?: Record<string, any>
   ): Promise<TData> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Verificar cache primeiro
       const cacheKey = getCacheKey(url, params);
+      
+      // Verificar cache primeiro
       if (isCacheValid(cacheKey)) {
-        const cached = apiCache.get(cacheKey);
-        setState({ data: cached!.data, loading: false, error: null });
-        return cached!.data;
+        const cachedData = apiCache.get(cacheKey)?.data;
+        if (cachedData) {
+          setState({ data: cachedData as T, loading: false, error: null });
+          return cachedData as TData;
+        }
       }
 
       // Construir URL com parâmetros
@@ -135,12 +138,13 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
         ? `${url}?${new URLSearchParams(params).toString()}`
         : url;
 
-      const data = await makeRequest(urlWithParams);
+      const response = await makeRequest(urlWithParams);
+      const data = response as TData;
 
       // Armazenar no cache
       apiCache.set(cacheKey, { data, timestamp: Date.now() });
 
-      setState({ data, loading: false, error: null });
+      setState({ data: data as T, loading: false, error: null });
       return data;
 
     } catch (error) {
@@ -153,7 +157,7 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
   /**
    * Função POST
    */
-  const post = useCallback(async <TData = T>(
+  const post = useCallback(async <TData extends T | null = T>(
     url: string,
     data: any
   ): Promise<TData> => {
@@ -165,8 +169,9 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
         body: JSON.stringify(data),
       });
 
-      setState({ data: response, loading: false, error: null });
-      return response;
+      const result = response as TData;
+      setState({ data: result as T, loading: false, error: null });
+      return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -178,7 +183,7 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
   /**
    * Função PUT
    */
-  const put = useCallback(async <TData = T>(
+  const put = useCallback(async <TData extends T | null = T>(
     url: string,
     data: any
   ): Promise<TData> => {
@@ -190,8 +195,9 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
         body: JSON.stringify(data),
       });
 
-      setState({ data: response, loading: false, error: null });
-      return response;
+      const result = response as TData;
+      setState({ data: result as T, loading: false, error: null });
+      return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -203,7 +209,7 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
   /**
    * Função DELETE
    */
-  const del = useCallback(async <TData = T>(url: string): Promise<TData> => {
+  const del = useCallback(async <TData extends T | null = T>(url: string): Promise<TData> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -211,8 +217,9 @@ export function useApi<T = any>(baseUrl: string = '/api', options: ApiOptions = 
         method: 'DELETE',
       });
 
-      setState({ data: response, loading: false, error: null });
-      return response;
+      const result = response as TData;
+      setState({ data: result as T, loading: false, error: null });
+      return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';

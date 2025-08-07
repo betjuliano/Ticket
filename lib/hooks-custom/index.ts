@@ -1,15 +1,6 @@
-/**
- * Índice de Hooks Customizados
- * 
- * Este arquivo centraliza a exportação de todos os hooks customizados
- * do sistema, facilitando imports e organização.
- */
-
-// API Hook
+// Exportar hooks customizados
 export { useApi } from './useApi';
-
-// Tickets Hook
 export { useTickets } from './useTickets';
 
-// Re-export existing hooks
-export { useAuth } from '../hooks'; 
+// Re-exportar tipos úteis
+export type { Ticket, TicketStatus, TicketPriority } from '@/types/ticket'; 

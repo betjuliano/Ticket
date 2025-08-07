@@ -18,14 +18,6 @@ const nextConfig = {
       'recharts'
     ],
     
-    // Configurações de servidor
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      'bcryptjs',
-      'nodemailer',
-      'googleapis'
-    ],
-    
     // Configurações de TypeScript
     typedRoutes: true
   },

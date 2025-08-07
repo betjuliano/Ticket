@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/database/client';
 
 export class NotificationService {
   static async notifyTicketCreated(ticketId: string, createdById: string) {

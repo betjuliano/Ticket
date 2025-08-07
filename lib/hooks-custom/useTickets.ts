@@ -1,9 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useApi } from './useApi';
 import { Ticket, TicketStatus, TicketPriority } from '@/types/ticket';
-import { createTicketSchema, updateTicketSchema } from '@/lib/validations';
 
-// Tipos para filtros de tickets
 interface TicketFilters {
   search?: string;
   status?: TicketStatus | 'all';
@@ -14,7 +12,6 @@ interface TicketFilters {
   dateTo?: string;
 }
 
-// Tipos para criação de ticket
 interface CreateTicketData {
   title: string;
   description: string;
@@ -25,7 +22,6 @@ interface CreateTicketData {
   dueDate?: string;
 }
 
-// Tipos para atualização de ticket
 interface UpdateTicketData {
   title?: string;
   description?: string;
@@ -39,79 +35,85 @@ interface UpdateTicketData {
   dueDate?: string;
 }
 
-/**
- * Hook customizado para operações de tickets com validação robusta
- * 
- * Este hook centraliza toda a lógica de CRUD de tickets, incluindo:
- * - Validação de dados com Zod
- * - Tratamento de erros específicos
- * - Cache inteligente
- * - Estados de loading otimizados
- * 
- * @returns Funções e estado para operações de tickets
- */
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+interface TicketsResponse {
+  tickets: Ticket[];
+  total: number;
+}
+
+interface TicketResponse {
+  ticket: Ticket;
+}
+
 export function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filters, setFilters] = useState<TicketFilters>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Usar o hook de API com configurações específicas para tickets
-  const api = useApi<{ tickets: Ticket[]; total: number }>('/api', {
-    cacheTime: 2 * 60 * 1000, // 2 minutos para tickets (dados mais dinâmicos)
-    retryCount: 2,
-    retryDelay: 500,
+  // API com tipos corretos
+  const api = useApi<any>('/api', {
+    cacheTime: 5 * 60 * 1000, // 5 minutos
+    retryCount: 3,
+    retryDelay: 1000,
   });
 
-  /**
-   * Função para validar dados de criação de ticket
-   * Usa Zod para validação robusta e tipagem segura
-   */
-  const validateCreateTicket = useCallback((data: CreateTicketData) => {
-    try {
-      return createTicketSchema.parse(data);
-    } catch (error: any) {
-      // Extrair mensagens de erro do Zod de forma amigável
-      const errorMessages = error.errors?.map((err: any) => err.message).join(', ');
-      throw new Error(`Dados inválidos: ${errorMessages}`);
+  // Validação de dados
+  const validateCreateTicket = useCallback((data: CreateTicketData): CreateTicketData => {
+    if (!data.title?.trim()) {
+      throw new Error('Título é obrigatório');
     }
+    if (!data.description?.trim()) {
+      throw new Error('Descrição é obrigatória');
+    }
+    if (!data.priority) {
+      throw new Error('Prioridade é obrigatória');
+    }
+    if (!data.category?.trim()) {
+      throw new Error('Categoria é obrigatória');
+    }
+    return data;
+  }, []);
+
+  const validateUpdateTicket = useCallback((data: UpdateTicketData): UpdateTicketData => {
+    if (data.title !== undefined && !data.title?.trim()) {
+      throw new Error('Título não pode estar vazio');
+    }
+    if (data.description !== undefined && !data.description?.trim()) {
+      throw new Error('Descrição não pode estar vazia');
+    }
+    return data;
   }, []);
 
   /**
-   * Função para validar dados de atualização de ticket
+   * Função para buscar tickets
+   * Implementa cache inteligente e filtros avançados
    */
-  const validateUpdateTicket = useCallback((data: UpdateTicketData) => {
-    try {
-      return updateTicketSchema.parse(data);
-    } catch (error: any) {
-      const errorMessages = error.errors?.map((err: any) => err.message).join(', ');
-      throw new Error(`Dados inválidos: ${errorMessages}`);
-    }
-  }, []);
-
-  /**
-   * Função para buscar tickets com filtros
-   * Implementa cache inteligente e tratamento de erros robusto
-   */
-  const fetchTickets = useCallback(async (newFilters?: TicketFilters) => {
+  const fetchTickets = useCallback(async (newFilters?: Partial<TicketFilters>) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Mesclar filtros existentes com novos filtros
+      // Mesclar filtros
       const mergedFilters = { ...filters, ...newFilters };
       
-      // Remover filtros vazios para otimizar cache
+      // Limpar filtros vazios
       const cleanFilters = Object.fromEntries(
         Object.entries(mergedFilters).filter(([_, value]) => 
-          value !== undefined && value !== null && value !== ''
+          value !== undefined && value !== '' && value !== 'all'
         )
       );
 
       const response = await api.get('/tickets', cleanFilters);
       
-      if (response.success) {
-        setTickets(response.tickets || []);
+      if (response.success && response.data) {
+        setTickets(response.data.tickets || []);
         setFilters(mergedFilters);
       } else {
         throw new Error(response.error || 'Erro ao buscar tickets');
@@ -146,16 +148,16 @@ export function useTickets() {
       // Validar dados antes de enviar
       const validatedData = validateCreateTicket(data);
 
-      const response = await api.post('/tickets', validatedData);
+      const response = await api.post<ApiResponse<TicketResponse>>('/tickets', validatedData);
 
-      if (response.success) {
+      if (response.success && response.data) {
         // Adicionar novo ticket ao início da lista
-        setTickets(prev => [response.ticket, ...prev]);
+        setTickets(prev => [response.data!.ticket, ...prev]);
         
         // Limpar cache para garantir dados atualizados
         api.clearCache();
         
-        return response.ticket;
+        return response.data.ticket;
       } else {
         throw new Error(response.error || 'Erro ao criar ticket');
       }
@@ -188,14 +190,14 @@ export function useTickets() {
       // Validar dados de atualização
       const validatedData = validateUpdateTicket(data);
 
-      const response = await api.put(`/tickets/${ticketId}`, validatedData);
+      const response = await api.put<ApiResponse<TicketResponse>>(`/tickets/${ticketId}`, validatedData);
 
-      if (response.success) {
+      if (response.success && response.data) {
         // Atualizar ticket na lista local
         setTickets(prev => 
           prev.map(ticket => 
             ticket.id === ticketId 
-              ? { ...ticket, ...response.ticket }
+              ? { ...ticket, ...response.data!.ticket }
               : ticket
           )
         );
@@ -203,7 +205,7 @@ export function useTickets() {
         // Limpar cache para garantir dados atualizados
         api.clearCache();
         
-        return response.ticket;
+        return response.data.ticket;
       } else {
         throw new Error(response.error || 'Erro ao atualizar ticket');
       }
@@ -234,13 +236,13 @@ export function useTickets() {
     setError(null);
 
     try {
-      const response = await api.delete(`/tickets/${ticketId}`);
+      const response = await api.delete<ApiResponse<{ success: boolean }>>(`/tickets/${ticketId}`);
 
       if (response.success) {
         // Remover ticket da lista local
         setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
         
-        // Limpar cache
+        // Limpar cache para garantir dados atualizados
         api.clearCache();
         
         return true;
@@ -266,67 +268,39 @@ export function useTickets() {
 
   /**
    * Função para buscar ticket específico
-   * Implementa cache específico para dados individuais
+   * Implementa cache individual para performance
    */
-  const fetchTicket = useCallback(async (ticketId: string) => {
+  const getTicket = useCallback(async (ticketId: string): Promise<Ticket | null> => {
     try {
-      const response = await api.get(`/tickets/${ticketId}`);
+      const response = await api.get<ApiResponse<TicketResponse>>(`/tickets/${ticketId}`);
       
-      if (response.success) {
-        return response.ticket;
+      if (response.success && response.data) {
+        return response.data.ticket;
       } else {
         throw new Error(response.error || 'Ticket não encontrado');
       }
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      setError(errorMessage);
-      throw error;
+      console.error('Erro ao buscar ticket:', error);
+      return null;
     }
   }, [api]);
 
-  /**
-   * Função para aplicar filtros
-   * Implementa debounce para otimizar performance
-   */
-  const applyFilters = useCallback((newFilters: TicketFilters) => {
-    setFilters(newFilters);
-    return fetchTickets(newFilters);
-  }, [fetchTickets]);
-
-  /**
-   * Função para limpar filtros
-   */
-  const clearFilters = useCallback(() => {
-    setFilters({});
-    return fetchTickets({});
-  }, [fetchTickets]);
-
-  /**
-   * Função para buscar tickets na inicialização
-   */
+  // Carregar tickets iniciais
   useEffect(() => {
     fetchTickets();
-  }, [fetchTickets]); // Executar apenas na montagem do componente
+  }, []);
 
   return {
-    // Estado
     tickets,
     filters,
-    isLoading: isLoading || api.loading,
-    error: error || api.error,
-    
-    // Funções
+    isLoading,
+    error,
     fetchTickets,
     createTicket,
     updateTicket,
     deleteTicket,
-    fetchTicket,
-    applyFilters,
-    clearFilters,
-    
-    // Utilitários
-    clearCache: api.clearCache,
-    cancelRequest: api.cancelRequest,
+    getTicket,
+    setFilters,
+    clearError: () => setError(null),
   };
 } 
