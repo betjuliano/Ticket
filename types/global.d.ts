@@ -131,6 +131,17 @@ declare global {
   
   // Notification types
   type NotificationType = 'info' | 'success' | 'warning' | 'error';
+  
+  // Agent types
+  type Agent = {
+    id: string;
+    name: string;
+    status: 'active' | 'standby' | 'compromised' | 'training';
+    location: string;
+    lastSeen: string;
+    missions: number;
+    risk: 'low' | 'medium' | 'high' | 'critical';
+  };
 }
 
 // Module augmentations
