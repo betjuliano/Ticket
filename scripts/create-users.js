@@ -73,8 +73,8 @@ async function createUsers() {
       }
     }
 
-    // Criar categorias padrão para Knowledge Base
-    console.log('📚 Criando categorias padrão para Knowledge Base...');
+    // Criar categorias padrão para Docs e IA da Adm
+    console.log('📚 Criando categorias padrão para Docs e IA da Adm...');
 
     const categories = [
       {
@@ -108,12 +108,12 @@ async function createUsers() {
     ];
 
     for (const categoryData of categories) {
-      const existingCategory = await prisma.knowledgeCategory.findUnique({
+      const existingCategory = await prisma.docsCategory.findUnique({
         where: { name: categoryData.name },
       });
 
       if (!existingCategory) {
-        await prisma.knowledgeCategory.create({
+        await prisma.docsCategory.create({
           data: categoryData,
         });
         console.log(`✅ Categoria "${categoryData.name}" criada!`);
@@ -128,7 +128,7 @@ async function createUsers() {
 
     // Exibir resumo
     const totalUsers = await prisma.user.count();
-    const totalCategories = await prisma.knowledgeCategory.count();
+    const totalCategories = await prisma.docsCategory.count();
 
     console.log('\n📊 RESUMO:');
     console.log(`👥 Total de usuários: ${totalUsers}`);

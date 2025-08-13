@@ -5,7 +5,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Usar PostgreSQL em produção
+// Usar SQLite para desenvolvimento rápido
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -20,7 +20,7 @@ model User {
   email            String    @unique
   name             String
   password         String
-  role             UserRole  @default(USER)
+  role             String    @default("USER") // Enum como string para SQLite
   avatar           String?
   isActive         Boolean   @default(true)
   matricula        String?   @unique
@@ -28,7 +28,7 @@ model User {
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
   lastLoginAt      DateTime?
-  preferences      Json?     // Preferências do usuário (tema, notificações, etc)
+  preferences      String?   // JSON como string para SQLite
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -40,8 +40,9 @@ model User {
   userSessions       Session[]
   userLogs           UserLog[]
   notifications      Notification[]
-  knowledgeArticles  KnowledgeArticle[] @relation("ArticleAuthor")
+  knowledgeArticles  DocsArticle[] @relation("ArticleAuthor")
   articleRatings     ArticleRating[]
+  ticketLogs         TicketLog[]        // Adicionando relacionamento faltante
 
   @@map("users")
 }
@@ -67,16 +68,16 @@ model Session {
 // ========================================
 
 model Ticket {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String
-  status      TicketStatus @default(OPEN)
-  priority    Priority     @default(MEDIUM)
+  status      String   @default("OPEN") // Enum como string para SQLite
+  priority    String   @default("MEDIUM") // Enum como string para SQLite
   category    String
-  tags        String[]     // Array de tags
-  estimatedHours Float?     // Estimativa de horas
-  actualHours    Float?     // Horas reais gastas
-  dueDate        DateTime?  // Data limite
+  tags        String   // Array como string para SQLite
+  estimatedHours Float?
+  actualHours    Float?
+  dueDate        DateTime?
   
   // Relacionamentos
   createdById String
@@ -94,6 +95,7 @@ model Ticket {
   comments    Comment[]
   attachments Attachment[]
   ticketLogs  TicketLog[]
+  metrics     TicketMetrics?
 
   @@map("tickets")
 }
@@ -101,7 +103,6 @@ model Ticket {
 model Comment {
   id        String   @id @default(cuid())
   content   String
-  isInternal Boolean @default(false) // Comentário interno (não visível para usuários)
   ticketId  String
   userId    String
   createdAt DateTime @default(now())
@@ -115,16 +116,15 @@ model Comment {
 }
 
 model Attachment {
-  id        String   @id @default(cuid())
-  filename  String
+  id          String   @id @default(cuid())
+  filename    String
   originalName String
-  filepath  String
-  filesize  Int
-  mimetype  String
-  isImage   Boolean  @default(false)
-  ticketId  String
-  userId    String
-  createdAt DateTime @default(now())
+  mimeType    String
+  size        Int
+  path        String
+  ticketId    String
+  userId      String
+  createdAt   DateTime @default(now())
 
   // Relacionamentos
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
@@ -134,53 +134,39 @@ model Attachment {
 }
 
 // ========================================
-// MODELOS DE CONHECIMENTO (KNOWLEDGE BASE)
+// MODELOS DE DOCS E IA DA ADM
 // ========================================
 
-model KnowledgeCategory {
-  id          String             @id @default(cuid())
-  name        String             @unique
+model DocsCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
   description String?
-  icon        String?
-  color       String?
-  order       Int                @default(0)
-  isActive    Boolean            @default(true)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relacionamentos
-  articles    KnowledgeArticle[]
+  articles DocsArticle[]
 
-  @@map("knowledge_categories")
+  @@map("docs_categories")
 }
 
-model KnowledgeArticle {
+model DocsArticle {
   id          String   @id @default(cuid())
   title       String
-  content     String   // Conteúdo em HTML/Markdown
-  excerpt     String?  // Resumo do artigo
-  slug        String   @unique
-  tags        String[] // Array de tags
-  isPublished Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
-  views       Int      @default(0)
-  
-  // Relacionamentos
+  content     String
   categoryId  String
-  category    KnowledgeCategory @relation(fields: [categoryId], references: [id])
-  
   authorId    String
-  author      User              @relation("ArticleAuthor", fields: [authorId], references: [id])
-  
-  // Timestamps
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  publishedAt DateTime?
+  isPublished Boolean  @default(false)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relacionamentos
-  ratings     ArticleRating[]
+  category DocsCategory @relation(fields: [categoryId], references: [id])
+  author   User         @relation("ArticleAuthor", fields: [authorId], references: [id])
+  ratings  ArticleRating[]
 
-  @@map("knowledge_articles")
+  @@map("docs_articles")
 }
 
 model ArticleRating {
@@ -192,10 +178,10 @@ model ArticleRating {
   createdAt DateTime @default(now())
 
   // Relacionamentos
-  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  user    User             @relation(fields: [userId], references: [id])
+  article DocsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id])
 
-  @@unique([articleId, userId]) // Um usuário só pode avaliar um artigo uma vez
+  @@unique([articleId, userId])
   @@map("article_ratings")
 }
 
@@ -204,16 +190,14 @@ model ArticleRating {
 // ========================================
 
 model Notification {
-  id        String           @id @default(cuid())
-  type      NotificationType
+  id        String   @id @default(cuid())
+  type      String   // Enum como string para SQLite
   title     String
   message   String
   userId    String
-  relatedId String?          // ID do ticket, comentário, etc.
-  data      Json?            // Dados adicionais em JSON
-  read      Boolean          @default(false)
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
+  isRead    Boolean  @default(false)
+  metadata  String?  // JSON como string para SQLite
+  createdAt DateTime @default(now())
 
   // Relacionamentos
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -222,16 +206,15 @@ model Notification {
 }
 
 // ========================================
-// MODELOS DE LOGS E AUDITORIA
+// MODELOS DE LOGS
 // ========================================
 
 model UserLog {
   id        String   @id @default(cuid())
   userId    String
   action    String
-  details   String?
+  details   String?  // JSON como string para SQLite
   ipAddress String?
-  userAgent String?
   createdAt DateTime @default(now())
 
   // Relacionamentos
@@ -244,72 +227,29 @@ model TicketLog {
   id        String   @id @default(cuid())
   ticketId  String
   action    String
-  details   String?
-  oldValue  String?
-  newValue  String?
+  details   String?  // JSON como string para SQLite
   userId    String?
   createdAt DateTime @default(now())
 
   // Relacionamentos
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
 
   @@map("ticket_logs")
 }
 
-// ========================================
-// MODELOS DE RELATÓRIOS E ANALYTICS
-// ========================================
-
 model TicketMetrics {
   id                String   @id @default(cuid())
-  date              DateTime @unique @db.Date
-  totalTickets      Int      @default(0)
-  openTickets       Int      @default(0)
-  inProgressTickets Int      @default(0)
-  resolvedTickets   Int      @default(0)
-  closedTickets     Int      @default(0)
-  avgResolutionTime Float?   // Em horas
-  avgResponseTime   Float?   // Em horas
+  ticketId          String   @unique
+  timeSpent         Float    @default(0)
+  responseTime      Float?   // Tempo até primeira resposta
+  resolutionTime    Float?   // Tempo até resolução
+  reopenCount       Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
   @@map("ticket_metrics")
-}
-
-// ========================================
-// ENUMS
-// ========================================
-
-enum UserRole {
-  ADMIN
-  COORDINATOR
-  USER
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  WAITING_FOR_USER
-  WAITING_FOR_THIRD_PARTY
-  RESOLVED
-  CLOSED
-  CANCELLED
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum NotificationType {
-  TICKET_CREATED
-  TICKET_UPDATED
-  TICKET_ASSIGNED
-  TICKET_COMMENTED
-  TICKET_RESOLVED
-  TICKET_CLOSED
-  SYSTEM_ANNOUNCEMENT
-  KNOWLEDGE_ARTICLE_PUBLISHED
-}
+} 

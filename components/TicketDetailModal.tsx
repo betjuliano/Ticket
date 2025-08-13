@@ -81,15 +81,15 @@ export function TicketDetailModal({
           <p className="text-sm text-neutral-300">{ticket.description}</p>
 
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-neutral-300">
-              <User className="w-4 h-4" /> {ticket.user.name}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <User className="w-4 h-4" /> {ticket.createdBy?.name || 'Usuário'}
             </div>
-            <div className="flex items-center gap-2 text-sm text-neutral-300">
-              <Mail className="w-4 h-4" /> {ticket.user.email}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Mail className="w-4 h-4" /> {ticket.createdBy?.email || 'N/A'}
             </div>
-            {ticket.user.phone && (
-              <div className="flex items-center gap-2 text-sm text-neutral-300">
-                <Phone className="w-4 h-4" /> {ticket.user.phone}
+            {ticket.createdBy?.phone && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Phone className="w-4 h-4" /> {ticket.createdBy.phone}
               </div>
             )}
           </div>
@@ -111,7 +111,7 @@ export function TicketDetailModal({
               <Archive className="w-4 h-4 mr-1" /> Arquivar
             </Button>
             <Button
-              onClick={() => onForward(ticket.id, ticket.assignedTo || '')}
+              onClick={() => onForward(ticket.id, ticket.assignedToId || '')}
               disabled={isLoading}
             >
               <Forward className="w-4 h-4 mr-1" /> Encaminhar

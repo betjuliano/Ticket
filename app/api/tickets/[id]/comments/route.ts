@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createCommentSchema } from '@/lib/validations';
+import { createCommentSchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/tickets/[id]/comments - Listar comentários do ticket
@@ -148,7 +148,6 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        isInternal: finalIsInternal,
         ticketId,
         userId,
       },
@@ -184,7 +183,7 @@ export async function POST(
     // TODO: Criar notificação para usuários relevantes
     // Isso será implementado na fase de notificações
 
-    return createSuccessResponse(comment, 'Comentário criado com sucesso', 201);
+    return createSuccessResponse(comment, 'Comentário criado com sucesso');
   } catch (error) {
     console.error('Erro ao criar comentário:', error);
     return createErrorResponse('Erro interno do servidor', 500);

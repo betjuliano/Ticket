@@ -1,92 +1,108 @@
 'use client';
 
 import { useState } from 'react';
-import { IntelligenceReport } from '@/types/global';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Search,
-  FileText,
+  Filter,
+  MoreHorizontal,
   Eye,
   Download,
-  Filter,
+  Share2,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  FileText,
   Globe,
   Shield,
-  AlertTriangle,
 } from 'lucide-react';
+
+interface IntelligenceReport {
+  id: string;
+  title: string;
+  type: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  analyst: string;
+  confidence: number;
+  threatLevel: string;
+  summary: string;
+  tags: string[];
+  classification?: string;
+  source?: string;
+  location?: string;
+  date?: string;
+  threat?: string;
+}
 
 export default function IntelligencePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReport, setSelectedReport] =
     useState<IntelligenceReport | null>(null);
 
-  const reports = [
+  const reports: IntelligenceReport[] = [
     {
-      id: 'INT-2025-001',
-      title: 'CYBERCRIME NETWORK ANALYSIS',
-      classification: 'TOP SECRET',
-      source: 'SIGINT',
-      location: 'Eastern Europe',
-      date: '2025-06-17',
-      status: 'verified',
-      threat: 'high',
-      summary:
-        'Detailed analysis of emerging cybercrime syndicate operating across multiple jurisdictions',
-      tags: ['cybercrime', 'international', 'financial'],
-    },
-    {
-      id: 'INT-2025-002',
-      title: 'ROGUE AGENT COMMUNICATIONS',
-      classification: 'SECRET',
-      source: 'HUMINT',
-      location: 'Berlin',
-      date: '2025-06-16',
-      status: 'pending',
-      threat: 'critical',
-      summary:
-        'Intercepted communications suggesting potential security breach in European operations',
-      tags: ['internal', 'security', 'communications'],
-    },
-    {
-      id: 'INT-2025-003',
-      title: 'ARMS TRAFFICKING ROUTES',
-      classification: 'CONFIDENTIAL',
-      source: 'OSINT',
-      location: 'Middle East',
-      date: '2025-06-15',
-      status: 'verified',
-      threat: 'medium',
-      summary:
-        'Updated intelligence on weapons smuggling corridors through Mediterranean region',
-      tags: ['trafficking', 'weapons', 'maritime'],
-    },
-    {
-      id: 'INT-2025-004',
-      title: 'TERRORIST CELL SURVEILLANCE',
-      classification: 'TOP SECRET',
-      source: 'HUMINT',
-      location: 'North Africa',
-      date: '2025-06-14',
+      id: 'INT-001',
+      title: 'Análise de Vulnerabilidades de Rede',
+      type: 'vulnerability',
+      priority: 'HIGH',
       status: 'active',
-      threat: 'critical',
-      summary:
-        'Ongoing surveillance of suspected terrorist cell planning coordinated attacks',
-      tags: ['terrorism', 'surveillance', 'coordinated'],
+      createdAt: '2025-01-15T10:30:00Z',
+      updatedAt: '2025-01-15T14:45:00Z',
+      analyst: 'Ana Silva',
+      confidence: 85,
+      threatLevel: 'HIGH',
+      summary: 'Identificadas múltiplas vulnerabilidades críticas na infraestrutura de rede.',
+      tags: ['rede', 'vulnerabilidade', 'crítico'],
+      classification: 'CONFIDENCIAL',
+      source: 'Scanner de Rede',
+      location: 'Rede Corporativa',
+      date: '2025-01-15',
+      threat: 'Alto',
     },
     {
-      id: 'INT-2025-005',
-      title: 'DIPLOMATIC INTELLIGENCE BRIEF',
-      classification: 'SECRET',
-      source: 'DIPLOMATIC',
-      location: 'Asia Pacific',
-      date: '2025-06-13',
-      status: 'verified',
-      threat: 'low',
-      summary:
-        'Political developments affecting regional security and operational considerations',
-      tags: ['diplomatic', 'political', 'regional'],
+      id: 'INT-002',
+      title: 'Monitoramento de Tráfego Anômalo',
+      type: 'monitoring',
+      priority: 'MEDIUM',
+      status: 'active',
+      createdAt: '2025-01-14T16:20:00Z',
+      updatedAt: '2025-01-15T09:15:00Z',
+      analyst: 'Carlos Mendes',
+      confidence: 72,
+      threatLevel: 'MEDIUM',
+      summary: 'Detectado aumento significativo no tráfego de rede durante horário não comercial.',
+      tags: ['tráfego', 'anomalia', 'monitoramento'],
+      classification: 'INTERNO',
+      source: 'IDS/IPS',
+      location: 'Gateway Principal',
+      date: '2025-01-14',
+      threat: 'Médio',
+    },
+    {
+      id: 'INT-003',
+      title: 'Relatório de Incidentes de Segurança',
+      type: 'incident',
+      priority: 'HIGH',
+      status: 'resolved',
+      createdAt: '2025-01-13T08:45:00Z',
+      updatedAt: '2025-01-14T12:30:00Z',
+      analyst: 'Roberto Lima',
+      confidence: 95,
+      threatLevel: 'HIGH',
+      summary: 'Investigação completa de tentativa de acesso não autorizado ao sistema.',
+      tags: ['incidente', 'acesso', 'investigação'],
+      classification: 'RESTRITO',
+      source: 'Logs de Sistema',
+      location: 'Servidor Principal',
+      date: '2025-01-13',
+      threat: 'Alto',
     },
   ];
 
@@ -269,15 +285,11 @@ export default function IntelligencePage() {
 
                   <div className="flex flex-col sm:items-end gap-2">
                     <div className="flex flex-wrap gap-2">
-                      <Badge
-                        className={getClassificationColor(
-                          report.classification
-                        )}
-                      >
-                        {report.classification}
+                      <Badge className="bg-orange-500/20 text-orange-500">
+                        {report.classification || 'N/A'}
                       </Badge>
-                      <Badge className={getThreatColor(report.threat)}>
-                        {report.threat.toUpperCase()}
+                      <Badge className="bg-red-500/20 text-red-500">
+                        {report.threat || 'N/A'}
                       </Badge>
                       <Badge className={getStatusColor(report.status)}>
                         {report.status.toUpperCase()}
@@ -334,13 +346,13 @@ export default function IntelligencePage() {
                     <div className="flex gap-2">
                       <Badge
                         className={getClassificationColor(
-                          selectedReport.classification
+                          selectedReport.classification || 'N/A'
                         )}
                       >
-                        {selectedReport.classification}
+                        {selectedReport.classification || 'N/A'}
                       </Badge>
-                      <Badge className={getThreatColor(selectedReport.threat)}>
-                        THREAT: {selectedReport.threat.toUpperCase()}
+                      <Badge className={getThreatColor(selectedReport.threat || 'N/A')}>
+                        {(selectedReport.threat || 'N/A').toUpperCase()}
                       </Badge>
                     </div>
                   </div>
@@ -405,19 +417,19 @@ export default function IntelligencePage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-neutral-400">Threat Level</span>
                         <Badge
-                          className={getThreatColor(selectedReport.threat)}
+                          className={getThreatColor(selectedReport.threat || 'medium')}
                         >
-                          {selectedReport.threat.toUpperCase()}
+                          {(selectedReport.threat || 'medium').toUpperCase()}
                         </Badge>
                       </div>
                       <div className="w-full bg-neutral-800 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all duration-300 ${
-                            selectedReport.threat === 'critical'
+                            (selectedReport.threat || 'medium') === 'critical'
                               ? 'bg-red-500 w-full'
-                              : selectedReport.threat === 'high'
+                              : (selectedReport.threat || 'medium') === 'high'
                                 ? 'bg-orange-500 w-3/4'
-                                : selectedReport.threat === 'medium'
+                                : (selectedReport.threat || 'medium') === 'medium'
                                   ? 'bg-neutral-400 w-1/2'
                                   : 'bg-white w-1/4'
                           }`}

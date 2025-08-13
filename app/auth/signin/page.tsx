@@ -725,7 +725,9 @@ export default function AuthPage() {
               <p className="text-blue-200 text-sm">
                 Problemas para acessar?{' '}
                 <a
-                  href="#"
+                  href="https://wa.me/5555999631365"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-300 hover:text-white underline transition-colors"
                 >
                   Entre em contato

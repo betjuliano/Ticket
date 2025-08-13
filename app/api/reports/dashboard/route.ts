@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
         inProgress: inProgressTickets,
         resolved: resolvedTickets,
         closed: closedTickets,
-        avgResolutionTime: avgResolutionTime[0]?.avg_hours || 0,
+        avgResolutionTime: (avgResolutionTime as any[])[0]?.avg_hours || 0,
       },
 
       charts: {

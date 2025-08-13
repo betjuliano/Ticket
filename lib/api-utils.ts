@@ -24,9 +24,9 @@ export function createSuccessResponse<T>(
   return NextResponse.json({
     success: true,
     data,
-    message,
+    message: message || '',
     meta,
-  });
+  } as ApiResponse<T>);
 }
 
 // Função para criar respostas de erro

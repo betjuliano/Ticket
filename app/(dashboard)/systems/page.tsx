@@ -432,7 +432,7 @@ export default function SystemsPage() {
                 <Textarea
                   placeholder="Prompt principal para a IA..."
                   className="bg-slate-800 border-neutral-600 text-white min-h-[120px]"
-                  defaultValue="Você é um assistente especializado em suporte técnico. Analise o ticket e forneça uma resposta profissional e útil baseada na knowledge base disponível. Seja claro, objetivo e empático."
+                  defaultValue="Você é um assistente especializado em suporte técnico. Analise o ticket e forneça uma resposta profissional e útil baseada na docs e IA da adm disponível. Seja claro, objetivo e empático."
                 />
               </div>
               <div>

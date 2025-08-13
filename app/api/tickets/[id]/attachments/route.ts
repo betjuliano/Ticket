@@ -185,10 +185,9 @@ export async function POST(
       data: {
         filename,
         originalName: file.name,
-        filepath: `/uploads/attachments/${filename}`,
-        filesize: file.size,
-        mimetype: file.type,
-        isImage,
+        path: `/uploads/attachments/${filename}`,
+        size: file.size,
+        mimeType: file.type,
         ticketId,
         userId,
       },
@@ -222,8 +221,7 @@ export async function POST(
 
     return createSuccessResponse(
       attachment,
-      'Arquivo enviado com sucesso',
-      201
+      'Arquivo enviado com sucesso'
     );
   } catch (error) {
     console.error('Erro ao fazer upload:', error);

@@ -17,7 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": true, // ⚠️ CAUSA DOS ERROS UI - MUITO RIGOROSO
     
     // Additional Checks
     "noUnusedLocals": false,

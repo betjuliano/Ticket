@@ -18,17 +18,6 @@ const nextConfig = {
       'recharts'
     ],
     
-    // Configurações de servidor
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      'bcryptjs',
-      'nodemailer',
-      'googleapis'
-    ],
-    
-    // Configurações de bundling
-    bundlePagesRouterDependencies: true,
-    
     // Configurações de TypeScript
     typedRoutes: true
   },
@@ -133,7 +122,7 @@ const nextConfig = {
   compress: true,
   
   // Configurações de pacotes externos para servidor
-  serverExternalPackages: [
+  serverComponentsExternalPackages: [
     '@prisma/client',
     'bcryptjs',
     'nodemailer',

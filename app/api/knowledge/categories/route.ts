@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createKnowledgeCategorySchema } from '@/lib/validations';
+import { createDocsCategorySchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/knowledge/categories - Listar categorias
@@ -18,24 +18,24 @@ export async function GET(request: NextRequest) {
       searchParams.get('includeArticleCount') === 'true';
 
     // Buscar categorias
-    const categories = await prisma.knowledgeCategory.findMany({
-      orderBy: { order: 'asc' },
+    const categories = await prisma.docsCategory.findMany({
+      orderBy: { name: 'asc' },
       include: includeArticleCount
         ? {
             _count: {
               select: {
                 articles:
                   session.user.role === 'USER'
-                    ? { where: { published: true } }
+                    ? { where: { isPublished: true } }
                     : true,
               },
             },
           }
-        : undefined,
+        : null,
     });
 
     // Formatar resposta
-    const formattedCategories = categories.map(category => ({
+    const formattedCategories = categories.map((category: any) => ({
       ...category,
       articleCount: includeArticleCount ? category._count?.articles : undefined,
       _count: undefined,
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validar dados
-    const validationResult = createKnowledgeCategorySchema.safeParse(body);
+    const validationResult = createDocsCategorySchema.safeParse(body);
     if (!validationResult.success) {
       return createErrorResponse(
         'Dados inválidos',
@@ -73,10 +73,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, icon, color, order } = validationResult.data;
+    const { name, description } = validationResult.data;
 
     // Verificar se nome já existe
-    const existingCategory = await prisma.knowledgeCategory.findUnique({
+    const existingCategory = await prisma.docsCategory.findUnique({
       where: { name },
     });
 
@@ -84,27 +84,15 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Já existe uma categoria com este nome', 400);
     }
 
-    // Determinar ordem se não fornecida
-    let finalOrder = order;
-    if (!finalOrder) {
-      const lastCategory = await prisma.knowledgeCategory.findFirst({
-        orderBy: { order: 'desc' },
-      });
-      finalOrder = (lastCategory?.order || 0) + 1;
-    }
-
     // Criar categoria
-    const category = await prisma.knowledgeCategory.create({
+    const category = await prisma.docsCategory.create({
       data: {
         name,
-        description,
-        icon,
-        color,
-        order: finalOrder,
+        description: description || null,
       },
     });
 
-    return createSuccessResponse(category, 'Categoria criada com sucesso', 201);
+    return createSuccessResponse(category, 'Categoria criada com sucesso');
   } catch (error) {
     console.error('Erro ao criar categoria:', error);
     return createErrorResponse('Erro interno do servidor', 500);

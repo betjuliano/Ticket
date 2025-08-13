@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import {
   Ticket,
@@ -35,92 +36,62 @@ import {
   TicketStatus,
   TicketPriority,
 } from '@/types/ticket';
+import { TicketResponseModal } from '@/components/ticket-response-modal';
 
-type TicketCategory = 'Sistema' | 'Rede' | 'Hardware' | 'Software';
+type TicketCategory = 'Coordenação' | 'Outros';
 
 // Constantes
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },
-  { value: 'open', label: 'Abertos' },
-  { value: 'in_progress', label: 'Em Andamento' },
-  { value: 'resolved', label: 'Resolvidos' },
+  { value: 'OPEN', label: 'Abertos' },
+  { value: 'IN_PROGRESS', label: 'Em Andamento' },
+  { value: 'RESOLVED', label: 'Resolvidos' },
 ] as const;
 
 const PRIORITY_OPTIONS = [
   { value: 'all', label: 'Todas' },
-  { value: 'high', label: 'Alta' },
-  { value: 'medium', label: 'Média' },
-  { value: 'low', label: 'Baixa' },
+  { value: 'HIGH', label: 'Alta' },
+  { value: 'MEDIUM', label: 'Média' },
+  { value: 'LOW', label: 'Baixa' },
 ] as const;
 
 const STATUS_STYLES = {
-  open: 'bg-blue-500/20 text-blue-400',
-  in_progress: 'bg-yellow-600/20 text-yellow-300',
-  resolved: 'bg-green-600/20 text-green-300',
+  OPEN: 'bg-blue-500/20 text-blue-400',
+  IN_PROGRESS: 'bg-yellow-600/20 text-yellow-300',
+  RESOLVED: 'bg-green-600/20 text-green-300',
 } as const;
 
 const PRIORITY_STYLES = {
-  high: 'bg-red-500/20 text-red-500',
-  medium: 'bg-orange-500/20 text-orange-500',
-  low: 'bg-gray-500/20 text-gray-400',
+  HIGH: 'bg-red-500/20 text-red-500',
+  MEDIUM: 'bg-orange-500/20 text-orange-500',
+  LOW: 'bg-gray-500/20 text-gray-400',
 } as const;
 
-// Dados iniciais de exemplo
-const initialTickets: Ticket[] = [
-  {
-    id: 'TKT-001',
-    title: 'Sistema de login não funciona',
-    description: 'Usuários não conseguem fazer login no sistema',
-    status: 'open',
-    priority: 'high',
-    category: 'Sistema',
-    createdBy: '12345',
-    createdAt: '2025-01-20 10:00',
-    updatedAt: '2025-01-20 10:00',
-    user: {
-      name: 'João Silva',
-      matricula: '12345',
-      email: 'joao.silva@empresa.com',
-      phone: '(11) 99999-9999',
-      admissionDate: '2023-01-15',
-      sector: 'TI',
-    },
-    responses: [],
-  },
-  {
-    id: 'TKT-002',
-    title: 'Lentidão na rede',
-    description: 'Rede corporativa está muito lenta',
-    status: 'in_progress',
-    priority: 'medium',
-    category: 'Rede',
-    createdBy: '67890',
-    createdAt: '2025-01-19 14:30',
-    updatedAt: '2025-01-20 09:15',
-    user: {
-      name: 'Maria Santos',
-      matricula: '67890',
-      email: 'maria.santos@empresa.com',
-      phone: '(11) 88888-8888',
-      admissionDate: '2022-05-10',
-      sector: 'Financeiro',
-    },
-    responses: [],
-  },
-];
+// Dados iniciais vazios - serão carregados do banco
+const initialTickets: Ticket[] = [];
 
 export default function CoordinatorTicketsPage() {
   const { data: session } = useSession();
   const userRole = session?.user?.role;
   const isAdmin = userRole === 'ADMIN';
   const isCoordinator = userRole === 'COORDINATOR';
+  const isManager = userRole === 'MANAGER';
   const isUser = userRole === 'USER';
-  const canCreateTickets = isAdmin || isCoordinator;
-  const canEditAllTickets = isAdmin || isCoordinator;
+  
+  // Permissões ajustadas para permitir que usuários criem seus próprios tickets
+  const canCreateTickets = isAdmin || isCoordinator || isManager || isUser;
+  const canEditAllTickets = isAdmin || isCoordinator || isManager;
+  const canEditOwnTickets = isUser; // Usuários podem editar seus próprios tickets
   const canDeleteTickets = isAdmin;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [ticketToForward, setTicketToForward] = useState<string | null>(null);
+  const [selectedSupportUser, setSelectedSupportUser] = useState<string>('');
+  const [isForwarding, setIsForwarding] = useState(false);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [ticketToRespond, setTicketToRespond] = useState<any>(null);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -129,11 +100,13 @@ export default function CoordinatorTicketsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [supportUsers, setSupportUsers] = useState<any[]>([]);
   const [newTicketForm, setNewTicketForm] = useState({
     title: '',
     description: '',
-    priority: 'medium' as TicketPriority,
-    category: 'Sistema' as TicketCategory,
+    priority: 'MEDIUM' as TicketPriority,
+    category: 'Coordenação' as TicketCategory,
     userType: 'existing' as 'existing' | 'new',
     existingUserId: '',
     newUser: {
@@ -145,6 +118,65 @@ export default function CoordinatorTicketsPage() {
     },
   });
 
+  // Carregar tickets do banco de dados
+  useEffect(() => {
+    const fetchTickets = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch('/api/tickets');
+        if (response.ok) {
+          const data = await response.json();
+          setTickets(data.tickets || []);
+        } else {
+          setError('Erro ao carregar tickets');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar tickets:', error);
+        setError('Erro ao carregar tickets');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Carregar usuários para admins/coordenadores
+    const fetchUsers = async () => {
+      if (!isAdmin && !isCoordinator && !isManager) return;
+      
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar usuários:', error);
+      }
+    };
+
+    // Carregar usuários de suporte
+    const fetchSupportUsers = async () => {
+      if (!isAdmin && !isCoordinator) return;
+      
+      try {
+        const response = await fetch('/api/users/support');
+        if (response.ok) {
+          const data = await response.json();
+          setSupportUsers(data.data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar usuários de suporte:', error);
+      }
+    };
+
+    if (session?.user) {
+      fetchTickets();
+      fetchUsers();
+      fetchSupportUsers();
+    }
+  }, [session?.user, isAdmin, isCoordinator, isManager]);
+
   // Memoização para performance
   const filteredTickets = useMemo(() => {
     let ticketsToFilter = tickets;
@@ -152,7 +184,7 @@ export default function CoordinatorTicketsPage() {
     // Se for usuário comum, mostrar apenas seus próprios tickets
     if (isUser && session?.user?.id) {
       ticketsToFilter = tickets.filter(
-        ticket => ticket.createdBy === session.user.id
+        ticket => ticket.createdById === session.user.id
       );
     }
 
@@ -160,7 +192,7 @@ export default function CoordinatorTicketsPage() {
       const matchesSearch =
         ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.user.name.toLowerCase().includes(searchTerm.toLowerCase());
+        ticket.createdBy?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus =
         selectedStatus === 'all' || ticket.status === selectedStatus;
       const matchesPriority =
@@ -177,195 +209,284 @@ export default function CoordinatorTicketsPage() {
     session?.user?.id,
   ]);
 
+  // Função para verificar se o usuário pode editar um ticket específico
+  const canEditTicket = (ticket: Ticket) => {
+    if (canEditAllTickets) return true;
+    if (canEditOwnTickets && ticket.createdBy?.id === session?.user?.id) return true;
+    return false;
+  };
+
   // Função para criar novo chamado
-  const handleCreateTicket = () => {
+  const handleCreateTicket = async () => {
     if (!newTicketForm.title || !newTicketForm.description) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
-    if (newTicketForm.userType === 'new') {
-      if (
-        !newTicketForm.newUser.name ||
-        !newTicketForm.newUser.email ||
-        !newTicketForm.newUser.matricula
-      ) {
-        alert('Por favor, preencha todos os dados do novo usuário.');
+    try {
+      setIsLoading(true);
+
+      // Para usuários regulares, usar seus próprios dados automaticamente
+      if (isUser && session?.user) {
+        const response = await fetch('/api/tickets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: newTicketForm.title,
+            description: newTicketForm.description,
+            priority: newTicketForm.priority,
+            category: newTicketForm.category,
+            createdById: session.user.id,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTickets(prev => [data.ticket, ...prev]);
+          setShowNewTicketModal(false);
+          setNewTicketForm({
+            title: '',
+            description: '',
+            priority: 'MEDIUM',
+            category: 'Coordenação',
+            userType: 'existing',
+            existingUserId: '',
+            newUser: {
+              name: '',
+              email: '',
+              phone: '',
+              sector: '',
+              matricula: '',
+            },
+          });
+          alert('Chamado criado com sucesso!');
+        } else {
+          alert('Erro ao criar chamado. Tente novamente.');
+        }
         return;
       }
-    } else if (!newTicketForm.existingUserId) {
-      alert('Por favor, selecione um usuário existente.');
-      return;
-    }
 
-    const newTicketId = `TKT-${String(tickets.length + 1).padStart(3, '0')}`;
-    const currentDate = new Date().toLocaleString('pt-BR');
+      // Lógica para coordenadores e admins (mantém a seleção de usuário)
+      const selectedUserId = newTicketForm.existingUserId || session?.user?.id || 'admin';
+      
+      const response = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newTicketForm.title,
+          description: newTicketForm.description,
+          priority: newTicketForm.priority,
+          category: newTicketForm.category,
+          createdById: selectedUserId,
+        }),
+      });
 
-    let ticketUser: TicketUser;
-
-    if (newTicketForm.userType === 'new') {
-      // Criar novo usuário
-      ticketUser = {
-        name: newTicketForm.newUser.name,
-        matricula: newTicketForm.newUser.matricula,
-        email: newTicketForm.newUser.email,
-        phone: newTicketForm.newUser.phone,
-        sector: newTicketForm.newUser.sector,
-        admissionDate: currentDate.split(' ')[0],
-      };
-
-      // Simular envio de email de recuperação de senha
-      console.log(`Email de recuperação enviado para: ${ticketUser.email}`);
-      alert(
-        `Novo usuário criado! Email de configuração de senha enviado para ${ticketUser.email}`
-      );
-    } else {
-      // Usar usuário existente
-      const existingTicket = tickets.find(
-        t => t.user.matricula === newTicketForm.existingUserId
-      );
-      if (!existingTicket) {
-        alert('Usuário não encontrado.');
-        return;
+      if (response.ok) {
+        const data = await response.json();
+        setTickets(prev => [data.ticket, ...prev]);
+        setShowNewTicketModal(false);
+        setNewTicketForm({
+          title: '',
+          description: '',
+          priority: 'MEDIUM',
+          category: 'Coordenação',
+          userType: 'existing',
+          existingUserId: '',
+          newUser: {
+            name: '',
+            email: '',
+            phone: '',
+            sector: '',
+            matricula: '',
+          },
+        });
+        alert('Chamado criado com sucesso!');
+      } else {
+        alert('Erro ao criar chamado. Tente novamente.');
       }
-      ticketUser = existingTicket.user;
+    } catch (error) {
+      console.error('Erro ao criar ticket:', error);
+      alert('Erro ao criar chamado. Tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
-
-    const newTicket: Ticket = {
-      id: newTicketId,
-      title: newTicketForm.title,
-      description: newTicketForm.description,
-      status: 'open',
-      priority: newTicketForm.priority,
-      category: newTicketForm.category,
-      createdBy: ticketUser.matricula,
-      createdAt: currentDate,
-      updatedAt: currentDate,
-      user: ticketUser,
-      responses: [],
-    };
-
-    setTickets(prev => [newTicket, ...prev]);
-
-    // Resetar formulário
-    setNewTicketForm({
-      title: '',
-      description: '',
-      priority: 'medium',
-      category: 'Sistema',
-      userType: 'existing',
-      existingUserId: '',
-      newUser: {
-        name: '',
-        email: '',
-        phone: '',
-        sector: '',
-        matricula: '',
-      },
-    });
-
-    setShowNewTicketModal(false);
-    alert('Chamado criado com sucesso!');
   };
 
-  // Funções otimizadas com useCallback (manter apenas esta versão)
-  const handleArchiveTicket = useCallback(async (ticketId: string) => {
-    setIsLoading(true);
-    setError(null);
+  // Função para editar ticket
+  const handleEditTicket = async (ticket: Ticket) => {
+    if (!canEditTicket(ticket)) {
+      alert('Você não tem permissão para editar este ticket.');
+      return;
+    }
+    
+    try {
+      // Implementar modal de edição ou navegar para página de edição
+      console.log('Editando ticket:', ticket.id);
+      
+      // Por enquanto, vamos apenas atualizar o status para IN_PROGRESS
+      const response = await fetch(`/api/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'IN_PROGRESS',
+        }),
+      });
+
+      if (response.ok) {
+        // Atualizar o ticket na lista local
+        setTickets(prev =>
+          prev.map(t =>
+            t.id === ticket.id
+              ? { ...t, status: 'IN_PROGRESS' as TicketStatus }
+              : t
+          )
+        );
+        alert('Ticket atualizado com sucesso!');
+      } else {
+        alert('Erro ao atualizar ticket.');
+      }
+    } catch (error) {
+      console.error('Erro ao editar ticket:', error);
+      alert('Erro ao editar ticket.');
+    }
+  };
+
+  // Função para arquivar ticket
+  const handleArchiveTicket = async (ticketId: string) => {
     try {
       const response = await fetch(`/api/tickets/${ticketId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'resolved' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'RESOLVED',
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Falha ao arquivar ticket');
+      if (response.ok) {
+        setTickets(prev =>
+          prev.map(ticket =>
+            ticket.id === ticketId
+              ? { ...ticket, status: 'RESOLVED' as TicketStatus }
+              : ticket
+          )
+        );
+        alert('Ticket arquivado com sucesso!');
+      } else {
+        alert('Erro ao arquivar ticket.');
       }
-
-      setTickets(prev =>
-        prev.map(t =>
-          t.id === ticketId ? { ...t, status: 'resolved' as TicketStatus } : t
-        )
-      );
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro desconhecido');
-    } finally {
-      setIsLoading(false);
+      console.error('Erro ao arquivar ticket:', error);
+      alert('Erro ao arquivar ticket.');
     }
-  }, []);
+  };
 
-  const handleForwardTicket = useCallback(
-    async (ticketId: string, assignedTo: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/tickets/${ticketId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assignedTo }),
-        });
+  // Função para encaminhar ticket
+  const handleForwardTicket = async (ticketId: string) => {
+    setTicketToForward(ticketId);
+    setShowForwardModal(true);
+  };
 
-        if (!response.ok) {
-          throw new Error('Falha ao encaminhar ticket');
-        }
-
-        alert('Ticket encaminhado com sucesso!');
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Erro desconhecido');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
-
-  const handleEditTicket = useCallback((ticketId: string) => {
-    // Implementar modal de edição ou redirecionamento
-    alert(
-      `Funcionalidade de edição será implementada para o ticket: ${ticketId}`
-    );
-  }, []);
-
-  const handleDeleteTicket = useCallback(async (ticketId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este ticket?')) {
+  // Função para confirmar encaminhamento
+  const handleConfirmForward = async () => {
+    if (!selectedSupportUser) {
+      alert('Por favor, selecione um usuário de suporte.');
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (!ticketToForward) {
+      alert('Erro: Ticket não identificado.');
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/tickets/${ticketId}`, {
-        method: 'DELETE',
+      setIsForwarding(true);
+      console.log(`Encaminhando ticket ${ticketToForward} para usuário ${selectedSupportUser}`);
+      
+      const response = await fetch(`/api/tickets/${ticketToForward}/forward`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assignedToId: selectedSupportUser,
+          status: 'IN_PROGRESS',
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Falha ao excluir ticket');
+      if (response.ok) {
+        alert('Ticket encaminhado com sucesso!');
+        // Recarregar tickets para mostrar mudanças
+        const ticketsResponse = await fetch('/api/tickets');
+        if (ticketsResponse.ok) {
+          const data = await ticketsResponse.json();
+          setTickets(data.tickets || []);
+        }
+        // Fechar modal
+        setShowForwardModal(false);
+        setTicketToForward(null);
+        setSelectedSupportUser('');
+      } else {
+        const errorData = await response.json();
+        alert(`Erro ao encaminhar ticket: ${errorData.error || 'Erro desconhecido'}`);
       }
-
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
-      setSelectedTicket(null);
-      alert('Ticket excluído com sucesso!');
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro desconhecido');
+      console.error('Erro ao encaminhar ticket:', error);
+      alert('Erro ao encaminhar ticket.');
     } finally {
-      setIsLoading(false);
+      setIsForwarding(false);
     }
-  }, []);
+  };
+
+  const handleDeleteTicket = useCallback(async (ticketId: string) => {
+    if (!canDeleteTickets) {
+      alert('Você não tem permissão para excluir tickets.');
+      return;
+    }
+
+    if (confirm('Tem certeza que deseja excluir este ticket?')) {
+      try {
+        const response = await fetch(`/api/tickets/${ticketId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setTickets(prev => prev.filter(t => t.id !== ticketId));
+          alert('Ticket excluído com sucesso!');
+        } else {
+          alert('Erro ao excluir ticket.');
+        }
+      } catch (error) {
+        console.error('Erro ao excluir ticket:', error);
+        alert('Erro ao excluir ticket.');
+      }
+    }
+  }, [canDeleteTickets]);
 
   const handleSendEmail = useCallback((ticket: Ticket) => {
     const subject = encodeURIComponent(`Ticket ${ticket.id}: ${ticket.title}`);
     const body = encodeURIComponent(
-      `Olá ${ticket.user.name},\n\nSeu ticket foi atualizado:\n\nTítulo: ${ticket.title}\nDescrição: ${ticket.description}\nStatus: ${ticket.status}\nPrioridade: ${ticket.priority}\n\nAtenciosamente,\nEquipe de Suporte`
+      `Olá ${ticket.createdBy?.name},\n\nSeu ticket foi atualizado:\n\nTítulo: ${ticket.title}\nDescrição: ${ticket.description}\nStatus: ${ticket.status}\nPrioridade: ${ticket.priority}\n\nAtenciosamente,\nEquipe de Suporte`
     );
-    const mailtoLink = `mailto:${ticket.user.email}?subject=${subject}&body=${body}`;
+    const mailtoLink = `mailto:${ticket.createdBy?.email}?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
   }, []);
 
   const handleSendWhatsApp = useCallback((ticket: Ticket) => {
-    const phone = ticket.user.phone.replace(/\D/g, ''); // Remove caracteres não numéricos
+    const phone = ticket.createdBy?.phone?.replace(/\D/g, '') || ''; // Remove caracteres não numéricos
+    if (!phone) {
+      alert('Telefone não disponível para este usuário.');
+      return;
+    }
     const message = encodeURIComponent(
-      `Olá ${ticket.user.name}! Seu ticket ${ticket.id} foi atualizado. Título: ${ticket.title}. Status: ${ticket.status}. Prioridade: ${ticket.priority}.`
+      `Olá ${ticket.createdBy?.name}! Seu ticket ${ticket.id} foi atualizado. Título: ${ticket.title}. Status: ${ticket.status}. Prioridade: ${ticket.priority}.`
     );
     const whatsappLink = `https://wa.me/55${phone}?text=${message}`;
     window.open(whatsappLink, '_blank');
@@ -373,10 +494,10 @@ export default function CoordinatorTicketsPage() {
 
   // Componente para Badge de Status
   const StatusBadge = ({ status }: { status: TicketStatus }) => (
-    <Badge className={STATUS_STYLES[status]}>
-      {status === 'open'
+    <Badge className={STATUS_STYLES[status as keyof typeof STATUS_STYLES] || 'bg-gray-500/20 text-gray-400'}>
+      {status === 'OPEN'
         ? 'ABERTO'
-        : status === 'in_progress'
+        : status === 'IN_PROGRESS'
           ? 'EM ANDAMENTO'
           : 'RESOLVIDO'}
     </Badge>
@@ -384,7 +505,7 @@ export default function CoordinatorTicketsPage() {
 
   // Componente para Badge de Prioridade
   const PriorityBadge = ({ priority }: { priority: TicketPriority }) => (
-    <Badge className={PRIORITY_STYLES[priority]}>
+    <Badge className={PRIORITY_STYLES[priority as keyof typeof PRIORITY_STYLES] || 'bg-gray-500/20 text-gray-400'}>
       {priority.toUpperCase()}
     </Badge>
   );
@@ -398,6 +519,55 @@ export default function CoordinatorTicketsPage() {
         'Com base no problema relatado, sugiro verificar: 1) Se o usuário está usando as credenciais corretas, 2) Se não há bloqueio na conta, 3) Verificar logs do sistema de autenticação.'
       );
     }, 2000);
+  };
+
+  // Função para responder ticket (usuários de suporte)
+  const handleRespondTicket = async (ticketId: string) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setTicketToRespond(ticket);
+      setShowResponseModal(true);
+    }
+  };
+
+  // Função para enviar resposta
+  const handleSendResponse = async (response: string, action: 'respond' | 'return_to_coordination') => {
+    if (!ticketToRespond) return;
+
+    try {
+      const apiResponse = await fetch(`/api/tickets/${ticketToRespond.id}/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          response,
+          action,
+        }),
+      });
+
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        alert(data.message || 'Resposta enviada com sucesso!');
+        
+        // Recarregar tickets
+        const ticketsResponse = await fetch('/api/tickets');
+        if (ticketsResponse.ok) {
+          const ticketsData = await ticketsResponse.json();
+          setTickets(ticketsData.tickets || []);
+        }
+        
+        // Fechar modal
+        setShowResponseModal(false);
+        setTicketToRespond(null);
+      } else {
+        const errorData = await apiResponse.json();
+        alert(`Erro ao enviar resposta: ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar resposta:', error);
+      alert('Erro ao enviar resposta.');
+    }
   };
 
   return (
@@ -417,6 +587,15 @@ export default function CoordinatorTicketsPage() {
             <Filter className="w-4 h-4 mr-2" />
             Filtros
           </Button>
+          {(isAdmin || isCoordinator || isManager) && (
+            <Button
+              onClick={() => window.location.href = '/users'}
+              className="tactical-button bg-blue-600 hover:bg-blue-700"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Criar Usuário Suporte
+            </Button>
+          )}
           {canCreateTickets && (
             <Button
               onClick={() => setShowNewTicketModal(true)}
@@ -454,19 +633,19 @@ export default function CoordinatorTicketsPage() {
                   Todos
                 </SelectItem>
                 <SelectItem
-                  value="open"
+                  value="OPEN"
                   className="text-foreground hover:bg-accent"
                 >
                   Abertos
                 </SelectItem>
                 <SelectItem
-                  value="in_progress"
+                  value="IN_PROGRESS"
                   className="text-foreground hover:bg-accent"
                 >
                   Em Andamento
                 </SelectItem>
                 <SelectItem
-                  value="resolved"
+                  value="RESOLVED"
                   className="text-foreground hover:bg-accent"
                 >
                   Resolvidos
@@ -488,19 +667,19 @@ export default function CoordinatorTicketsPage() {
                   Todas
                 </SelectItem>
                 <SelectItem
-                  value="high"
+                  value="HIGH"
                   className="text-foreground hover:bg-accent"
                 >
                   Alta
                 </SelectItem>
                 <SelectItem
-                  value="medium"
+                  value="MEDIUM"
                   className="text-foreground hover:bg-accent"
                 >
                   Média
                 </SelectItem>
                 <SelectItem
-                  value="low"
+                  value="LOW"
                   className="text-foreground hover:bg-accent"
                 >
                   Baixa
@@ -536,24 +715,24 @@ export default function CoordinatorTicketsPage() {
                   <div className="flex flex-wrap gap-2 mb-2">
                     <Badge
                       className={`${
-                        ticket.status === 'open'
+                        ticket.status === 'OPEN'
                           ? 'btn-status-open'
-                          : ticket.status === 'in_progress'
+                          : ticket.status === 'IN_PROGRESS'
                             ? 'btn-status-progress'
                             : 'btn-status-resolved'
                       }`}
                     >
-                      {ticket.status === 'open'
+                      {ticket.status === 'OPEN'
                         ? 'ABERTO'
-                        : ticket.status === 'in_progress'
+                        : ticket.status === 'IN_PROGRESS'
                           ? 'EM ANDAMENTO'
                           : 'RESOLVIDO'}
                     </Badge>
                     <Badge
                       className={`${
-                        ticket.priority === 'high'
+                        ticket.priority === 'HIGH'
                           ? 'badge-danger'
-                          : ticket.priority === 'medium'
+                          : ticket.priority === 'MEDIUM'
                             ? 'badge-warning'
                             : 'badge-secondary'
                       }`}
@@ -564,17 +743,35 @@ export default function CoordinatorTicketsPage() {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
-                      {ticket.user.name}
+                      {ticket.createdBy?.name}
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {ticket.createdAt}
+                      {ticket.createdAt instanceof Date 
+                        ? ticket.createdAt.toLocaleDateString('pt-BR')
+                        : ticket.createdAt}
                     </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {/* Botão de Editar para usuários */}
+                  {canEditTicket(ticket) && (
+                    <Button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleEditTicket(ticket);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      size="sm"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      {isUser ? 'Editar' : 'Editar'}
+                    </Button>
+                  )}
+                  
+                  {/* Botão de Arquivar */}
                   {(canEditAllTickets ||
-                    (isUser && ticket.createdBy === session?.user?.id)) && (
+                    (isUser && ticket.createdBy?.id === session?.user?.id)) && (
                     <Button
                       onClick={e => {
                         e.stopPropagation();
@@ -587,17 +784,34 @@ export default function CoordinatorTicketsPage() {
                       Arquivar
                     </Button>
                   )}
+                  
+                  {/* Botão de Encaminhar apenas para admins/coordinators */}
                   {canEditAllTickets && (
                     <Button
                       onClick={e => {
                         e.stopPropagation();
-                        handleForwardTicket(ticket.id, 'coordinator-id');
+                        handleForwardTicket(ticket.id);
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       size="sm"
                     >
                       <Forward className="w-4 h-4 mr-1" />
                       Encaminhar
+                    </Button>
+                  )}
+
+                  {/* Botão de Responder para usuários de suporte */}
+                  {session?.user?.role === 'USER' && ticket.assignedToId === session.user.id && (
+                    <Button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleRespondTicket(ticket.id);
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      size="sm"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Responder
                     </Button>
                   )}
                 </div>
@@ -648,10 +862,10 @@ export default function CoordinatorTicketsPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">
-                            {selectedTicket.user.name}
+                            {selectedTicket.createdBy?.name}
                           </p>
                           <p className="text-xs text-neutral-400">
-                            Mat: {selectedTicket.user.matricula}
+                            Mat: {selectedTicket.createdBy?.matricula || 'N/A'}
                           </p>
                         </div>
                       </div>
@@ -659,25 +873,25 @@ export default function CoordinatorTicketsPage() {
                         <div className="flex justify-between">
                           <span className="text-neutral-400">E-mail:</span>
                           <span className="text-white">
-                            {selectedTicket.user.email}
+                            {selectedTicket.createdBy?.email}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Telefone:</span>
                           <span className="text-white">
-                            {selectedTicket.user.phone}
+                            {selectedTicket.createdBy?.phone || 'N/A'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Setor:</span>
                           <span className="text-white">
-                            {selectedTicket.user.sector}
+                            {selectedTicket.createdBy?.sector || 'N/A'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Admissão:</span>
                           <span className="text-white">
-                            {selectedTicket.user.admissionDate}
+                            {selectedTicket.createdBy?.admissionDate || 'N/A'}
                           </span>
                         </div>
                       </div>
@@ -742,16 +956,16 @@ export default function CoordinatorTicketsPage() {
                           <div className="mt-1">
                             <Badge
                               className={`${
-                                selectedTicket.status === 'open'
+                                selectedTicket.status === 'OPEN'
                                   ? 'bg-orange-500/20 text-orange-500'
-                                  : selectedTicket.status === 'in_progress'
+                                  : selectedTicket.status === 'IN_PROGRESS'
                                     ? 'bg-white/20 text-white'
                                     : 'bg-white/20 text-white'
                               }`}
                             >
-                              {selectedTicket.status === 'open'
+                              {selectedTicket.status === 'OPEN'
                                 ? 'ABERTO'
-                                : selectedTicket.status === 'in_progress'
+                                : selectedTicket.status === 'IN_PROGRESS'
                                   ? 'EM ANDAMENTO'
                                   : 'RESOLVIDO'}
                             </Badge>
@@ -764,9 +978,9 @@ export default function CoordinatorTicketsPage() {
                           <div className="mt-1">
                             <Badge
                               className={`${
-                                selectedTicket.priority === 'high'
+                                selectedTicket.priority === 'HIGH'
                                   ? 'bg-red-500/20 text-red-500'
-                                  : selectedTicket.priority === 'medium'
+                                  : selectedTicket.priority === 'MEDIUM'
                                     ? 'bg-orange-500/20 text-orange-500'
                                     : 'bg-white/20 text-white'
                               }`}
@@ -820,8 +1034,7 @@ export default function CoordinatorTicketsPage() {
                           className="border-neutral-700 text-neutral-400 hover:bg-slate-800"
                           onClick={() =>
                             handleForwardTicket(
-                              selectedTicket.id,
-                              'coordinator-id'
+                              selectedTicket.id
                             )
                           }
                         >
@@ -839,7 +1052,7 @@ export default function CoordinatorTicketsPage() {
                         <Button
                           variant="outline"
                           className="border-blue-700 text-blue-400 hover:bg-blue-800"
-                          onClick={() => handleEditTicket(selectedTicket.id)}
+                          onClick={() => handleEditTicket(selectedTicket)}
                         >
                           <Edit className="w-4 h-4 mr-2" />
                           Editar
@@ -938,9 +1151,9 @@ export default function CoordinatorTicketsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="high">Alta</SelectItem>
-                          <SelectItem value="medium">Média</SelectItem>
-                          <SelectItem value="low">Baixa</SelectItem>
+                          <SelectItem value="HIGH">Alta</SelectItem>
+                          <SelectItem value="MEDIUM">Média</SelectItem>
+                          <SelectItem value="LOW">Baixa</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -962,194 +1175,215 @@ export default function CoordinatorTicketsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Sistema">Sistema</SelectItem>
-                          <SelectItem value="Rede">Rede</SelectItem>
-                          <SelectItem value="Hardware">Hardware</SelectItem>
-                          <SelectItem value="Software">Software</SelectItem>
+                          <SelectItem value="Coordenação">Coordenação</SelectItem>
+                          <SelectItem value="Outros">Outros</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                 </div>
 
-                {/* Seleção de Usuário */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Usuário</h3>
+                {/* Seleção de Usuário - apenas para admins/coordinators */}
+                {!isUser && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Usuário</h3>
 
-                  <div className="flex gap-4">
-                    <Button
-                      variant={
-                        newTicketForm.userType === 'existing'
-                          ? 'default'
-                          : 'outline'
-                      }
-                      onClick={() =>
-                        setNewTicketForm(prev => ({
-                          ...prev,
-                          userType: 'existing',
-                        }))
-                      }
-                      className={
-                        newTicketForm.userType === 'existing'
-                          ? 'bg-blue-500 hover:bg-blue-600'
-                          : 'border-slate-600 text-gray-300'
-                      }
-                    >
-                      Usuário Existente
-                    </Button>
-                    <Button
-                      variant={
-                        newTicketForm.userType === 'new' ? 'default' : 'outline'
-                      }
-                      onClick={() =>
-                        setNewTicketForm(prev => ({ ...prev, userType: 'new' }))
-                      }
-                      className={
-                        newTicketForm.userType === 'new'
-                          ? 'bg-blue-500 hover:bg-blue-600'
-                          : 'border-slate-600 text-gray-300'
-                      }
-                    >
-                      Novo Usuário
-                    </Button>
-                  </div>
-
-                  {newTicketForm.userType === 'existing' ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Selecionar Usuário
-                      </label>
-                      <Select
-                        value={newTicketForm.existingUserId}
-                        onValueChange={value =>
+                    <div className="flex gap-4">
+                      <Button
+                        variant={
+                          newTicketForm.userType === 'existing'
+                            ? 'default'
+                            : 'outline'
+                        }
+                        onClick={() =>
                           setNewTicketForm(prev => ({
                             ...prev,
-                            existingUserId: value,
+                            userType: 'existing',
                           }))
                         }
+                        className={
+                          newTicketForm.userType === 'existing'
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : 'border-slate-600 text-gray-300'
+                        }
                       >
-                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                          <SelectValue placeholder="Selecione um usuário" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {initialTickets.map(ticket => (
-                            <SelectItem
-                              key={ticket.user.matricula}
-                              value={ticket.user.matricula}
-                            >
-                              {ticket.user.name} - {ticket.user.matricula}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        Usuário Existente
+                      </Button>
+                      <Button
+                        variant={
+                          newTicketForm.userType === 'new' ? 'default' : 'outline'
+                        }
+                        onClick={() =>
+                          setNewTicketForm(prev => ({ ...prev, userType: 'new' }))
+                        }
+                        className={
+                          newTicketForm.userType === 'new'
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : 'border-slate-600 text-gray-300'
+                        }
+                      >
+                        Novo Usuário
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Nome Completo
-                          </label>
-                          <Input
-                            value={newTicketForm.newUser.name}
-                            onChange={e =>
-                              setNewTicketForm(prev => ({
-                                ...prev,
-                                newUser: {
-                                  ...prev.newUser,
-                                  name: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="Nome do usuário"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Matrícula
-                          </label>
-                          <Input
-                            value={newTicketForm.newUser.matricula}
-                            onChange={e =>
-                              setNewTicketForm(prev => ({
-                                ...prev,
-                                newUser: {
-                                  ...prev.newUser,
-                                  matricula: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="Matrícula do usuário"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Email
-                          </label>
-                          <Input
-                            type="email"
-                            value={newTicketForm.newUser.email}
-                            onChange={e =>
-                              setNewTicketForm(prev => ({
-                                ...prev,
-                                newUser: {
-                                  ...prev.newUser,
-                                  email: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="email@empresa.com"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Telefone
-                          </label>
-                          <Input
-                            value={newTicketForm.newUser.phone}
-                            onChange={e =>
-                              setNewTicketForm(prev => ({
-                                ...prev,
-                                newUser: {
-                                  ...prev.newUser,
-                                  phone: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="(11) 99999-9999"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </div>
-                      </div>
-
+                    {newTicketForm.userType === 'existing' ? (
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Setor
+                          Selecionar Usuário
                         </label>
-                        <Input
-                          value={newTicketForm.newUser.sector}
-                          onChange={e =>
+                        <Select
+                          value={newTicketForm.existingUserId}
+                          onValueChange={value =>
                             setNewTicketForm(prev => ({
                               ...prev,
-                              newUser: {
-                                ...prev.newUser,
-                                sector: e.target.value,
-                              },
+                              existingUserId: value,
                             }))
                           }
-                          placeholder="Setor do usuário"
-                          className="bg-slate-700 border-slate-600 text-white"
-                        />
+                        >
+                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                            <SelectValue placeholder="Selecione um usuário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map(user => (
+                              <SelectItem
+                                key={user.id}
+                                value={user.id}
+                              >
+                                {user.name} - {user.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Nome Completo
+                            </label>
+                            <Input
+                              value={newTicketForm.newUser.name}
+                              onChange={e =>
+                                setNewTicketForm(prev => ({
+                                  ...prev,
+                                  newUser: {
+                                    ...prev.newUser,
+                                    name: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="Nome do usuário"
+                              className="bg-slate-700 border-slate-600 text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Matrícula
+                            </label>
+                            <Input
+                              value={newTicketForm.newUser.matricula}
+                              onChange={e =>
+                                setNewTicketForm(prev => ({
+                                  ...prev,
+                                  newUser: {
+                                    ...prev.newUser,
+                                    matricula: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="Matrícula do usuário"
+                              className="bg-slate-700 border-slate-600 text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Email
+                            </label>
+                            <Input
+                              type="email"
+                              value={newTicketForm.newUser.email}
+                              onChange={e =>
+                                setNewTicketForm(prev => ({
+                                  ...prev,
+                                  newUser: {
+                                    ...prev.newUser,
+                                    email: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="email@empresa.com"
+                              className="bg-slate-700 border-slate-600 text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Telefone
+                            </label>
+                            <Input
+                              value={newTicketForm.newUser.phone}
+                              onChange={e =>
+                                setNewTicketForm(prev => ({
+                                  ...prev,
+                                  newUser: {
+                                    ...prev.newUser,
+                                    phone: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="(11) 99999-9999"
+                              className="bg-slate-700 border-slate-600 text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Setor
+                          </label>
+                          <Input
+                            value={newTicketForm.newUser.sector}
+                            onChange={e =>
+                              setNewTicketForm(prev => ({
+                                ...prev,
+                                newUser: {
+                                  ...prev.newUser,
+                                  sector: e.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Setor do usuário"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Informação para usuários */}
+                {isUser && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Informações do Usuário</h3>
+                    <div className="bg-slate-700 border border-slate-600 rounded-lg p-4">
+                      <p className="text-sm text-gray-300">
+                        <strong>Nome:</strong> {session?.user?.name || 'Usuário'}
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        <strong>Email:</strong> {session?.user?.email || 'N/A'}
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        <strong>Matrícula:</strong> N/A
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        O chamado será criado com suas informações automaticamente.
+                      </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Botões de Ação */}
                 <div className="flex gap-4 pt-4">
@@ -1171,6 +1405,70 @@ export default function CoordinatorTicketsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Encaminhamento */}
+      {showForwardModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-slate-800 border border-white/20 rounded-lg p-6">
+            <CardHeader className="border-b border-neutral-700 pb-4">
+              <CardTitle className="text-lg font-bold text-white">
+                Encaminhar Ticket
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-neutral-400">
+                Selecione o usuário de suporte para encaminhar este ticket.
+              </p>
+              <Select
+                value={selectedSupportUser}
+                onValueChange={setSelectedSupportUser}
+              >
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecione um usuário de suporte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supportUsers.map(user => (
+                    <SelectItem
+                      key={user.id}
+                      value={user.id}
+                    >
+                      {user.name} - {user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                  onClick={() => setShowForwardModal(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmForward}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isForwarding}
+                >
+                  {isForwarding ? 'Encaminhando...' : 'Encaminhar'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal de Resposta */}
+      {showResponseModal && ticketToRespond && (
+        <TicketResponseModal
+          ticket={ticketToRespond}
+          onClose={() => {
+            setShowResponseModal(false);
+            setTicketToRespond(null);
+          }}
+          onResponse={(response, action) => handleSendResponse(response, action)}
+        />
       )}
     </div>
   );

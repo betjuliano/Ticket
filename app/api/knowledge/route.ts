@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
     if (category) where.category = category;
 
-    const articles = await prisma.knowledgeArticle.findMany({
+    const articles = await prisma.docsArticle.findMany({
       where,
       include: {
         author: {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const total = await prisma.knowledgeArticle.count({ where });
+    const total = await prisma.docsArticle.count({ where });
 
     return createSuccessResponse(articles, undefined, {
       page,
@@ -86,12 +86,11 @@ export async function POST(request: NextRequest) {
     // `tags` como campo de texto, então armazenamos como lista separada por vírgula.
     const tagsString = validatedData.tags ? validatedData.tags.join(',') : '';
 
-    const newArticle = await prisma.knowledgeArticle.create({
+    const newArticle = await prisma.docsArticle.create({
       data: {
         title: validatedData.title,
         content: validatedData.content,
-        category: validatedData.category,
-        tags: tagsString,
+        categoryId: validatedData.category,
         isPublished: validatedData.isPublished,
         authorId: session.user.id,
       },

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { SYSTEM_USERS, prepareUsersForDatabase, validateUserConfig } from '../config/users';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -6,61 +7,49 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...');
 
-  // Criar usuários de exemplo
-  const users = [
-    {
-      email: 'admin@ticket.local',
-      name: 'Administrador',
-      password: await bcrypt.hash('admin123', 10),
-      role: 'ADMIN' as const,
-    },
-    {
-      email: 'coordenador@ticket.local',
-      name: 'Coordenador TI',
-      password: await bcrypt.hash('coord123', 10),
-      role: 'COORDINATOR' as const,
-    },
-    {
-      email: 'usuario@ticket.local',
-      name: 'Usuário Teste',
-      password: await bcrypt.hash('user123', 10),
-      role: 'USER' as const,
-    },
-    {
-      email: 'admjulianoo@gmail.com',
-      name: 'Juliano Admin',
-      password: await bcrypt.hash('Adm4125', 10),
-      role: 'ADMIN' as const,
-    },
-    {
-      email: 'coordadm@ufsm.br',
-      name: 'Coordenação UFSM',
-      password: await bcrypt.hash('Adm4125', 10),
-      role: 'COORDINATOR' as const,
-    },
-    {
-      email: 'alunoadm@ufsm.br',
-      name: 'Aluno Admin UFSM',
-      password: await bcrypt.hash('teste123', 10),
-      role: 'USER' as const,
-    },
-  ];
+  try {
+    // Validar configuração de usuários
+    const validationErrors = validateUserConfig(SYSTEM_USERS);
+    if (validationErrors.length > 0) {
+      console.error('❌ Configuração de usuários inválida:', validationErrors);
+      return;
+    }
 
-  for (const userData of users) {
-    const user = await prisma.user.upsert({
-      where: { email: userData.email },
-      update: {},
-      create: userData,
-    });
-    console.log(`✅ Usuário criado: ${user.name} (${user.email})`);
+    // Preparar usuários para inserção
+    const usersToInsert = await prepareUsersForDatabase(SYSTEM_USERS);
+
+    // Inserir usuários no banco
+    for (const user of usersToInsert) {
+      const userData = {
+        email: user.email,
+        name: user.name,
+        password: await bcrypt.hash(user.password, 10),
+        role: user.role,
+        matricula: user.matricula || null,
+        telefone: user.telefone || null,
+      };
+
+      const createdUser = await prisma.user.upsert({
+        where: { email: userData.email },
+        update: userData,
+        create: userData,
+      });
+
+      console.log(`✅ Usuário ${createdUser.name} (${createdUser.email}) processado`);
+    }
+
+    console.log('🎉 Seed concluído com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro durante o seed:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
   }
-
-  console.log('🎉 Seed concluído!');
 }
 
 main()
-  .catch(e => {
-    console.error('❌ Erro no seed:', e);
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

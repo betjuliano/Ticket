@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,12 +61,7 @@ export function CommentSection({
   const userId = session?.user?.id;
   const canCreateInternal = userRole === 'ADMIN' || userRole === 'COORDINATOR';
 
-  // Carregar comentários
-  useEffect(() => {
-    loadComments();
-  }, [ticketId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/tickets/${ticketId}/comments`);
@@ -83,7 +78,11 @@ export function CommentSection({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ticketId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   // Criar novo comentário
   const handleSubmitComment = async (e: React.FormEvent) => {

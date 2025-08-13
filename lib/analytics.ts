@@ -1,6 +1,17 @@
 import { prisma } from './prisma';
-import { cache } from './cache';
 import { logger } from './logger';
+
+// Função simples de cache sem Redis por enquanto
+async function getOrSetCache<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+  try {
+    // Por enquanto, sempre buscar dados frescos
+    // TODO: Implementar cache real quando necessário
+    return await fetchFn();
+  } catch (error) {
+    console.error('Cache error:', error);
+    return await fetchFn();
+  }
+}
 
 // Interfaces para analytics
 interface TicketStats {
@@ -70,7 +81,7 @@ class AnalyticsService {
   async getTicketStats(period: string = '30d'): Promise<TicketStats> {
     const cacheKey = `ticket_stats:${period}`;
 
-    return cache.getOrSet(
+    return getOrSetCache(
       cacheKey,
       async () => {
         try {
@@ -170,19 +181,18 @@ class AnalyticsService {
             satisfactionRate,
           };
         } catch (error) {
-          logger.error('Failed to get ticket stats', { error, period });
+          logger.error('Failed to get ticket stats', error as Error, { period });
           throw error;
         }
-      },
-      { ttl: 300 }
-    ); // Cache por 5 minutos
+      }
+    );
   }
 
   // Obter estatísticas de usuários
   async getUserStats(period: string = '30d'): Promise<UserStats> {
     const cacheKey = `user_stats:${period}`;
 
-    return cache.getOrSet(
+    return getOrSetCache(
       cacheKey,
       async () => {
         try {
@@ -285,19 +295,18 @@ class AnalyticsService {
             topResolvers: topResolversFormatted,
           };
         } catch (error) {
-          logger.error('Failed to get user stats', { error, period });
+          logger.error('Failed to get user stats', error as Error, { period });
           throw error;
         }
-      },
-      { ttl: 600 }
-    ); // Cache por 10 minutos
+      }
+    );
   }
 
   // Obter dados de série temporal
   async getTimeSeriesData(period: string = '30d'): Promise<TimeSeriesData[]> {
     const cacheKey = `time_series:${period}`;
 
-    return cache.getOrSet(
+    return getOrSetCache(
       cacheKey,
       async () => {
         try {
@@ -341,7 +350,7 @@ class AnalyticsService {
             });
 
             data.push({
-              date: date.toISOString().split('T')[0],
+              date: date.toISOString().split('T')[0] || '',
               created,
               resolved,
               open,
@@ -350,12 +359,11 @@ class AnalyticsService {
 
           return data;
         } catch (error) {
-          logger.error('Failed to get time series data', { error, period });
+          logger.error('Failed to get time series data', error as Error, { period });
           throw error;
         }
-      },
-      { ttl: 1800 }
-    ); // Cache por 30 minutos
+      }
+    );
   }
 
   // Obter métricas de performance
@@ -364,7 +372,7 @@ class AnalyticsService {
   ): Promise<PerformanceMetrics> {
     const cacheKey = `performance_metrics:${period}`;
 
-    return cache.getOrSet(
+    return getOrSetCache(
       cacheKey,
       async () => {
         try {
@@ -385,7 +393,7 @@ class AnalyticsService {
             .filter(ticket => ticket.comments.length > 0)
             .map(ticket => {
               const diff =
-                new Date(ticket.comments[0].createdAt).getTime() -
+                new Date(ticket.comments?.[0]?.createdAt || new Date()).getTime() -
                 new Date(ticket.createdAt).getTime();
               return diff / (1000 * 60 * 60); // em horas
             });
@@ -439,19 +447,18 @@ class AnalyticsService {
             },
           };
         } catch (error) {
-          logger.error('Failed to get performance metrics', { error, period });
+          logger.error('Failed to get performance metrics');
           throw error;
         }
-      },
-      { ttl: 900 }
-    ); // Cache por 15 minutos
+      }
+    );
   }
 
   // Obter insights e recomendações
   async getInsights(period: string = '30d'): Promise<any> {
     const cacheKey = `insights:${period}`;
 
-    return cache.getOrSet(
+    return getOrSetCache(
       cacheKey,
       async () => {
         try {
@@ -517,12 +524,11 @@ class AnalyticsService {
             ],
           };
         } catch (error) {
-          logger.error('Failed to get insights', { error, period });
+          logger.error('Failed to get insights');
           throw error;
         }
-      },
-      { ttl: 3600 }
-    ); // Cache por 1 hora
+      }
+    );
   }
 
   // Utilitários privados

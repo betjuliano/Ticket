@@ -67,11 +67,12 @@ export async function GET(
     const fileBuffer = await readFile(fullPath);
 
     // Retornar arquivo
-    return new NextResponse(fileBuffer, {
+    const uint8Array = new Uint8Array(fileBuffer);
+    return new NextResponse(uint8Array, {
       headers: {
-        'Content-Type': attachment.mimetype,
+        'Content-Type': attachment.mimeType,
         'Content-Disposition': `attachment; filename="${attachment.originalName}"`,
-        'Content-Length': attachment.filesize.toString(),
+        'Content-Length': attachment.size.toString(),
       },
     });
   } catch (error) {

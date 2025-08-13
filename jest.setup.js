@@ -45,10 +45,11 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock do Prisma
-jest.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/database/client', () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -67,7 +68,29 @@ jest.mock('@/lib/prisma', () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
+    $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
   },
+  databaseClient: {
+    getInstance: jest.fn(),
+    getMetrics: jest.fn().mockResolvedValue({
+      activeConnections: 1,
+      queryCount: 0,
+      avgQueryTime: 0,
+      totalQueries: 0,
+      slowQueries: 0,
+      errorCount: 0,
+      lastQueryTime: 0,
+    }),
+    disconnect: jest.fn(),
+    isConnected: jest.fn().mockResolvedValue(true),
+    resetMetrics: jest.fn(),
+  },
+  checkDatabaseConnection: jest.fn().mockResolvedValue(true),
+  disconnectPrisma: jest.fn(),
+  executeTransaction: jest.fn(),
 }));
 
 // Mock do NextAuth

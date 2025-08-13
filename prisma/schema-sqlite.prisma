@@ -1,0 +1,255 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Usar SQLite para desenvolvimento rápido
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ========================================
+// MODELOS DE USUÁRIOS E AUTENTICAÇÃO
+// ========================================
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  password         String
+  role             String    @default("USER") // Enum como string para SQLite
+  avatar           String?
+  isActive         Boolean   @default(true)
+  matricula        String?   @unique
+  telefone         String?   @unique
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  lastLoginAt      DateTime?
+  preferences      String?   // JSON como string para SQLite
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relacionamentos
+  createdTickets     Ticket[]           @relation("CreatedBy")
+  assignedTickets    Ticket[]           @relation("AssignedTo")
+  ticketComments     Comment[]
+  ticketAttachments  Attachment[]
+  userSessions       Session[]
+  userLogs           UserLog[]
+  notifications      Notification[]
+  knowledgeArticles  KnowledgeArticle[] @relation("ArticleAuthor")
+  articleRatings     ArticleRating[]
+  ticketLogs         TicketLog[]        // Adicionando relacionamento faltante
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ========================================
+// MODELOS DE TICKETS
+// ========================================
+
+model Ticket {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  status      String   @default("OPEN") // Enum como string para SQLite
+  priority    String   @default("MEDIUM") // Enum como string para SQLite
+  category    String
+  tags        String   // Array como string para SQLite
+  estimatedHours Float?
+  actualHours    Float?
+  dueDate        DateTime?
+  
+  // Relacionamentos
+  createdById String
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?       @relation("AssignedTo", fields: [assignedToId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  closedAt    DateTime?
+  
+  // Relacionamentos
+  comments    Comment[]
+  attachments Attachment[]
+  ticketLogs  TicketLog[]
+  metrics     TicketMetrics?
+
+  @@map("tickets")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  ticketId    String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("attachments")
+}
+
+// ========================================
+// MODELOS DE CONHECIMENTO
+// ========================================
+
+model KnowledgeCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  articles KnowledgeArticle[]
+
+  @@map("knowledge_categories")
+}
+
+model KnowledgeArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  categoryId  String
+  authorId    String
+  isPublished Boolean  @default(false)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  category KnowledgeCategory @relation(fields: [categoryId], references: [id])
+  author   User             @relation("ArticleAuthor", fields: [authorId], references: [id])
+  ratings  ArticleRating[]
+
+  @@map("knowledge_articles")
+}
+
+model ArticleRating {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 estrelas
+  comment   String?
+  articleId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id])
+
+  @@unique([articleId, userId])
+  @@map("article_ratings")
+}
+
+// ========================================
+// MODELOS DE NOTIFICAÇÕES
+// ========================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // Enum como string para SQLite
+  title     String
+  message   String
+  userId    String
+  isRead    Boolean  @default(false)
+  metadata  String?  // JSON como string para SQLite
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ========================================
+// MODELOS DE LOGS
+// ========================================
+
+model UserLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?  // JSON como string para SQLite
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_logs")
+}
+
+model TicketLog {
+  id        String   @id @default(cuid())
+  ticketId  String
+  action    String
+  details   String?  // JSON como string para SQLite
+  userId    String?
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@map("ticket_logs")
+}
+
+model TicketMetrics {
+  id                String   @id @default(cuid())
+  ticketId          String   @unique
+  timeSpent         Float    @default(0)
+  responseTime      Float?   // Tempo até primeira resposta
+  resolutionTime    Float?   // Tempo até resolução
+  reopenCount       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relacionamentos
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_metrics")
+} 

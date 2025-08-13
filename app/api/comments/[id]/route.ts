@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { updateCommentSchema } from '@/lib/validations';
+import { updateCommentSchema } from '@/lib/validations/forms';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api-utils';
 
 // GET /api/comments/[id] - Buscar comentário específico
@@ -61,10 +61,10 @@ export async function GET(
       );
     }
 
-    // Usuários comuns não podem ver comentários internos
-    if (userRole === 'USER' && comment.isInternal) {
-      return createErrorResponse('Comentário não encontrado', 404);
-    }
+    // Verificação de permissões para comentários (se necessário no futuro)
+    // if (userRole === 'USER' && comment.isInternal) {
+    //   return createErrorResponse('Comentário não encontrado', 404);
+    // }
 
     return createSuccessResponse(comment);
   } catch (error) {

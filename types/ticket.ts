@@ -45,6 +45,11 @@ export interface Ticket {
     id: string;
     name: string;
     email: string;
+    role?: string;
+    matricula?: string;
+    phone?: string;
+    sector?: string;
+    admissionDate?: string;
   };
   assignedTo?: {
     id: string;

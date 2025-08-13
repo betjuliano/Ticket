@@ -76,10 +76,11 @@ export async function POST(request: NextRequest) {
     // Salvar no banco
     const attachment = await prisma.attachment.create({
       data: {
-        filename: file.name,
-        filepath: `/uploads/${filename}`,
-        filesize: file.size,
-        mimetype: file.type,
+        filename: filename,
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        path: `/uploads/${filename}`,
         ticketId,
         userId: session.user.id,
       },
